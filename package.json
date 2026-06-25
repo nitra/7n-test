@@ -1,0 +1,27 @@
+{
+  "name": "mono",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "npm"
+  ],
+  "type": "module",
+  "scripts": {
+    "start": "bun ./npm/bin/7.js",
+    "test": "vitest run",
+    "lint": "bun run lint-ga && bun run lint-js && bun run lint-security && bun run lint-text && bun run lint-image && oxfmt .",
+    "lint-ga": "n-cursor lint-ga",
+    "lint-js": "bunx oxlint --fix && bunx eslint --fix . && bunx jscpd . && bunx knip --no-config-hints",
+    "lint-security": "trufflehog filesystem . --no-update --exclude-paths .trufflehog-exclude --results=verified,unknown --fail",
+    "lint-text": "n-cursor lint-text",
+    "lint-image": "npx @nitra/minify-image --src=. --write",
+    "oxfmt": "oxfmt .",
+    "coverage": "n-cursor coverage"
+  },
+  "devDependencies": {
+  },
+  "engines": {
+    "bun": ">=1.3",
+    "node": ">=25"
+  }
+}

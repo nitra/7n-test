@@ -1,0 +1,19 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "mono",
+    },
+    "npm": {
+      "name": "@7n/test",
+      "version": "0.1.0",
+      "bin": {
+        "n": "bin/n.js",
+      },
+    },
+  },
+  "packages": {
+    "@7n/test": ["@7n/test@workspace:npm"],
+  }
+}

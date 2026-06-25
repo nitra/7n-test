@@ -1,0 +1,44 @@
+{
+  "name": "@7n/test",
+  "version": "0.1.0",
+  "description": "CLI-утиліта @7n/test",
+  "keywords": [
+    "7n",
+    "bun",
+    "cli"
+  ],
+  "homepage": "https://github.com/nitra/7n-test#readme",
+  "bugs": {
+    "url": "https://github.com/nitra/7n-test/issues"
+  },
+  "license": "ISC",
+  "author": "vitaliytv@nitralabs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nitra/7n-test.git"
+  },
+  "bin": {
+    "n": "bin/n.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "CHANGELOG.md",
+    "README.md",
+    "types"
+  ],
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./types/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "start": "bun ./bin/n.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "bun": ">=1.3",
+    "node": ">=24"
+  }
+}
