@@ -19,6 +19,7 @@
     "coverage": "n-cursor coverage"
   },
   "devDependencies": {
+    "@nitra/cursor": "^12.11.0"
   },
   "engines": {
     "bun": ">=1.3",
