@@ -1,15 +1,15 @@
 /**
- * Test generation via pi agent.
- * Reads source files, builds a rich prompt, and runs pi in agent mode
- * so it can find/create test files and verify them with bun test.
+ * Test generation via pi SDK (one file at a time).
+ *
+ * Uses callText() for text-mode generation: gets raw code back,
+ * extracts the ```js block, writes the file directly.
+ * No subprocess, no confirmation prompts.
  */
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { spawnSync } from 'node:child_process'
-import { env } from 'node:process'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { callText } from './lib/pi-client.mjs'
 
-const MAX_SRC_BYTES = 4000
-const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? env.N_CLOUD_MAX_MODEL ?? ''
+const MAX_SRC_BYTES = 6000
 
 /** Test file candidates relative to source file. */
 function testCandidates(file) {
@@ -20,89 +20,124 @@ function testCandidates(file) {
   return [
     `${base}.test.mjs`,
     `${base}.test.js`,
-    `${base}.test.ts`,
-    ...(dir ? [`${dir}/tests/${name}.test.mjs`, `${dir}/tests/${name}.test.js`] : [])
+    ...(dir ? [`${dir}/tests/${name}.test.mjs`] : [])
   ]
 }
 
 /**
- * Builds the pi agent prompt for test generation.
+ * Extracts the first ```js...``` block from LLM text output.
+ * @param {string} text
+ * @returns {string}
+ */
+function extractCode(text) {
+  const match = text.match(/```(?:js|javascript|mjs|ts)?\n([\s\S]*?)```/)
+  return match ? match[1].trim() : ''
+}
+
+/**
+ * Builds a display-only summary prompt (used in tests).
  * @param {Array<{file: string, pct: number, reason: string}>} files
- * @param {string} dir project root
+ * @param {string} dir
  * @returns {string}
  */
 export function buildGenTestsPrompt(files, dir) {
-  const sections = []
-  for (const { file, pct, reason } of files) {
+  return files.map(({ file, pct, reason }) => {
     const absPath = join(dir, file)
     let content = ''
     if (existsSync(absPath)) {
       content = readFileSync(absPath, 'utf8')
       if (content.length > MAX_SRC_BYTES) content = content.slice(0, MAX_SRC_BYTES) + '\n...(truncated)'
     }
-
-    const existingTest = testCandidates(file).find(c => existsSync(join(dir, c)))
-    let existingTestSection = ''
-    if (existingTest) {
-      const testContent = readFileSync(join(dir, existingTest), 'utf8')
-      existingTestSection = `\n\nІснуючий тест-файл (\`${existingTest}\`):\n\`\`\`js\n${testContent.slice(0, 2000)}\n\`\`\``
-    }
-
-    sections.push(
+    return (
       `### \`${file}\` (покриття: ${pct.toFixed(1)}%)\n` +
-        (reason ? `Причина: ${reason}\n\n` : '') +
-        (content ? `\`\`\`js\n${content}\n\`\`\`` : '(вміст недоступний)') +
-        existingTestSection
+      (reason ? `Причина: ${reason}\n\n` : '') +
+      (content ? `\`\`\`js\n${content}\n\`\`\`` : '(вміст недоступний)')
     )
+  }).join('\n\n')
+}
+
+function buildSingleFilePrompt(fileInfo, dir) {
+  const { file, pct, reason } = fileInfo
+  const absPath = join(dir, file)
+  let content = ''
+  if (existsSync(absPath)) {
+    content = readFileSync(absPath, 'utf8')
+    if (content.length > MAX_SRC_BYTES) content = content.slice(0, MAX_SRC_BYTES) + '\n...(truncated)'
+  }
+
+  const existingTestFile = testCandidates(file).find(c => existsSync(join(dir, c)))
+  let existingSection = ''
+  if (existingTestFile) {
+    const tc = readFileSync(join(dir, existingTestFile), 'utf8')
+    existingSection = `\n\nІснуючий тест (доповни):\n\`\`\`js\n${tc.slice(0, 3000)}\n\`\`\``
   }
 
   return [
-    'ДІЯ: Негайно напиши unit-тести для кожного з наступних файлів. Без запитань, без підтверджень — одразу пиши файли.',
+    `Напиши повний unit-тест для файлу \`${file}\` (покриття зараз ${pct.toFixed(1)}%).`,
+    reason ? `Причина: ${reason}` : '',
     '',
-    'Для кожного файлу: створи або відредагуй відповідний `*.test.mjs` поруч із джерелом,',
-    'напиши тести що покривають основну логіку, гілки та граничні випадки.',
+    'Правила (СУВОРО):',
+    '- Перший рядок: `import { vi, describe, it, expect, beforeEach } from "vitest"`',
+    '- Мокуй залежності: `vi.mock("module", () => ({ fn: vi.fn() }))` + `vi.mocked(fn)`',
+    '- НІКОЛИ `jest.*`, НІКОЛИ `require()`',
+    '- Лише поведінкові тести — НЕ тестуй приватні деталі реалізації',
+    '- Поверни ЛИШЕ код тесту у блоці ```js ... ``` — без пояснень',
     '',
-    '## Файли для покриття',
-    '',
-    ...sections,
-    '',
-    '## Обовʼязкові правила (дотримуйся СУВОРО)',
-    '- НЕ змінюй source-файли — лише test-файли (`*.test.mjs`).',
-    '- Фреймворк: **vitest**. Перший рядок кожного тест-файлу: `import { vi, describe, it, expect, beforeEach } from "vitest"`',
-    '- Мокування: `vi.mock(...)`, `vi.fn()`, `vi.clearAllMocks()` — НІКОЛИ `jest.*`.',
-    '- Після кожного файлу виконай `bun test <шлях-до-тесту>` і переконайся що 0 fail.',
-    '- Не питай підтвердження — пиши всі файли підряд самостійно.',
-    '- Якщо файл лише re-export або типи — пропусти і продовж до наступного.'
-  ].join('\n')
+    `Джерело (\`${file}\`):`,
+    '```js',
+    content || '(недоступно)',
+    '```',
+    existingSection
+  ].filter(Boolean).join('\n')
 }
 
 /**
- * Runs pi agent to generate tests for the given files.
- * @param {Array<{file: string, pct: number, reason: string}>} files files that need tests
- * @param {string} dir project root
- * @param {{ callPi?: Function }} [opts]
+ * Generates a test for one file via pi text mode.
+ * @param {{file: string, pct: number, reason: string}} fileInfo
+ * @param {string} dir
+ * @param {Function} callTextFn
+ * @returns {Promise<string|null>} written test path or null
  */
-export function generateTests(files, dir, opts = {}) {
+async function generateOneTest(fileInfo, dir, callTextFn) {
+  const prompt = buildSingleFilePrompt(fileInfo, dir)
+
+  let response
+  try {
+    response = await callTextFn(prompt, { cwd: dir })
+  } catch (err) {
+    console.error(`  ✗ pi помилка для ${fileInfo.file}: ${err.message}`)
+    return null
+  }
+
+  const code = extractCode(response)
+  if (!code) {
+    console.error(`  ✗ pi не повернула код для ${fileInfo.file}`)
+    return null
+  }
+
+  const testPath = join(dir, testCandidates(fileInfo.file)[0])
+  writeFileSync(testPath, code + '\n', 'utf8')
+  console.log(`  ✓ Записано: ${relative(dir, testPath)}`)
+  return testPath
+}
+
+/**
+ * Generates tests for all given files (one pi call per file).
+ * @param {Array<{file: string, pct: number, reason: string}>} files
+ * @param {string} dir project root
+ * @param {{ callText?: Function, generateOne?: Function }} [opts]
+ * @returns {Promise<void>}
+ */
+export async function generateTests(files, dir, opts = {}) {
   if (files.length === 0) return
 
-  const prompt = buildGenTestsPrompt(files, dir)
-  console.log(`\n🤖 Генерую тести для ${files.length} файлів через pi агента...\n`)
+  const callTextFn = opts.callText ?? callText
+  const generateOneFn = opts.generateOne ?? ((f, d) => generateOneTest(f, d, callTextFn))
 
-  const callPiFn = opts.callPi ?? callPi
-  callPiFn(prompt, MODEL, dir)
-}
+  console.log(`\n🤖 Генерую тести для ${files.length} файлів (pi SDK, по одному)...\n`)
 
-/**
- * @param {string} prompt
- * @param {string} model
- * @param {string} cwd
- */
-function callPi(prompt, model, cwd) {
-  const modelArgs = model ? ['--model', model] : []
-  spawnSync('pi', ['-p', prompt, ...modelArgs, '--no-session'], {
-    cwd,
-    stdio: 'inherit',
-    env,
-    timeout: 900_000
-  })
+  for (const fileInfo of files) {
+    console.log(`  → ${fileInfo.file} (${fileInfo.pct.toFixed(1)}%)`)
+    await generateOneFn(fileInfo, dir)
+  }
 }

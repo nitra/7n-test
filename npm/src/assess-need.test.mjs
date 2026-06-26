@@ -1,127 +1,84 @@
-import { assessNeed } from './assess-need.mjs'
-import * as fs from 'node:fs'
-import { spawnSync } from 'node:child_process'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { existsSync, readFileSync } from 'node:fs'
+import { assessNeed } from './assess-need.mjs'
 
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(),
-}))
+vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn() }))
+vi.mock('node:path', () => ({ join: vi.fn((...a) => a.join('/')) }))
+vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
 
-vi.mock('node:child_process', () => ({
-  spawnSync: vi.fn(),
-}))
+const DIR = '/proj'
+const mockCallText = vi.fn()
 
-describe('assessNeed', () => {
-  const projectDir = '/mock/project'
-  const fileInfo = { file: 'testfile.js', pct: 45.6 }
-  let mockFs, mockSpawnSync
+describe('assess-need.mjs', () => {
+  beforeEach(() => vi.clearAllMocks())
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockFs = fs
-    mockSpawnSync = spawnSync
-  })
-
-  it('should return early if file does not exist', async () => {
-    mockFs.existsSync.mockReturnValue(false)
-    
-    const result = await assessNeed([fileInfo], projectDir)
-    
-    expect(mockFs.existsSync).toHaveBeenCalledWith('/mock/project/testfile.js')
+  it('returns needsTests:false when file not found', async () => {
+    vi.mocked(existsSync).mockReturnValue(false)
+    const result = await assessNeed([{ file: 'src/a.mjs', pct: 0 }], DIR, { callText: mockCallText })
     expect(result[0].needsTests).toBe(false)
     expect(result[0].reason).toBe('файл недоступний')
+    expect(mockCallText).not.toHaveBeenCalled()
   })
 
-  it('should correctly assess need when pi returns valid JSON (needsTests: true)', async () => {
-    const mockContent = 'Some code that needs testing'
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.readFileSync.mockReturnValue(mockContent)
-    
-    // Simulate successful pi call with JSON response
-    mockSpawnSync.mockReturnValue({
-      status: 0,
-      stdout: '{"needsTests": true, "reason": "Містить бізнес-логіку"}\n',
-      stderr: ''
-    })
+  it('calls callText and parses JSON response', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('export const x = 1')
+    mockCallText.mockResolvedValue('{"needsTests": true, "reason": "має логіку"}')
 
-    const result = await assessNeed([fileInfo], projectDir)
-
-    expect(mockSpawnSync).toHaveBeenCalledWith('pi', expect.anything(), expect.anything())
+    const result = await assessNeed([{ file: 'src/a.mjs', pct: 20 }], DIR, { callText: mockCallText })
+    expect(mockCallText).toHaveBeenCalledOnce()
     expect(result[0].needsTests).toBe(true)
-    expect(result[0].reason).toBe('Містить бізнес-логіку')
+    expect(result[0].reason).toBe('має логіку')
   })
 
-  it('should correctly assess need when pi returns valid JSON (needsTests: false)', async () => {
-    const mockContent = 'interface MyType {}'
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.readFileSync.mockReturnValue(mockContent)
-    
-    // Simulate successful pi call with JSON response indicating no tests needed
-    mockSpawnSync.mockReturnValue({
-      status: 0,
-      stdout: '{"needsTests": false, "reason": "Тільки типи"}\n',
-      stderr: ''
-    })
+  it('returns needsTests:false when LLM says false', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('export { x } from "./x.mjs"')
+    mockCallText.mockResolvedValue('{"needsTests": false, "reason": "лише re-export"}')
 
-    const result = await assessNeed([fileInfo], projectDir)
-
+    const result = await assessNeed([{ file: 'src/b.mjs', pct: 0 }], DIR, { callText: mockCallText })
     expect(result[0].needsTests).toBe(false)
-    expect(result[0].reason).toBe('Тільки типи')
   })
 
-  it('should treat as needsTests=true on pi execution failure (non-zero status)', async () => {
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.readFileSync.mockReturnValue('content')
-    
-    // Simulate failure
-    mockSpawnSync.mockReturnValue({
-      status: 1,
-      stdout: '',
-      stderr: 'Failed to run pi command'
-    })
+  it('defaults needsTests:true on parse error', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    mockCallText.mockResolvedValue('not json')
 
-    const result = await assessNeed([fileInfo], projectDir)
-
-    expect(result[0].needsTests).toBe(true)
-    expect(result[0].reason).toBe('оцінка не вдалась — вважаємо що потрібні тести')
-  })
-  
-  it('should treat as needsTests=true on pi execution error (r.error)', async () => {
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.readFileSync.mockReturnValue('content')
-    
-    // Simulate error thrown by spawnSync
-    mockSpawnSync.mockImplementation(() => {
-        throw new Error('Mocked pi error')
-    })
-
-    const result = await assessNeed([fileInfo], projectDir)
-
-    expect(result[0].needsTests).toBe(true)
-    expect(result[0].reason).toBe('оцінка не вдалась — вважаємо що потрібні тести')
-  })
-
-  it('should handle content truncation correctly', async () => {
-    const largeContent = 'A'.repeat(6000)
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.readFileSync.mockReturnValue(largeContent)
-    
-    mockSpawnSync.mockReturnValue({
-      status: 0,
-      stdout: '{"needsTests": true, "reason": "Content was truncated"}\n',
-      stderr: ''
-    })
-
-    const result = await assessNeed([fileInfo], projectDir)
-    
-    expect(mockFs.readFileSync).toHaveBeenCalledWith('/mock/project/testfile.js', 'utf8')
-    // We check that the mocked readFileSync was called, which implies the truncation logic was engaged internally
+    const result = await assessNeed([{ file: 'src/c.mjs', pct: 10 }], DIR, { callText: mockCallText })
     expect(result[0].needsTests).toBe(true)
   })
 
-  it('should handle empty input file list', async () => {
-    const result = await assessNeed([], projectDir)
-    expect(result).toEqual([])
+  it('defaults needsTests:true when callText throws', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    mockCallText.mockRejectedValue(new Error('network error'))
+
+    const result = await assessNeed([{ file: 'src/d.mjs', pct: 5 }], DIR, { callText: mockCallText })
+    expect(result[0].needsTests).toBe(true)
+  })
+
+  it('truncates large files before sending', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('x'.repeat(10000))
+    mockCallText.mockResolvedValue('{"needsTests": false, "reason": "test"}')
+
+    await assessNeed([{ file: 'src/big.mjs', pct: 0 }], DIR, { callText: mockCallText })
+    const prompt = mockCallText.mock.calls[0][0]
+    expect(prompt).toContain('truncated')
+  })
+
+  it('processes multiple files in parallel', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    mockCallText.mockResolvedValue('{"needsTests": true, "reason": "logic"}')
+
+    const files = [
+      { file: 'src/a.mjs', pct: 10 },
+      { file: 'src/b.mjs', pct: 20 },
+    ]
+    const result = await assessNeed(files, DIR, { callText: mockCallText })
+    expect(result).toHaveLength(2)
+    expect(mockCallText).toHaveBeenCalledTimes(2)
   })
 })

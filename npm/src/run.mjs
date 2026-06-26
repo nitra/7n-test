@@ -56,7 +56,7 @@ export async function runAutoTest(dir) {
     prevUncoveredCount = uncovered.length
 
     console.log(`\n── Оцінюю ${uncovered.length} непокритих файлів (LLM) ──\n`)
-    const assessed = assessNeed(uncovered, dir)
+    const assessed = await assessNeed(uncovered, dir)
     const needsTests = assessed.filter(f => f.needsTests)
 
     if (needsTests.length === 0) {
@@ -69,7 +69,7 @@ export async function runAutoTest(dir) {
       console.log(`  • ${f.file} (${f.pct.toFixed(1)}%) — ${f.reason}`)
     }
 
-    generateTests(needsTests, dir)
+    await generateTests(needsTests, dir)
   }
 
   console.log('\n── Мутаційне тестування + автофікс ──\n')

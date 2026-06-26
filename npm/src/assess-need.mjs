@@ -1,15 +1,12 @@
 /**
- * LLM assessment via pi CLI: does an uncovered file actually need unit tests?
- * Uses `pi --mode text --no-tools --no-session` for structured JSON replies.
- * Model: N_CLOUD_MIN_MODEL env → pi default.
+ * LLM assessment via pi SDK: does an uncovered file actually need unit tests?
+ * Uses callText() (no tools) for structured JSON replies.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { spawnSync } from 'node:child_process'
-import { env } from 'node:process'
+import { callText } from './lib/pi-client.mjs'
 
 const MAX_CONTENT_BYTES = 6000
-const MODEL = env.N_CLOUD_MIN_MODEL ?? ''
 
 const SYSTEM_PROMPT = `You are a test-need classifier for JS/TS source files.
 
@@ -29,27 +26,12 @@ needsTests: true when:
 - Pure functions that can be unit-tested cheaply`
 
 /**
- * @param {string} prompt
- * @returns {string} stdout from pi
- */
-function callPiText(prompt) {
-  const modelArgs = MODEL ? ['--model', MODEL] : []
-  const r = spawnSync('pi', ['-p', prompt, ...modelArgs, '--no-session', '--mode', 'text', '--no-tools'], {
-    encoding: 'utf8',
-    timeout: 60_000,
-    env
-  })
-  if (r.error) throw new Error(`pi error: ${r.error.message}`)
-  if (r.status !== 0) throw new Error(`pi exit ${r.status}: ${r.stderr?.slice(0, 200) ?? ''}`)
-  return r.stdout?.trim() ?? ''
-}
-
-/**
  * @param {{file: string, pct: number}} fileInfo
  * @param {string} dir project root
- * @returns {{file: string, pct: number, needsTests: boolean, reason: string}}
+ * @param {Function} [callTextFn] injectable for tests
+ * @returns {Promise<{file: string, pct: number, needsTests: boolean, reason: string}>}
  */
-function assessOne(fileInfo, dir) {
+async function assessOne(fileInfo, dir, callTextFn) {
   const absPath = join(dir, fileInfo.file)
   if (!existsSync(absPath)) return { ...fileInfo, needsTests: false, reason: 'файл недоступний' }
 
@@ -62,7 +44,7 @@ function assessOne(fileInfo, dir) {
     `\`\`\`\n${content}\n\`\`\``
 
   try {
-    const text = callPiText(prompt)
+    const text = await callTextFn(prompt, { cwd: dir })
     const match = text.match(/\{[\s\S]*?"needsTests"[\s\S]*?\}/)
     const parsed = JSON.parse(match?.[0] ?? '{}')
     return {
@@ -80,8 +62,10 @@ function assessOne(fileInfo, dir) {
  * Assess a list of uncovered files: do they need tests?
  * @param {Array<{file: string, pct: number}>} files
  * @param {string} dir project root
- * @returns {Array<{file: string, pct: number, needsTests: boolean, reason: string}>}
+ * @param {{ callText?: Function }} [opts]
+ * @returns {Promise<Array<{file: string, pct: number, needsTests: boolean, reason: string}>>}
  */
-export function assessNeed(files, dir) {
-  return files.map(f => assessOne(f, dir))
+export async function assessNeed(files, dir, opts = {}) {
+  const callTextFn = opts.callText ?? callText
+  return Promise.all(files.map(f => assessOne(f, dir, callTextFn)))
 }

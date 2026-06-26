@@ -1,11 +1,17 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
 import { buildGenTestsPrompt, generateTests } from './gen-tests.mjs'
 
-vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn() }))
-vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
-vi.mock('node:path', () => ({ join: vi.fn((...a) => a.join('/')), relative: vi.fn((_, p) => p) }))
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn()
+}))
+vi.mock('node:path', () => ({
+  join: vi.fn((...a) => a.join('/')),
+  relative: vi.fn((_, p) => p)
+}))
+vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
 
 const mockDir = '/proj'
 const mockFiles = [
@@ -27,12 +33,6 @@ describe('gen-tests.mjs', () => {
       expect(prompt).toContain('### `src/b.js` (покриття: 10.0%)')
     })
 
-    it('includes vitest rule', () => {
-      const prompt = buildGenTestsPrompt(mockFiles, mockDir)
-      expect(prompt).toContain('vitest')
-      expect(prompt).toContain('vi.mock')
-    })
-
     it('includes file content when readable', () => {
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockReturnValue('export const x = 1')
@@ -42,19 +42,19 @@ describe('gen-tests.mjs', () => {
   })
 
   describe('generateTests', () => {
-    it('does nothing when files list is empty', () => {
-      generateTests([], mockDir)
-      expect(vi.mocked(spawnSync)).not.toHaveBeenCalled()
+    it('does nothing when files list is empty', async () => {
+      const generateOne = vi.fn()
+      await generateTests([], mockDir, { generateOne })
+      expect(generateOne).not.toHaveBeenCalled()
     })
 
-    it('calls pi agent with prompt', () => {
+    it('calls generateOne for each file', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      generateTests(mockFiles, mockDir)
-      expect(vi.mocked(spawnSync)).toHaveBeenCalledWith(
-        'pi',
-        expect.arrayContaining(['-p', expect.stringContaining('src/a.js')]),
-        expect.objectContaining({ cwd: mockDir })
-      )
+      const generateOne = vi.fn().mockResolvedValue('/proj/src/a.test.mjs')
+      await generateTests(mockFiles, mockDir, { generateOne })
+      expect(generateOne).toHaveBeenCalledTimes(2)
+      expect(generateOne).toHaveBeenCalledWith(mockFiles[0], mockDir)
+      expect(generateOne).toHaveBeenCalledWith(mockFiles[1], mockDir)
       consoleSpy.mockRestore()
     })
   })
