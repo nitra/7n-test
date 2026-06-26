@@ -18,6 +18,7 @@
     "url": "git+https://github.com/nitra/7n-test.git"
   },
   "bin": {
+    "test": "bin/7n-test.js",
     "7n-test": "bin/7n-test.js"
   },
   "files": [
