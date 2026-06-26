@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-06-26
+
+### Changed
+
+- fix: unignore npm/src/coverage/ (was blocked by **/coverage/ in .gitignore)
+
 ## [0.3.0] - 2026-06-26
 
 ### Changed
