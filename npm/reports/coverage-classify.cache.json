@@ -1,0 +1,1904 @@
+{
+  "version": 1,
+  "model": "omlx/gemma-4-e4b-it-OptiQ-4bit+cloud",
+  "entries": {
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:58:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPiText` uses `spawnSync` to execute an external process ('pi'). The argument `--no-session` is part of the command line arguments passed to this external tool. The behavior is determined by the external process, not the logic inside this function.",
+      "suggestedTest": "Integration test covering the execution of the 'pi' command with various arguments.",
+      "classifiedAt": "2026-06-26T08:25:58.870Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:36:50:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:26:24.977Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:84:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPiText` uses `spawnSync` to execute an external process ('pi'). The string literal mutation on line 37 changes the argument passed to the spawned process, but the core behavior is dictated by the external 'pi' tool, not the internal logic of this function.",
+      "suggestedTest": "Integration test covering the execution of 'pi' with different prompts and verifying the resulting stdout/stderr.",
+      "classifiedAt": "2026-06-26T08:26:29.754Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:30:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPiText` uses `spawnSync` to execute an external process ('pi'). The argument change from `'-p'` to `''` affects how the command line is constructed, but the core behavior is dictated by the external 'pi' tool, making this a wrapper around an external command.",
+      "suggestedTest": "Integration test covering the execution of 'pi' with different command-line arguments.",
+      "classifiedAt": "2026-06-26T08:26:34.483Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:29:W10": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The mutated code replaces a list of arguments passed to 'pi' CLI (including '-p', prompt, etc.) with an empty array `[]`. Line 37 uses `spawnSync('pi', [...])`, indicating this function is a thin wrapper around an external command execution. The behavior is dictated by the external 'pi' tool, not the internal logic of `callPiText`.",
+      "suggestedTest": "Integration tests should cover the successful execution of 'pi' with varied argument sets to ensure correct invocation and parsing of its output.",
+      "classifiedAt": "2026-06-26T08:26:47.863Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:74:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPiText` uses `spawnSync` to execute an external process ('pi'). The argument change from `'--mode', 'text'` to `''` only affects how the external 'pi' command is invoked, meaning the behavior is dictated by the external tool, not the logic in this function.",
+      "suggestedTest": "Integration test covering the execution of 'pi' with different mode arguments.",
+      "classifiedAt": "2026-06-26T08:26:52.569Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:92:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the command-line arguments passed to the 'pi' process by removing the '--no-tools' flag. This changes the behavior of the external tool invocation, which should be tested to ensure the command structure is correct.",
+      "suggestedTest": "Write an integration test that calls callPiText with a prompt and asserts that the spawned 'pi' process is executed with the exact arguments, including '--no-tools'.",
+      "classifiedAt": "2026-06-26T08:26:57.363Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:37:107:e30": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The code uses `spawnSync` to execute an external process ('pi'). The object literal being mutated is the options passed to `spawnSync`, which configures the external command execution environment (encoding, timeout, env). The behavior is determined by the external 'pi' tool.",
+      "suggestedTest": "Integration test covering the execution of 'pi' with various inputs and expected outputs.",
+      "classifiedAt": "2026-06-26T08:27:01.893Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:38:15:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPiText` uses `spawnSync` to execute an external process ('pi'). The logic itself is a thin wrapper around this external command execution, making it unsuitable for isolated unit testing.",
+      "suggestedTest": "Integration test covering the execution of 'pi' with various prompts and verifying the returned stdout/stderr.",
+      "classifiedAt": "2026-06-26T08:27:05.972Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:42:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks `r.error` from `spawnSync`. Mutating this to `false` bypasses error handling for the spawned process. A test must verify that an error condition in 'pi' correctly throws an error.",
+      "suggestedTest": "Mock `spawnSync` to return an object where `error` is truthy and assert that `callPiText` throws an Error.",
+      "classifiedAt": "2026-06-26T08:27:10.659Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:43:63:ci5zdGRlcnI_LnNsaWNlKDAsIDIwMCkgJiYgJyc": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:27:28.078Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:43:63:ci5zdGRlcnIuc2xpY2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses optional chaining (`r.stderr?.slice`) to safely access stderr content if the process execution resulted in an error or non-zero status. The mutation removes this check, causing a runtime error if `r.stderr` is null/undefined when `r.status !== 0`.",
+      "suggestedTest": "Test the scenario where `spawnSync` returns a non-zero status but `r.stderr` is undefined or null.",
+      "classifiedAt": "2026-06-26T08:27:33.082Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:43:63:ci5zdGRlcnI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code limits the error message from stderr to 200 characters (`.slice(0, 200)`), preventing excessively long error logs from crashing or cluttering output. The mutant (`r.stderr`) exposes the full, potentially massive, stderr content.",
+      "suggestedTest": "Test the function with a mock 'pi' process that returns a very long string in stderr to ensure the error message is truncated correctly, verifying the original behavior.",
+      "classifiedAt": "2026-06-26T08:27:38.152Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:44:10:ci5zdGRvdXQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses `.trim()` on `r.stdout`, which removes leading/trailing whitespace. The mutant `r.stdout` retains this whitespace. If the external process 'pi' outputs data with trailing newlines or spaces, the mutant will return a different string than the original, exposing a potential logic bug or incorrect parsing.",
+      "suggestedTest": "Test the function with a mock of spawnSync where r.stdout contains trailing whitespace (e.g., 'Hello\\n'). Assert that the function returns 'Hello' (trimmed) in the original case and 'Hello\\n' (untrimmed) in the mutant case.",
+      "classifiedAt": "2026-06-26T08:27:44.422Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:43:39:YGA": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function uses `spawnSync('pi', ...)` to execute an external process ('pi'). The logic at line 43 only handles the exit status of this external command, not internal logic, making it a wrapper around the 'pi' CLI tool.",
+      "suggestedTest": "Integration test: Verify the function correctly throws an error when the 'pi' subprocess exits with a non-zero status code, using a mock or controlled environment for 'pi'.",
+      "classifiedAt": "2026-06-26T08:27:49.424Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:44:10:ci5zdGRvdXQudHJpbQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses optional chaining (`r.stdout?.trim()`) to safely handle cases where `r.stdout` might be undefined (e.g., if the spawned process exits without producing stdout). The mutation removes this safety check, potentially causing a runtime error if `r.stdout` is null/undefined.",
+      "suggestedTest": "Test the scenario where the 'pi' process runs but produces no standard output (i.e., r.stdout is undefined or null).",
+      "classifiedAt": "2026-06-26T08:27:54.607Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:57:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `content.length > MAX_CONTENT_BYTES` controls whether content is truncated. Mutating it to `true` forces truncation regardless of the actual content length. A test case with content shorter than MAX_CONTENT_BYTES should fail if this mutant survives.",
+      "suggestedTest": "Write a unit test where the file content is known to be less than MAX_CONTENT_BYTES and assert that the content passed to callPiText is NOT truncated.",
+      "classifiedAt": "2026-06-26T08:28:00.067Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:61:5:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal by removing the original content. Since this string is concatenated into a larger prompt passed to an external LLM (`callPiText`), changing the literal content will likely result in a different prompt, but the observable behavior of `assessOne` (which relies on the LLM's response structure) is unlikely to change unless the specific string content was critical for the LLM's parsing logic, which is not apparent here.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:28:05.453Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:60:5:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from `${SYSTEM_PROMPT}\\n\\n` to ````. Since this string is concatenated with other variables (fileInfo.file, content) to form the 'prompt' sent to an external LLM via callPiText, changing the literal content of the initial part of the prompt is unlikely to change the observable output structure or the LLM's response in a predictable way, making it behaviorally equivalent for unit testing purposes.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:28:11.161Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:57:7:Y29udGVudC5sZW5ndGggPD0gTUFYX0NPTlRFTlRfQllURVM": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a strict inequality check (`> MAX_CONTENT_BYTES`) to a non-strict one (`<= MAX_CONTENT_BYTES`) on line 57. This logic dictates whether content is truncated. A test case where content length is exactly `MAX_CONTENT_BYTES` will expose the difference.",
+      "suggestedTest": "Test with a file whose content length is exactly equal to MAX_CONTENT_BYTES to ensure truncation logic is correctly bypassed.",
+      "classifiedAt": "2026-06-26T08:28:16.521Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:62:5:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal formatting from a markdown code block (```\\n${content}\\n```) to an empty string (````). This alters the prompt structure sent to the LLM, which is critical for the subsequent JSON parsing logic (line 66).",
+      "suggestedTest": "Test the function with a file whose content, when inserted, would normally form a valid markdown code block, and assert that the LLM response structure is correctly parsed.",
+      "classifiedAt": "2026-06-26T08:28:22.064Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:57:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if content length exceeds MAX_CONTENT_BYTES to decide if truncation should occur. Mutating this to `false` means truncation never happens, even for large files. This logic needs a test case with a file larger than MAX_CONTENT_BYTES.",
+      "suggestedTest": "Write a unit test providing a file content string longer than MAX_CONTENT_BYTES and assert that the resulting 'content' variable is truncated to MAX_CONTENT_BYTES + length of '...(truncated)'.",
+      "classifiedAt": "2026-06-26T08:28:27.619Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:57:7:Y29udGVudC5sZW5ndGggPj0gTUFYX0NPTlRFTlRfQllURVM": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the boundary condition from strictly greater than (>) to greater than or equal to (>=) when checking content length against MAX_CONTENT_BYTES. This affects the truncation logic on line 57.",
+      "suggestedTest": "Test a file whose content length is exactly equal to MAX_CONTENT_BYTES to ensure it is not truncated.",
+      "classifiedAt": "2026-06-26T08:28:32.028Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:66:30:L1x7W1xzXHNdKj8ibmVlZHNUZXN0cyJbXHNcU10qP1x9Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:28:45.824Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:66:30:L1x7W15cc1xTXSo_Im5lZWRzVGVzdHMiW1xzXFNdKj9cfS8": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:28:58.524Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:66:30:L1x7W1xTXFNdKj8ibmVlZHNUZXN0cyJbXHNcU10qP1x9Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:29:14.281Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:67:31:bWF0Y2hbMF0": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses optional chaining (`match?.[0]`) to safely access the first element of `match` (which is null if no match occurs). The mutation removes this safety check, leading to a potential runtime error (TypeError: Cannot read properties of undefined) if `match` is null.",
+      "suggestedTest": "Test the scenario where `text.match(...)` returns null, ensuring the code handles this gracefully (e.g., by defaulting to an empty object or triggering the catch block).",
+      "classifiedAt": "2026-06-26T08:29:19.933Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:72:15:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `parsed.reason` is a string before assigning it to the return object. The mutation replaces this check with `true`, meaning the mutant will always assign `parsed.reason` (even if it's null, undefined, or a number) to the return object's `reason` field, potentially leading to incorrect data structure or type if the original logic intended to default to an empty string when not a string.",
+      "suggestedTest": "Test cases must be provided where `parsed.reason` is not a string (e.g., null or a number) to ensure the mutant's behavior (assigning the non-string value) is caught against the original behavior (assigning '').",
+      "classifiedAt": "2026-06-26T08:29:27.227Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:12:15:ZW52Lk5fQ0xPVURfTUlOX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses nullish coalescing (`??`) to default to an empty string if `env.N_CLOUD_MIN_MODEL` is null or undefined. The mutant uses logical AND (`&&`), which evaluates to the right operand ('') if the left operand is falsy (e.g., undefined, null, or empty string). This changes the behavior when the environment variable is explicitly set to a falsy value other than null/undefined, or if the original code intended to handle null/undefined specifically.",
+      "suggestedTest": "Test cases where N_CLOUD_MIN_MODEL is explicitly set to a falsy value (e.g., empty string or 0, if applicable) to ensure the default behavior matches the original logic.",
+      "classifiedAt": "2026-06-26T08:29:34.526Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:14:23:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "The file defines a fixed prompt string (`SYSTEM_PROMPT`) which acts as a boilerplate instruction for an external process or model invocation, typical of a CLI entrypoint or wrapper.",
+      "suggestedTest": "Integration test covering the CLI execution flow.",
+      "classifiedAt": "2026-06-26T08:29:38.122Z"
+    },
+    "e01cf4f252318658c21e7b515e97cb882fa88aaf:12:40:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal from a single quote (') to a longer string (\"Stryker was here!\"). Since this constant is not used in any observable logic path within the provided context, changing its value does not affect the program's behavior.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:29:41.911Z"
+    },
+    "1cc4c371a7fca13562cc6cfcaff816a3f950b20f:19:48:dmVyZGljdC5jb25maWRlbmNlID4gdGhyZXNob2xk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The change modifies the comparison from inclusive (>=) to exclusive (>) for the confidence threshold check on line 19. This is a pure logic change that affects whether a mutant is considered an 'allowed gap' based on its confidence score.",
+      "suggestedTest": "Write a unit test that specifically checks the boundary condition where verdict.confidence is exactly equal to the threshold, ensuring the original logic (>=) passes and the mutated logic (>) fails.",
+      "classifiedAt": "2026-06-26T08:29:47.092Z"
+    },
+    "1cc4c371a7fca13562cc6cfcaff816a3f950b20f:48:28:e30": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code constructs an object literal `{ file: group.file, mutant, verdict }` to push into `allowedGaps`. The mutant replaces this with an empty object `{}`. Since `allowedGaps.push()` accepts any value, and the subsequent logic does not inspect the structure of the pushed object, replacing it with `{}` results in behaviorally identical execution flow.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:29:51.820Z"
+    },
+    "1cc4c371a7fca13562cc6cfcaff816a3f950b20f:10:46:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal 'defensive' to an empty string \"\". Since this string is only used as a key in the SKIP_VERDICTS Set, replacing it with an empty string will not change the set's membership or the logic of the isAllowedGap function for any existing or future verdicts.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:29:56.054Z"
+    },
+    "1cc4c371a7fca13562cc6cfcaff816a3f950b20f:10:59:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal 'glue' to an empty string \"\". Since this string is only used as a key in the SKIP_VERDICTS Set, replacing it with \"\" will not change the set's membership or the logic of the isAllowedGap function, as the original set contained 'glue'.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:30:00.338Z"
+    },
+    "1cc4c371a7fca13562cc6cfcaff816a3f950b20f:10:67:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `wrapper']` to `\"\"` on line 10. Since `SKIP_VERDICTS` is a Set, replacing a string literal that is not present in the Set with an empty string will not change the behavior of `SKIP_VERDICTS.has(verdict.verdict)` for any input `verdict.verdict` that is a valid verdict string.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:30:05.336Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:29:32:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code calls `execFileSync('git', ['hash-object', filePath], ...)` which executes an external command. The mutation replaces the arguments array with an empty array `[]`. This will cause `execFileSync` to fail or behave unexpectedly, likely leading to the `catch` block being executed, which changes the return path from Git hashing to SHA256 hashing.",
+      "suggestedTest": "Test the path where `git hash-object` succeeds. Verify that the function returns the output of the git command when the file exists and git is available.",
+      "classifiedAt": "2026-06-26T08:30:11.159Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:29:33:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function relies on `execFileSync('git', ['hash-object', filePath], ...)` to execute an external system command (`git`). This is a thin wrapper around an external tool.",
+      "suggestedTest": "Integration test that verifies the output of `git hash-object` for a known file path.",
+      "classifiedAt": "2026-06-26T08:30:15.105Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:29:25:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the command executed by execFileSync from 'git' to an empty string (''). This will cause execFileSync to fail immediately or execute an invalid command, likely leading to an error or unexpected behavior that should be caught by the surrounding try/catch block or manifest as a failure in the test.",
+      "suggestedTest": "Test the scenario where the command execution fails due to an invalid command name (e.g., by mocking execFileSync to throw or return an error).",
+      "classifiedAt": "2026-06-26T08:30:20.229Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:29:59:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation replaces `{ encoding: 'utf8' }` with `{}` in `execFileSync`. This changes how the standard output of 'git hash-object' is interpreted. If the output contains non-UTF8 bytes, the original code would decode it correctly, while the mutant would likely fail or produce corrupted data, exposing a missing test case for encoding handling.",
+      "suggestedTest": "Test `deriveBlobHash` with a file whose content or git hash output requires specific UTF-8 decoding to ensure the mutant's behavior (no encoding specified) is correctly caught.",
+      "classifiedAt": "2026-06-26T08:30:26.126Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:29:71:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the encoding option for execFileSync from 'utf8' to an empty string. This affects how stdout from 'git hash-object' is interpreted. If the output contains non-ASCII characters, the original code handles it correctly, while the mutant might fail or produce incorrect strings.",
+      "suggestedTest": "Test the function with a file whose content or git hash output might contain non-ASCII characters to ensure correct decoding.",
+      "classifiedAt": "2026-06-26T08:30:31.278Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:44:7:dHJ1ZQ": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `if (!blobHash) return null` to `if (true) return null` (logically). Since `blobHash` is derived from `deriveBlobHash(filePath)`, if `deriveBlobHash` returns a non-null value, the original code proceeds, but the mutant immediately returns null, causing the same failure mode or path execution as if `deriveBlobHash` returned null. This mutation is likely semantically equivalent if it always leads to an early exit for the same reason.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:30:48.085Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:57:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if the cache file exists using `existsSync(cachePath)`. The mutant replaces this with `false`, meaning the function will always return the empty cache object, even if the file exists and is valid. This misses testing the successful path where the cache file is present.",
+      "suggestedTest": "Write a unit test that provides a valid, existing cache file at `cachePath` and asserts that `readCache` returns the parsed content, not the empty object.",
+      "classifiedAt": "2026-06-26T08:30:53.601Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:59:53:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the encoding argument from 'utf8' to an empty string in readFileSync. If the file content is not valid UTF-8, the original code would likely throw an error caught by the surrounding try/catch block, returning 'empty'. The mutated code might behave differently or fail in unexpected ways depending on how readFileSync handles an empty encoding string.",
+      "suggestedTest": "Test reading a cache file containing non-UTF8 bytes to ensure the mutation's behavior is correctly handled by the surrounding error trapping.",
+      "classifiedAt": "2026-06-26T08:30:59.386Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:60:9:ZGF0YS52ZXJzaW9u": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes optional chaining `data?.version` to direct access `data.version` on line 60. If `data` is null or undefined (which can happen if JSON.parse succeeds but the file content is malformed or empty, though less likely given the try/catch), the original code safely returns early, while the mutant will throw a TypeError. This missing path needs testing.",
+      "suggestedTest": "Test case where JSON.parse returns null or undefined for the root object.",
+      "classifiedAt": "2026-06-26T08:31:05.201Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:61:9:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition checks for valid structure of `data.entries` (must be an object, not null, and not an array). Mutating this to `false` bypasses this validation, potentially allowing malformed data to pass the check if the surrounding logic doesn't handle it.",
+      "suggestedTest": "Test case where `data.entries` is `null`, an array, or a primitive type (e.g., string) to ensure the function correctly returns the empty cache object.",
+      "classifiedAt": "2026-06-26T08:31:11.155Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:61:9:KCFkYXRhLmVudHJpZXMgfHwgdHlwZW9mIGRhdGEuZW50cmllcyAhPT0gJ29iamVjdCcpICYmIEFycmF5LmlzQXJyYXkoZGF0YS5lbnRyaWVzKQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition checks for invalid 'entries' structure (null, not object, or array). The mutation changes this to a complex AND condition: (!data.entries || typeof data.entries !== 'object') && Array.isArray(data.entries). This new condition is logically flawed and should be tested to ensure it correctly rejects malformed cache data.",
+      "suggestedTest": "Test cases covering data where data.entries is null, undefined, a primitive, an object, and an array, to verify the mutant's behavior against the original logic.",
+      "classifiedAt": "2026-06-26T08:31:17.227Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:61:9:IWRhdGEuZW50cmllcyAmJiB0eXBlb2YgZGF0YS5lbnRyaWVzICE9PSAnb2JqZWN0Jw": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `!data.entries || typeof data.entries !== 'object'` checks if `data.entries` is missing or not an object. The mutant `!data.entries && typeof data.entries !== 'object'` requires `data.entries` to be falsy AND not an object. This changes the logic from OR to AND, potentially allowing invalid data structures to pass the check if `data.entries` is falsy (e.g., null or undefined) but the second part of the original OR condition was false.",
+      "suggestedTest": "Test case where data.entries is null or undefined, ensuring the mutant fails the check while the original passes, or vice versa.",
+      "classifiedAt": "2026-06-26T08:31:24.325Z"
+    },
+    "78acdeb5c9826214cdc4078db742fd8a68491746:61:26:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `typeof data.entries !== 'object'` checks if `data.entries` is not an object. The mutation replaces this with `false`, meaning the check will always pass (i.e., it will never return empty due to this specific check). This bypasses validation for non-object entries.",
+      "suggestedTest": "Test case providing a cache file where `data.entries` is a primitive type (e.g., a string or number) to ensure the function correctly returns the empty cache object.",
+      "classifiedAt": "2026-06-26T08:31:30.077Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:48:18:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal interpolation by removing the content of the second part of the template literal. Since the original code relies on `buildUserPrompt` to construct the user prompt, changing the literal structure without changing the logic of `buildUserPrompt` likely results in an identical or functionally equivalent prompt being passed to `callModelFn` for the purpose of classification.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:31:34.857Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:49:15:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal concatenation from ``${group.file}:${mutant.line}:${mutant.col}`` to ````, which results in an empty string for the `loc` variable. Since `loc` is only used to construct the `prompt` via `buildUserPrompt`, and the prompt construction logic likely handles an empty string gracefully or the subsequent LLM call is robust to it, the observable behavior of `classifyOne` is unlikely to change.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:31:40.480Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:53:51:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the model identifier from 'min' to an empty string in the call to callModelFn on line 53. This tests the behavior when the model name is empty, which might cause the underlying LLM integration to fail or behave unexpectedly.",
+      "suggestedTest": "Test the scenario where the model name passed to callModelFn is an empty string, ensuring the system handles this gracefully or fails as expected.",
+      "classifiedAt": "2026-06-26T08:31:45.585Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:61:20:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal used in console.warn. Since this function is only called when both Tier 1 and Tier 2 model calls fail (line 61), and the surrounding logic only relies on the error being caught, changing the warning message does not alter the observable behavior (return value or side effects) of the function.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:31:50.186Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:75:21:b3B0cy5jYWNoZVBhdGggJiYgam9pbihjd2QsICducG0vcmVwb3J0cy9jb3ZlcmFnZS1jbGFzc2lmeS5jYWNoZS5qc29uJyk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). If opts.cachePath is an empty string or falsy (e.g., null/undefined), the original code defaults to a path, while the mutant will evaluate to the second operand, which is a string path, potentially leading to unexpected behavior or incorrect path resolution if the original intent was to use the provided path or the default.",
+      "suggestedTest": "Test cases where opts.cachePath is explicitly set to null, undefined, or an empty string to verify the correct fallback path is used.",
+      "classifiedAt": "2026-06-26T08:31:56.494Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:75:49:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.85,
+      "reason": "The mutation changes the default cache file path from a specific JSON file to an empty string. If `opts.cachePath` is not provided, the function will attempt to read an empty string path, likely leading to an error or unexpected behavior that should be tested.",
+      "suggestedTest": "Test the case where `opts.cachePath` is omitted, ensuring the function correctly resolves the default path using `join(cwd, 'npm/reports/coverage-classify.cache.json')` and handles the file read operation.",
+      "classifiedAt": "2026-06-26T08:32:02.254Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:77:38:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `min` to `\"\"` in `resolveModel('min')`. Since the mutated value is an empty string, and the original value `'min'` is used to resolve a model or defaults to `'default'`, the code path likely remains the same or leads to an equivalent fallback behavior when the string is processed, as an empty string often results in a default state in such contexts.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:32:14.692Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:88:25:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal used to construct `lookupKey` by removing the replacement value. Since `lookupKey` is only used as a key in an in-memory cache (`cache.entries`), and the structure of the cache key derivation (`deriveCacheKey`) is not shown, changing the literal string used for the key generation is unlikely to change the observable behavior of the function unless the cache lookup logic relies on this exact string structure, which is not apparent.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:32:20.169Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:80:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The conditional expression `cache.model !== cacheModel` controls whether the cache is reset (lines 81-82). Mutating this to `false` means the cache is never reset, even if the model changes, potentially leading to incorrect classification if the cache was built with a different model.",
+      "suggestedTest": "Test case where the cache file exists but its 'model' field does not match the current 'cacheModel' derived from options, ensuring the cache is correctly invalidated and rebuilt.",
+      "classifiedAt": "2026-06-26T08:32:25.741Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:103:13:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `cacheKey` is truthy before caching the result. Mutating this to `true` means the cache entry will always be written if `verdict` is falsy, even if `cacheKey` was falsy (e.g., null or undefined). This bypasses the intended conditional logic.",
+      "suggestedTest": "Test a scenario where `cacheKey` is null or undefined, ensuring that the cache is NOT updated in that case.",
+      "classifiedAt": "2026-06-26T08:32:31.066Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:103:13:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `cacheKey` is truthy before caching the result. Mutating this to `false` means the cache entry will never be written if `cacheKey` is falsy, potentially leading to redundant computation if the key is expected to be valid.",
+      "suggestedTest": "Test a scenario where `cacheKey` is explicitly falsy (e.g., null or undefined) to ensure the logic correctly skips caching without causing downstream errors.",
+      "classifiedAt": "2026-06-26T08:32:36.291Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:103:23:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code explicitly stores the calculated 'verdict' object along with a timestamp in the cache. The mutation replaces this object with an empty object '{}', losing all classification metadata (verdict, confidence, reason, suggestedTest) for that cacheKey.",
+      "suggestedTest": "Test a scenario where a classification occurs and verify that the cache entry for that key contains the correct, non-empty verdict structure, including the timestamp.",
+      "classifiedAt": "2026-06-26T08:32:40.895Z"
+    },
+    "3f9aa24e97b67bdbf5836aa742d2ff9599c8dfd1:25:11:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original string provides context about the fallback mechanism. Mutating it to an empty string (`\"\"`) changes the descriptive text but does not alter the runtime behavior or the structure of the `FALLBACK_VERDICT` object, which is used downstream.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:32:44.494Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:70:46:e30": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces the entire block of code (lines 70-100 in the original context) with an empty object `{}`. Since the function signature requires returning a string (the prompt), returning `{}` will cause a runtime TypeError when the caller attempts to use the return value as a string, but the mutant itself is not logically equivalent to the original function's behavior of constructing a detailed prompt string.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:32:49.370Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:74:20:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a non-empty string literal '(source file unavailable)' with an empty string \"\". If the file does not exist (which is the case when this fallback is used), the resulting `srcContext` will be an empty string instead of the original placeholder string, but this change is unlikely to affect the observable behavior of the prompt generation unless the downstream consumer specifically checks for the exact string '(source file unavailable)' which is not guaranteed.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:32:54.107Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:75:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant replaces a file system check `existsSync(absPath)` with a constant `false`. This means if the file exists, the context extraction logic (lines 76-83) will be skipped, leading to `srcContext` remaining '(source file unavailable)' even when the file is present.",
+      "suggestedTest": "Write a unit test that provides a mutant where the source file *does* exist, and assert that the resulting prompt context contains the expected lines from the file.",
+      "classifiedAt": "2026-06-26T08:32:59.068Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:86:52:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal used to construct the test file path by removing the '.test' suffix. This logic dictates which test file is checked for existence, meaning a test case that relies on the correct naming convention will fail to find the expected test file.",
+      "suggestedTest": "Test the path construction logic by mocking `basename` or providing a path where the expected test file name differs from the mutated version.",
+      "classifiedAt": "2026-06-26T08:33:03.528Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:86:43:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from 'tests' to \"\" in line 86. This affects the path construction: `join(dirname(absPath), 'tests', ...)` becomes `join(dirname(absPath), '', ...)`. Since `join` handles empty strings gracefully, the resulting path will be identical to the original path if 'tests' was the only directory component being replaced, or it will resolve to a path that is functionally equivalent in terms of file system existence check.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:33:08.602Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:86:73:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a string literal '.mjs' with an empty string in the construction of testPath. This changes the expected file extension when resolving the test file path (line 86). If the original code relies on '.mjs' for correct path resolution, the mutant will point to an incorrect file or fail to find the test file.",
+      "suggestedTest": "Add a test case that specifically checks the construction of testPath when the source file has the '.mjs' extension, ensuring the correct test file path is generated.",
+      "classifiedAt": "2026-06-26T08:33:13.851Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:87:23:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes the string literal from '(no test file)' to \"\". Since this string is only used to initialize the `existingTests` variable (line 87), and it is immediately overwritten if `existsSync(testPath)` is true (line 88), the change has no observable effect on the function's output.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:33:17.943Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:88:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant replaces `existsSync(testPath)` with `false`. This changes the control flow, preventing the code from reading the test file content if it exists. A test case where a test file *does* exist but the mutant causes it to be skipped is necessary to verify correct file system interaction.",
+      "suggestedTest": "Provide a test case where the expected test file exists at `testPath` and assert that the subsequent logic (reading content) is executed.",
+      "classifiedAt": "2026-06-26T08:33:22.880Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:99:7:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code executes `execFileSync` to get git log output. The mutation replaces the entire block with `{}`. This removes the logic that updates `recentActivity` if `git log` succeeds and returns output. A test case where `git log` succeeds and produces output should fail.",
+      "suggestedTest": "Mock `execFileSync` to return a non-empty string for the git log command and assert that `recentActivity` is updated accordingly.",
+      "classifiedAt": "2026-06-26T08:33:28.014Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:98:24:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original string '(no git history)' serves as a fallback placeholder when 'git log' fails or returns no output. Mutating it to an empty string \"\" changes the observable output when git fails, which should be tested.",
+      "suggestedTest": "Test the scenario where 'git log' fails (e.g., by mocking execFileSync to throw or return empty) and assert that the resulting 'recentActivity' is an empty string.",
+      "classifiedAt": "2026-06-26T08:33:33.119Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:17:ZXhlY0ZpbGVTeW5jKCdnaXQnLCBbJ2xvZycsICctMScsICctLWZvcm1hdD0lYXInLCAnLS0nLCBhYnNQYXRoXSwgewogIGN3ZCwKICBlbmNvZGluZzogJ3V0ZjgnLAogIHN0ZGlvOiBbJ2lnbm9yZScsICdwaXBlJywgJ2lnbm9yZSddCn0p": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code calls `.trim()` on the output of `execFileSync`, ensuring no trailing whitespace is present in `recentActivity`. The mutant omits this call. If `git log` returns output with trailing newlines or spaces, the mutant will include them, potentially affecting downstream logic or display.",
+      "suggestedTest": "Test the scenario where 'git log' returns output containing trailing whitespace or newlines to ensure the mutant's output matches the original's trimmed output.",
+      "classifiedAt": "2026-06-26T08:33:38.589Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:30:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code calls `execFileSync('git', ...)` which executes the 'git' command. Mutating the command name to `''` will cause `execFileSync` to likely fail or execute an empty command, changing the behavior from fetching git history to something else (or throwing). This logic needs testing to ensure the fallback or error handling is correct.",
+      "suggestedTest": "Test the scenario where 'git' is unavailable or the command execution fails, ensuring the fallback `(no git history)` is correctly returned.",
+      "classifiedAt": "2026-06-26T08:33:44.280Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:37:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code executes 'git log -1 --format=%ar -- <absPath>'. The mutation replaces this array with an empty array `[]`, causing execFileSync to be called with an invalid command/arguments structure, likely leading to an error or unexpected behavior if the surrounding logic doesn't handle the empty argument list gracefully.",
+      "suggestedTest": "Test the execution path when git fails or when the file does not exist, ensuring the fallback logic (e.g., 'no git history') is correctly triggered when the command execution fails or returns empty.",
+      "classifiedAt": "2026-06-26T08:33:50.175Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:38:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "Replacing the string literal 'log' with an empty string \"\" in the git log command arguments effectively changes the command from 'git log -1 ...' to 'git \"\" -1 ...', which is syntactically invalid or results in unpredictable behavior, but in the context of the execution wrapper, it likely results in an error or returns an empty string, making it behaviorally equivalent if the surrounding try/catch handles the failure gracefully by returning no output.",
+      "classifiedAt": "2026-06-26T08:34:01.523Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:45:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses '-1' to fetch the last commit message via 'git log -1'. Mutating this to an empty string ('\"\"') changes the command executed to 'git log \"\" --format=%ar -- <absPath>'. This will likely cause 'git' to fail or return unexpected output, potentially masking a bug or changing the displayed activity.",
+      "suggestedTest": "Test the execution path where git log returns an empty string or fails to execute the command correctly, ensuring the fallback logic (or the resulting string) is handled as expected.",
+      "classifiedAt": "2026-06-26T08:34:07.339Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:51:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses '--format=%ar' to request a specific Git log format (author date). Mutating this to an empty string will change the command executed by execFileSync, likely causing Git to return an unexpected or empty output, which should be tested.",
+      "suggestedTest": "Test the execution path where Git returns a non-empty log entry to ensure the format string is correctly passed and parsed.",
+      "classifiedAt": "2026-06-26T08:34:11.994Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:67:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses '--' to pass the path argument to 'git log'. Changing it to an empty string `\"\"` will likely cause 'git log' to misinterpret the arguments, potentially failing or returning incorrect output, thus exposing a missing assertion about the command execution.",
+      "suggestedTest": "Test the execution path where git log is called, ensuring the correct arguments are passed to execFileSync, especially when the path argument is present.",
+      "classifiedAt": "2026-06-26T08:34:17.052Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:102:17:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "Changing the encoding from 'utf8' to \"\" (empty string) in execFileSync will likely cause the process to fail or return non-string data, but since the result is immediately trimmed and checked for truthiness (line 105), the observable behavior for successful git execution remains the same (a trimmed string or empty string). If git fails, the catch block handles it.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:34:21.870Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:100:83:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code passes configuration options ({cwd, encoding: 'utf8', stdio: [...]}) to execFileSync. The mutation replaces this object with an empty object {}. This changes the execution environment (e.g., cwd, stdio handling) of the 'git log' command, potentially altering its output or causing execution failure.",
+      "suggestedTest": "Test the execution path where git is available, ensuring the command runs correctly and captures the expected output when the options object is correctly provided.",
+      "classifiedAt": "2026-06-26T08:34:27.463Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:103:14:W10": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code sets stdio to ['ignore', 'pipe', 'ignore'], which directs stdout and stderr to be ignored/piped. The mutation changes this to [], which defaults to the process's standard streams. Since the subsequent code only reads the output via .trim() and doesn't rely on stderr, and the 'ignore' setting is often used to suppress output during subprocess execution, changing it to [] is unlikely to change the observable behavior of the successful git log execution.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:34:33.385Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:103:15:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `stdio: ['ignore', 'pipe', 'ignore']` to `stdio: ['']`. In Node.js execFileSync, providing an empty string for stdio is likely equivalent to providing `['ignore', 'pipe', 'ignore']` or causing the process to fail/behave identically if the underlying system call handles empty arrays/strings gracefully, resulting in no observable difference in the captured output or error state.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:34:38.839Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:103:25:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code uses `stdio: ['ignore', 'pipe', 'ignore']` for `execFileSync`. Changing `'pipe'` to `\"\"` (an empty string) will likely cause `execFileSync` to fail or behave unexpectedly, but if the surrounding logic handles the exception (which it does via `try/catch`), the observable output (`recentActivity`) remains unchanged if `git` fails or if the command succeeds but produces no output, as the error handling path is the same.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:34:44.617Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:103:33:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "Changing `stdio: ['ignore', 'pipe', 'ignore']` to `stdio: ['']` changes how `execFileSync` handles standard I/O streams. The original configuration explicitly ignores stdout and stderr, which is crucial for clean execution when running git commands. The mutant might cause unexpected stream handling or errors depending on the environment.",
+      "suggestedTest": "Test the execution path where git command succeeds and where it fails (e.g., non-existent git or file).",
+      "classifiedAt": "2026-06-26T08:34:49.942Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:110:10:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This code block constructs a string intended for logging or reporting (a 'Mutant' report format). It is boilerplate used to format mutation testing results, not core business logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:34:53.409Z"
+    },
+    "67cdb4e9448d042d051230ec87686b324e62c6b3:13:30:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This string literal defines the prompt used by the classifier, acting as boilerplate/configuration for an external LLM call. The actual classification logic is external to this constant.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:34:57.507Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:28:37:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from `'{')` to `\"\"` at line 28:37. However, this line is not present in the provided context. Assuming the mutation is within the `VerdictSchema` definition (which is not shown), changing a string literal to an empty string usually results in a schema validation failure or an empty field, which is often covered by existing JSON parsing/validation logic, or it's a dead code path if the original string was never matched.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:03.065Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:29:39:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal '}' to an empty string \"\" at line 29. This line is not present in the provided context, but assuming it's part of a structure being parsed or returned, replacing a closing brace with an empty string will almost certainly cause a JSON parsing error or schema validation failure, making it functionally different unless the original code was already flawed in a way that made this change irrelevant.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:07.758Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:30:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition checks if either the start index of '{' or the end index of '}' is -1, indicating missing JSON structure. Mutating this to 'false' bypasses the error throwing logic (line 31) when the JSON is missing.",
+      "suggestedTest": "Test with rawText that does not contain '{' or '}' to ensure the function throws the expected Error.",
+      "classifiedAt": "2026-06-26T08:35:12.220Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:30:7:anNvblN0YXJ0ID09PSAtMSAmJiBqc29uRW5kID09PSAtMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `jsonStart === -1 || jsonEnd === -1` correctly checks if either the start or end markers are missing. The mutation changes this to `jsonStart === -1 && jsonEnd === -1`, meaning the mutant only throws if *both* are missing, allowing execution to proceed if only one is missing, which is a logical error.",
+      "suggestedTest": "Test case where rawText contains '{' but no '}' (jsonStart != -1, jsonEnd == -1) to ensure the original OR condition correctly throws.",
+      "classifiedAt": "2026-06-26T08:35:17.673Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:30:21:KzE": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes the literal value from '1' to '+1'. Since this value is not used in any arithmetic operation or comparison within the provided context (lines 20-36), the change has no observable effect on the function's behavior.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:21.254Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:30:27:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `jsonStart` is -1 (meaning no '{' was found). Mutating this to `false` means the check `jsonStart === -1` will always evaluate to `false`, potentially skipping the error throw on missing JSON.",
+      "suggestedTest": "Test with an input string that does not contain '{' or '}' to ensure the error is thrown when JSON is missing.",
+      "classifiedAt": "2026-06-26T08:35:25.719Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:30:39:KzE": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the unary operator from `1` (which is equivalent to `+1` in arithmetic context) to `+1`. Since this is a constant value used in a conditional check (`jsonStart === -1 || jsonEnd === -1`), changing `1` to `+1` does not alter the boolean logic or the flow control of the surrounding `if` statement.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:30.160Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:33:27:cmF3VGV4dA": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation replaces slicing the string to extract the JSON object with using the entire rawText. If rawText contains non-JSON text before or after the JSON, the original code correctly isolates the JSON for parsing, while the mutant will likely cause JSON.parse to fail or parse incorrectly.",
+      "suggestedTest": "Test with an LLM response containing preamble text before the JSON object, e.g., 'Here is the result: {\"verdict\": \"worth-testing\"}'",
+      "classifiedAt": "2026-06-26T08:35:35.105Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:14:39:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:35:47.336Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:15:37:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes the string literal 'equivalent' to an empty string \"\". Since this string is used as a value within a Zod enum definition, replacing it with an empty string will likely cause the schema validation to fail or behave unexpectedly, but in terms of observable *behavior* of the surrounding code logic (which is just defining the schema), the change is semantically meaningless or leads to a predictable failure mode that doesn't represent a logical branch change.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:52.761Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:15:51:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a valid string literal ('defensive') to an empty string (''). Since this string is used as a value within a Zod enum definition (Line 15), replacing it with an empty string will cause the schema validation to fail for any input attempting to use 'defensive', but the mutant itself does not change the runtime behavior of the surrounding code logic.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:35:57.508Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:15:72:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:36:10.371Z"
+    },
+    "ec7e8151f9dc3b4273be1bdda716243ec6828d52:15:64:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "Mutating 'glue' to an empty string '' in z.enum(['worth-testing', 'equivalent', 'defensive', 'glue', 'wrapper']) only removes one valid option from the allowed set. If the input JSON string is valid and contains 'glue', the validation will fail. If it contains another value, the behavior is unchanged relative to the core function's logic, as the mutated value '' is not a recognized enum member.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:36:23.681Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:31:40:KCkgPT4gdW5kZWZpbmVk": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This function acts as a high-level orchestration layer, aggregating mutant counts and calling an external agent ('callPiFn') to perform the actual fixing/testing. The core logic is delegation.",
+      "suggestedTest": "Integration test covering the successful invocation of callPiFn with the correct prompt and projectRoot.",
+      "classifiedAt": "2026-06-26T08:36:27.787Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:31:50:cyAtIGcubXV0YW50cy5sZW5ndGg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:36:46.402Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:38:15:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a console logging statement within a function that orchestrates the fixing process. It serves as a status message before calling an external agent via `callPiFn`.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:36:49.945Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:51:50:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function callPi wraps 'pi' via spawnSync. The mutation modifies the arguments array used to construct the CLI command. The external tool behavior dictates correctness, not this small internal array change.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:37:14.728Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:67:20:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file appears to be a utility function (`buildFixPrompt`) responsible for formatting output for an agent, likely used in a CI/CD or reporting pipeline. The mutation itself replaces a closing bracket `]` with an array literal `[\"Stryker was here\"]` on line 67, which is part of initializing the `sections` array. This is boilerplate for prompt generation.",
+      "suggestedTest": "N/A (Integration test via subprocess/agent execution)",
+      "classifiedAt": "2026-06-26T08:37:19.809Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:70:20:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a closing array bracket `]` with an array containing a string literal `[\"Stryker was here\"]`. Since this line is inside a loop that builds `srcLines` (line 70), and the surrounding code does not immediately consume or rely on the specific structure of `srcLines` in a way that would change the final output string, the change is likely inert or results in an identical structure if the original line was part of a larger, non-critical array definition.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:37:25.312Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:73:28:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from `\n')` to `\"`. Since this string is used to construct context lines (`srcLines.slice(...)`) and is not directly used in a way that would alter the observable output of `buildFixPrompt` (which returns a promise resolving to a string), the behavior remains functionally identical.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:37:29.669Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:71:9:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:37:48.617Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:72:59:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the encoding parameter from 'utf8' to an empty string \"\". In JavaScript's readFile function, if the encoding argument is omitted or set to an empty string, it defaults to 'utf8' for Node.js runtime environments. Thus, the mutated code behaves identically to the original.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:38:00.180Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:80:38:bS5saW5lICsgNA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a utility or boilerplate script for fixing coverage issues, likely involving file reading and context extraction for mutants. Line 80 is part of a mapping operation that processes mutants, which is typical of a setup/glue script.",
+      "suggestedTest": "N/A (Glue/Boilerplate)",
+      "classifiedAt": "2026-06-26T08:38:04.526Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:80:26:TWF0aC5taW4oMCwgbS5saW5lIC0gNCk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses Math.max(0, m.line - 4) to ensure the context start line is non-negative. The mutation changes this to Math.min(0, m.line - 4), which will force ctxStart to 0 if m.line - 4 is negative, but will incorrectly clamp it to 0 even if m.line - 4 is positive, or if m.line - 4 is negative, it will clamp it to 0. If m.line - 4 is positive, the original code keeps the offset, while the mutant forces it to 0.",
+      "suggestedTest": "Test with a mutant line number (m.line) such that m.line - 4 is positive (e.g., m.line=10) to ensure the context start is correctly calculated, not clamped to 0.",
+      "classifiedAt": "2026-06-26T08:38:12.700Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:81:50:bS5saW5lIC0gMw": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the line number calculation from adding 3 to subtracting 3 when determining the context window (ctxEnd = Math.min(srcLines.length, m.line + 3) vs m.line - 3). This directly affects which lines are included in the context string generated for the mutant description.",
+      "suggestedTest": "Write a test case that forces the mutant to be triggered (i.e., test a file where the line number calculation is critical) and assert that the generated context string reflects the correct line range.",
+      "classifiedAt": "2026-06-26T08:38:18.487Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:82:25:c3JjTGluZXM": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a slice of lines (`rcLines.slice(ctxStart, ctxEnd)`) with the entire array (`srcLines`). If the context window defined by `ctxStart` and `ctxEnd` is smaller than the total number of lines, this change alters the context provided to the mutant description, potentially hiding or changing the reported context for a specific mutant.",
+      "suggestedTest": "Write a test case that specifically targets a mutant where the context window is significantly smaller than the total file size, ensuring the context reported is correctly truncated.",
+      "classifiedAt": "2026-06-26T08:38:24.232Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:81:24:TWF0aC5tYXgoc3JjTGluZXMubGVuZ3RoLCBtLmxpbmUgKyAzKQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses Math.min to cap the context end at srcLines.length, preventing out-of-bounds access. The mutation replaces this with Math.max, which will cause ctxEnd to be at least srcLines.length, but potentially much larger if m.line + 3 > srcLines.length, leading to incorrect slicing or errors if not handled by slice.",
+      "suggestedTest": "Test a mutant where m.line is near the end of the file (e.g., srcLines.length - 1) to ensure ctxEnd is correctly capped by srcLines.length.",
+      "classifiedAt": "2026-06-26T08:38:30.384Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:84:26:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from `${ctxStart + i + 1}: ${l}` to an empty string (or equivalent if the replacement is empty). Since this string is immediately used to construct a larger string via .join('\\n') and is only used for logging/reporting, replacing it with an empty string will not change the observable output of the function.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:38:34.953Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:84:16:KCkgPT4gdW5kZWZpbmVk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code constructs a formatted string describing the line number and content for a mutant. The mutation replaces this with `() => undefined`, meaning the resulting description for the mutant will be empty or incorrect, failing to report the mutant's details.",
+      "suggestedTest": "Assert that the output array generated by the mapping function contains strings containing the expected line number and code snippet for a specific mutant.",
+      "classifiedAt": "2026-06-26T08:38:39.567Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:84:29:Y3R4U3RhcnQgKyBpIC0gMQ": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `txStart + i + 1` to `ctxStart + i - 1`. Since `ctxStart` is derived from `Math.max(0, m.line - 4)` and `txStart` is not defined in the immediate scope, we assume `txStart` is related to `ctxStart` or that the arithmetic change results in the same value for the context generation logic, making the output identical.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:38:44.709Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:84:29:Y3R4U3RhcnQgLSBp": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `txStart + i` to `ctxStart - i`. Since `ctxStart` is derived from `m.line - 4` (a constant offset relative to the mutant line) and `i` is the index within the sliced context, the arithmetic change is unlikely to affect the observable output of this function, which is merely formatting a string representation of the context.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:38:49.564Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:86:16:W2AgIC0g0KDRj9C00L7QuiAke20ubGluZX0sINC60L7Qu9C-0L3QutCwICR7bS5jb2x9LCDRgtC40L8g0LzRg9GC0LDRhtGW0ZcgXGAke20ubXV0YW50VHlwZX1cYGAsIGAgICAg0J7RgNC40LPRltC90LDQuzogXGAke20ub3JpZ2luYWx9XGBgLCBgICAgINCS0LjQttC40LIg0LLQsNGA0ZbQsNC90YI6IFxgJHttLnJlcGxhY2VtZW50fVxgYCwgY29udGV4dCA_IGAgICAg0JrQvtC90YLQtdC60YHRgjpcblxgXGBcYFxuJHtjb250ZXh0fVxuXGBcYFxgYCA6ICcnXQ": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces an array construction that includes a `.filter(Boolean)` call on the resulting array elements (lines 87-91) with a direct construction of an empty array (`[]`). Since the original array creation is designed to filter out potentially undefined or empty descriptions, replacing it with a fixed empty array achieves the same observable output (an empty string after `.join('\\n')` if no mutants are present/processed), making it behaviorally indistinguishable.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:39:01.411Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:85:17:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a string literal `\\n')` with an empty string `\"\"` within the logic that generates `mutantDescriptions`. Since this string is subsequently used to format a report, changing the trailing newline and parenthesis to nothing will likely only affect the formatting of the output string passed to `.join('\\n')`, but it will not alter the core data structure or observable behavior of the surrounding code execution paths.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:39:13.166Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:90:21:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line constructs a string template used for reporting mutation details. It is part of the output formatting logic for the coverage-fix tool, which is likely driven by integration tests that execute the fixer.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:16.716Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:90:67:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from a single quote (') to a longer string (\"Stryker was here!\"). Since this string is used within a template literal to display mutation details (line 90), changing its content does not alter the observable behavior or structure of the output generated by the function.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:39:20.851Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:93:17:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `\n')` to `\"`. Since this string is used within a larger string construction via `.join('\\n')` (line 92), replacing the literal newline character with an empty string or a double quote inside the context string will likely result in functionally identical output structure for the surrounding logging/reporting mechanism, or the change is syntactically inert in this context.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:39:25.665Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:95:13:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code `\n')` is used as a string literal within a template literal construction (line 95). Replacing it with `\"` changes the literal content but, given its context as a separator/terminator within a larger string join operation, it is highly likely that the resulting string structure remains functionally identical or the change is absorbed by surrounding formatting.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:39:30.195Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:99:9:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a boilerplate or utility script used to generate instructions or documentation for writing unit tests, as suggested by the surrounding code which constructs strings like 'Твоє завдання — написати unit-тести...'.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:34.274Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:105:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a generated documentation string within a coverage-fixing script (`coverage-fix.mjs`). It serves as boilerplate text guiding the user on how to proceed, not core application logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:38.001Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:106:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a boilerplate or helper script used to generate instructions/prompts for testing, not core application logic. Line 106 is part of a generated instruction string.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:41.863Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:107:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a boilerplate or helper script used to generate instructions or documentation for fixing Stryker mutants, not core application logic. The mutation is in a string literal describing the task.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:45.675Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:108:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string construction within a file named 'coverage-fix.mjs', which appears to be a boilerplate or helper script for generating test instructions, not core application logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:49.293Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:109:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string literal used to format the output of a coverage-fixing script. It serves as boilerplate text within the generated report, not core logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:39:52.745Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:110:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a boilerplate script used to generate instructions or documentation for writing tests, evidenced by the content (e.g., 'Твоє завдання — написати unit-тести...'). The mutation itself is a string literal change within this generation logic.",
+      "suggestedTest": "N/A (This is a generator/helper script, not core logic)",
+      "classifiedAt": "2026-06-26T08:39:57.427Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:112:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file appears to be a boilerplate/documentation generator (`coverage-fix.mjs`) used to output instructions for writing tests, not core application logic. The mutation is a string literal change within this documentation output.",
+      "suggestedTest": "N/A (This is a documentation/scripting file)",
+      "classifiedAt": "2026-06-26T08:40:01.342Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:113:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file appears to be a boilerplate or documentation generator (`coverage-fix.mjs`) used to generate instructions for writing tests, not core application logic. The string literal change is cosmetic within this generated content.",
+      "suggestedTest": "N/A (Integration test pattern: Documentation Generation/CLI Helper)",
+      "classifiedAt": "2026-06-26T08:40:05.270Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:114:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file, `coverage-fix.mjs`, appears to be a boilerplate or setup script used to generate instructions for test writing, as indicated by the content (e.g., 'Твоє завдання — написати unit-тести...'). The specific line is part of a list of rules.",
+      "suggestedTest": "N/A (This is a generation/setup script, not core logic.)",
+      "classifiedAt": "2026-06-26T08:40:09.996Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:115:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string template used to generate instructions for the user regarding testing procedures. It is boilerplate text within a documentation/instruction file, not core application logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:40:13.395Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:116:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string literal within a file named 'coverage-fix.mjs', which appears to be a boilerplate or instruction generator for developers, not core application logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:40:16.938Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:117:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutant replaces a string literal containing Ukrainian text ('- Якщо мутант охоплений іншим новим тестом — не дублюй.') with an empty string ('\"\"'). Since this string is part of a documentation/comment block being joined into a larger string, replacing it with an empty string will only change the content of the generated documentation string, but it does not alter the observable behavior or logic of the surrounding code execution path.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:40:22.412Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:118:10:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a string literal containing a newline character (`\\n')`) with an empty string (`\"\"`). Since this string is used within an array that is then joined by '\\n', replacing it with an empty string will only change the formatting/spacing of the output string, not its fundamental content or structure in a way that affects observable behavior if the surrounding context doesn't strictly rely on that specific newline character for parsing.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:40:27.632Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:16:15:ZW52Lk5fQ1VSU09SX0NPVkVSQUdFX0ZJWF9NT0RFTCAmJiByZXNvbHZlTW9kZWwoJ21heCcp": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). The original code defaults to 'max' if N_CURSOR_COVERAGE_FIX_MODEL is null/undefined. The mutant only resolves 'max' if N_CURSOR_COVERAGE_FIX_MODEL is truthy, potentially leading to an incorrect model resolution if the environment variable is falsy but not null.",
+      "suggestedTest": "Test the scenario where N_CURSOR_COVERAGE_FIX_MODEL is explicitly set to a falsy value (e.g., empty string or 0, if applicable) to ensure the fallback to resolveModel('max') still occurs as intended by the original logic.",
+      "classifiedAt": "2026-06-26T08:40:34.734Z"
+    },
+    "a21ead91e0fb1b4bcb7350b82310a6e3957bf4d0:16:63:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This file appears to be a CLI entrypoint or utility script (`coverage-fix.mjs`) responsible for setting up the model name based on environment variables or a default resolution. Line 16 is part of this setup logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:40:38.601Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:16:29:L1wuW14uXSsv": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original regex `\\.[^.]+$` matches an extension starting with a dot and ending the string (e.g., `.mjs`). The mutated regex `/.+\\./` matches any string containing a dot, but since the structure of the filename is determined by the logic, the change from matching only extensions to matching any dot will likely not affect the intended behavior of stripping the final extension for `base` calculation, especially given the surrounding context.",
+      "suggestedTest": "No test suggested.",
+      "classifiedAt": "2026-06-26T08:40:51.046Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:16:41:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a string literal `')` with a different string literal `\"Stryker was here!\"` at line 16. This line is part of the `testCandidates` function, which constructs file paths. Since the mutated string is not used in any subsequent logic or path construction, the function's observable behavior remains identical.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:40:55.757Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:16:29:L1wuW14uXSQv": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:41:09.729Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:16:29:L1wuWy5dKyQv": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex replacement is intended to remove the final extension (e.g., '.js' from 'file.js'). The mutation changes `\\.[^.]+$` (match a dot followed by one or more non-dot characters till the end) to `/\\.[.]+$/` (match a dot followed by one or more dot characters till the end). This will incorrectly strip extensions like '.d.ts' or '.tar.gz', leading to incorrect base names for test candidates.",
+      "suggestedTest": "Add unit tests that provide file paths with complex or multiple dot extensions (e.g., 'src/module.d.ts') to verify the correct stripping behavior of the regex.",
+      "classifiedAt": "2026-06-26T08:41:24.575Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:17:38:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from '/')' to \"\". This string is used in template literals to construct file paths (e.g., line 24). Replacing a specific path segment with an empty string will likely result in a path that is either invalid or identical in its functional outcome if the surrounding logic handles empty strings gracefully, making it behaviorally equivalent in this context.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:41:29.767Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:16:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The conditional expression `astSlash === -1` determines if the file has no directory path (i.e., `lastSlash` is -1). Mutating this to `true` forces the code to always treat the file as having no directory, potentially skipping necessary directory-based test file searches.",
+      "suggestedTest": "Test a file name without a directory path (e.g., 'file.js') and a file name with a directory path (e.g., 'dir/file.js') to ensure both branches of the conditional are exercised.",
+      "classifiedAt": "2026-06-26T08:41:36.580Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:16:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes `lastSlash === -1` to `false` on line 18. This controls whether the filename is derived from the base name or if it's treated as having no directory path, affecting the construction of test file names.",
+      "suggestedTest": "Test with a file path that has no directory separators (e.g., 'file.js') and one that does (e.g., 'dir/file.js') to ensure correct path splitting.",
+      "classifiedAt": "2026-06-26T08:41:42.693Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:30:KzE": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes `1` to `+1` on line 18. Since this line is part of a function that constructs file names based on string manipulation (e.g., `base.slice(lastSlash + 1)`), the unary operator change has no effect on the resulting string value.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:41:47.470Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:42:YmFzZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code `base.slice(lastSlash + 1)` correctly extracts the filename (e.g., 'myFile' from 'path/to/myFile'). The mutant `base` returns the entire path without the extension (e.g., 'path/to/myFile'). This changes the logic for generating test file names.",
+      "suggestedTest": "Test with a file path containing slashes (e.g., 'src/utils/helper.js') to ensure the generated test names are correct and not just the base name.",
+      "classifiedAt": "2026-06-26T08:41:53.702Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:16:bGFzdFNsYXNoICE9PSAtMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `lastSlash` is -1, which happens when the base name has no directory separators (e.g., 'file'). The mutant checks if `lastSlash` is NOT equal to -1. This changes the logic for determining the file name when no slash exists, potentially leading to incorrect file name generation.",
+      "suggestedTest": "Test a file name without any directory separators (e.g., 'file.js') to ensure the mutant's condition (`lastSlash !== -1`) does not incorrectly alter the resulting file name.",
+      "classifiedAt": "2026-06-26T08:41:59.578Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:19:15:bGFzdFNsYXNoICE9PSAtMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `lastSlash` is -1, which happens when `base` contains no slashes (i.e., it's a top-level file name). The mutant checks if `lastSlash` is NOT equal to -1. This changes the logic for determining the directory path (`dir`) when no slash exists, potentially leading to incorrect test candidate generation.",
+      "suggestedTest": "Test a file name that does not contain any directory separators (e.g., 'file.js') to ensure `dir` is correctly set to ''.",
+      "classifiedAt": "2026-06-26T08:42:05.419Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:19:15:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `lastSlash` is -1, which determines if the file has a directory path component. Mutating this to `false` forces the logic to always assume a directory exists, potentially leading to incorrect candidate file generation when the input file has no directory.",
+      "suggestedTest": "Test with a filename that has no directory path (e.g., 'file.js') to ensure the correct, non-directory-based test candidates are generated.",
+      "classifiedAt": "2026-06-26T08:42:10.573Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:19:29:KzE": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes `1` to `+1` on line 19. Since this line is part of a string construction (`const name = ...`), the unary operator change from implicit addition/coercion to explicit addition does not alter the resulting string value.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:42:14.386Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:18:53:bGFzdFNsYXNoIC0gMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes `astSlash + 1` to `lastSlash - 1` on line 18. Since `lastSlash` is derived from `base.lastIndexOf('/')`, this arithmetic change alters the logic for determining the test file name, which is a core function of `testCandidates`.",
+      "suggestedTest": "Test `testCandidates` with various file paths (e.g., paths with no slashes, paths with multiple slashes) to ensure the resulting test file names are correct.",
+      "classifiedAt": "2026-06-26T08:42:19.812Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:20:10:W10": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code returns an array containing several potential test file paths based on the input 'file'. The mutation replaces this entire array construction with `[]`, resulting in an empty array. If the calling code only iterates over the returned array, the behavior (finding test candidates) remains functionally equivalent to an empty set of candidates.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:42:25.344Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:19:39:YmFzZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code `base.slice(0, lastSlash)` correctly extracts the directory path up to the last dot-less segment. The mutation replaces this with `base`, which will incorrectly include the filename base (e.g., 'file' instead of '').",
+      "suggestedTest": "Test with a file path containing a directory separator (e.g., 'src/file.js') to ensure 'dir' is correctly calculated as 'src'.",
+      "classifiedAt": "2026-06-26T08:42:31.197Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:19:15:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition `astSlash === -1` to `true` on line 19. This controls whether `name` is derived from `base` or if `lastSlash` is -1, which dictates how `name` and `dir` are calculated. If `lastSlash` is -1 (i.e., no directory separator), the original code sets `name = base` and `dir = ''`. The mutant forces `dir = ''` and `name = base` regardless of the actual value of `lastSlash`.",
+      "suggestedTest": "Test a file path without a directory separator (e.g., 'file.js') to ensure the logic correctly handles the case where `lastSlash` is -1, and test a path with a separator to ensure the original logic path is still reachable.",
+      "classifiedAt": "2026-06-26T08:42:39.732Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:22:5:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from `` `${base}.test.js`,` `` to `` ````. Since this string is immediately used as an element in an array returned by `testCandidates`, and the mutation only changes the literal content (likely to an empty or invalid string depending on how the surrounding template literal is parsed), it is highly probable that the resulting array structure remains functionally equivalent for the calling context, or the resulting string is simply ignored/handled gracefully.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:42:45.409Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:21:5:YGA": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal in an array return on line 21 from `` `${base}.test.mjs` `` to `` ````. Since this function constructs a list of potential test file paths based on the source file's base name, changing a single string literal inside the list does not affect the runtime logic or the structure of the path being generated.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:42:58.693Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:24:49:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal from `${dir}/tests/${name}.test.js` to an empty string (or similar, based on the provided snippet). Since the original code is part of a list generation function, replacing a valid path template with an empty string will likely result in an empty or incorrect path, but if the surrounding logic handles this gracefully or if the mutation results in a path that is never used, it is equivalent in behavior for the purpose of test generation.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:43:04.470Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:24:16:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from `${dir}/tests/${name}.test.mjs` to ````. Since this line constructs a list of potential test files by joining path segments derived from `file` input, replacing it with literal backticks makes the resulting array element invalid or nonsensical, but the *behavior* of the original function (generating plausible paths) is not meaningfully altered or proven wrong by this specific mutation in isolation.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:43:17.742Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:23:5:YGA": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from `${base}.test.ts` to ```, which results in an empty string. Since this string is immediately added to an array and subsequently used to construct file paths, replacing it with an empty string will likely result in an invalid or non-existent path that is filtered out or ignored by the calling logic, making the behavior functionally equivalent to the original path being generated, or at least not exposing a new logical path.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:43:23.002Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:35:20:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes an empty array declaration `[]` to `[\"Stryker was here\"]`. Since this array is immediately used to initialize `sections` (line 35), and the subsequent logic iterates over the `files` argument (line 36), the initial state of `sections` being modified by the loop is unaffected by this change. The mutation is effectively dead code or irrelevant to the function's observable output.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:43:28.983Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:24:15:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:43:43.893Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:38:19:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a single quote character literal ('\\'') with a string literal containing text (\"Stryker was here!\"). This mutation occurs on line 38, but the surrounding code does not use this literal in a way that affects the logic flow or output of buildGenTestsPrompt. It is likely unused or replaced by the logic flow.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:43:48.310Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:39:9:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant replaces a check for file existence (`existsSync(absPath)`) with a constant `false`. This means the code path that reads the file content (lines 40-42) will never be executed if the file exists, potentially hiding bugs if the file *should* exist.",
+      "suggestedTest": "Write a test case where one of the input files specified in `files` actually exists on the filesystem, ensuring the `if (existsSync(absPath))` block executes and reads the content correctly.",
+      "classifiedAt": "2026-06-26T08:43:53.719Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:40:39:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the encoding argument from 'utf8' to an empty string in readFileSync on line 40. This will likely cause readFileSync to default to an encoding or throw an error depending on the Node.js version/environment, potentially leading to incorrect content being read or an exception if the underlying implementation strictly requires an encoding.",
+      "suggestedTest": "Test the function with a file that exists and ensure the content read matches the expected UTF-8 decoded string, verifying the encoding parameter is correctly passed.",
+      "classifiedAt": "2026-06-26T08:43:59.188Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:41:11:Y29udGVudC5sZW5ndGggPj0gTUFYX1NSQ19CWVRFUw": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition from strictly greater than (>) to greater than or equal to (>=) when checking content length against MAX_SRC_BYTES. This changes the truncation logic for files whose content length is exactly MAX_SRC_BYTES.",
+      "suggestedTest": "Test with a file whose content length is exactly MAX_SRC_BYTES to ensure it is truncated correctly (i.e., it should be truncated by the mutant's logic but not by the original).",
+      "classifiedAt": "2026-06-26T08:44:04.376Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:41:11:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code conditionally truncates content if its length exceeds MAX_SRC_BYTES. Mutating this to 'false' means truncation never happens, even for very large files. This logic needs testing to ensure truncation occurs when necessary.",
+      "suggestedTest": "Provide an input file whose content length is greater than MAX_SRC_BYTES and assert that the resulting 'content' variable is truncated to MAX_SRC_BYTES + length of '...(truncated)'.",
+      "classifiedAt": "2026-06-26T08:44:09.606Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:45:31:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal from a single quote (') to a longer string (\"Stryker was here!\"). This string is used to construct the `existingTestSection` variable on line 48, but the mutation does not alter the logic flow or the content that is ultimately pushed to `sections` (line 55) in a way that changes the observable output structure or content, as the original string was not used in a conditional branch.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:44:14.905Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:41:11:Y29udGVudC5sZW5ndGggPD0gTUFYX1NSQ19CWVRFUw": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code truncates content if its length exceeds MAX_SRC_BYTES. The mutant changes this to only truncate if content.length <= MAX_SRC_BYTES, which is logically incorrect for truncation logic. A test case with content length > MAX_SRC_BYTES should fail if the mutant is active.",
+      "suggestedTest": "Provide a test case where the file content length is strictly greater than MAX_SRC_BYTES to ensure truncation occurs as intended by the original logic.",
+      "classifiedAt": "2026-06-26T08:44:20.122Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:39:30:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code truncates file content if it exceeds MAX_SRC_BYTES. The mutation replaces this logic with an empty block, meaning large files will not be truncated, potentially leading to overly long prompts or unexpected behavior in the test generation.",
+      "suggestedTest": "Test with a file whose content length is greater than MAX_SRC_BYTES to ensure the truncation logic is correctly applied and the resulting content is correctly formatted.",
+      "classifiedAt": "2026-06-26T08:44:24.978Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:44:52:KCkgPT4gdW5kZWZpbmVk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks for the existence of a candidate test file using `existsSync(join(dir, c))`. The mutant replaces this check with `() => undefined`, effectively making the check always return undefined/falsey, meaning the logic to find `existingTest` will fail even if the file exists.",
+      "suggestedTest": "Write a test case where a file matching a candidate test exists in the directory structure to ensure the existence check functions correctly.",
+      "classifiedAt": "2026-06-26T08:44:30.004Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:47:65:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutant changes the encoding argument from `'utf8'` to `''` in `readFileSync`. Since the file content is being read and subsequently potentially truncated or used in string interpolation, replacing `'utf8'` with an empty string likely results in the same byte-to-string conversion (or a default behavior) without affecting the observable content extracted by the test generator, making the mutation behaviorally equivalent.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:44:44.602Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:46:23:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:44:59.350Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:48:29:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a code generation utility (`gen-tests.mjs`) responsible for formatting output by embedding existing test file content. It's boilerplate for test documentation generation.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:45:02.782Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:48:89:dGVzdENvbnRlbnQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code truncates `testContent` to 2000 characters before embedding it in the generated documentation. The mutation replaces this slice with the full `testContent`. If the original test file exceeds 2000 characters, the mutant will produce a much longer output string, potentially breaking downstream parsing or exceeding display limits, thus exposing a missing boundary check.",
+      "suggestedTest": "Test the generation process with a mock test file whose content is exactly 2001 characters long to ensure the truncation logic is correctly applied.",
+      "classifiedAt": "2026-06-26T08:45:08.353Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:41:11:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a length check (`content.length > MAX_SRC_BYTES`) to always be true. This bypasses the truncation logic on line 41, meaning if the original content was short, the mutant will incorrectly truncate it, potentially altering the prompt generation.",
+      "suggestedTest": "Test with a file whose content length is less than MAX_SRC_BYTES to ensure the truncation logic is correctly skipped.",
+      "classifiedAt": "2026-06-26T08:45:13.099Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:46:9:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition `if (existingTest)` to `if (false)`. This means the block that reads and formats the existing test section (lines 47-49) will never execute, even if `testCandidates(file).find(...)` returns a truthy value. This hides the existing test content.",
+      "suggestedTest": "Write a test case where `testCandidates(file).find(...)` successfully finds an existing test file, ensuring that the resulting output string includes the content read from that file.",
+      "classifiedAt": "2026-06-26T08:45:18.672Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:53:46:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation replaces a closing parenthesis `)` with a string literal \"Stryker was here!\". Since this string literal is inserted into a template string on line 53, and the surrounding context suggests it's part of a generated documentation string, the change is unlikely to affect the runtime behavior or observable output of the test generation process.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:45:23.120Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:54:20:YGA": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of generating documentation/test instructions (gen-tests.mjs). It formats a string literal containing test content, which is boilerplate for test generation.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:45:26.553Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:54:53:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original string literal `(вміст недоступний)` is replaced by an empty string `\"\"`. Since this string is only used as a fallback content placeholder (line 54) when `content` is falsy, replacing it with an empty string results in functionally identical output structure in the generated markdown.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:45:31.109Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:61:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a literal comma (`,`) with a string literal (`\"Stryker was here!\"`) at line 61. This line is part of a list of instructions being returned, and replacing a separator with a descriptive string will change the output content but not the fundamental structure or behavior of the function call returning the array.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:45:35.882Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:60:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The original string literal provided a specific instruction set for test generation. Mutating it to an empty string (`\"\"`) removes this instruction, but since this code is part of a generator script (`gen-tests.mjs`) that likely formats output, the change in the string content itself does not affect the observable behavior of the generator's execution flow or the resulting output structure in a testable way.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:45:40.840Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:62:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "The mutated line is part of a string template used to generate instructions for test generation. This is boilerplate/glue code for the CLI tool's output, not core logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:45:44.590Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:65:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a string literal containing Ukrainian text ('## Файли для покриття') with an empty string ('\"\"'). Since this string is part of a generated prompt/instruction set, changing its content to empty does not alter the functional behavior or observable output of the script generating these instructions.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:45:48.859Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:64:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string construction within a file named 'gen-tests.mjs', which appears to be a code generator or boilerplate script used to generate test instructions/content. The string literal is likely part of a fixed instruction set.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:45:53.060Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:63:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a string template used to generate instructions for test generation. It functions as boilerplate text within a larger prompt structure, similar to a CLI entrypoint instruction.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:45:56.698Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:66:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a literal string element in an array returned by the function. Since this string is part of a large, static prompt intended for test generation, changing its content does not alter the observable behavior or the structure of the generated output in a way that would fail existing tests (as there are none), nor does it introduce new logic.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:01.975Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:68:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a literal string separator (',') to a descriptive string ('\"Stryker was here!\"') within a large generated text block. This change affects the content of the generated instructions but does not alter the execution flow or observable behavior of the function itself.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:06.166Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:69:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a string literal containing instructions ('## Обовʼязкові правила (дотримуйся СУВОРО)') with an empty string ('\"\"'). Since this string is part of a large array being joined into a single output string, replacing it with an empty string will only change the formatting/content of the generated instructions, but it does not alter the fundamental logic or observable behavior of the function generating the test instructions.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:11.369Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:70:5:IiI": {
+      "verdict": "glue",
+      "confidence": 0.95,
+      "reason": "This line is part of a large string literal used to generate instructions for test generation. It acts as boilerplate/guidance text, not core application logic.",
+      "suggestedTest": "N/A",
+      "classifiedAt": "2026-06-26T08:46:15.890Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:75:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original string literal provides a specific instruction ('Якщо файл лише re-export або типи — пропусти і продовж до наступного.'). Mutating it to an empty string ('\"\"') removes this instruction, but since this code is part of a static documentation string being joined into a larger output, changing the content of the string does not change the observable behavior of the function `generateTests` itself, which is what mutation testing targets.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:22.187Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:74:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation replaces a non-empty string literal with an empty string literal. Since this string is part of a list of instructions being joined into a documentation string, changing its content to empty will likely result in a slightly shorter but functionally identical output string, unless the specific content was required for parsing, which is unlikely here.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:27.487Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:73:5:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original line 73 provided a specific instruction regarding test execution ('bun test <path> and ensure 0 fail'). Mutating this to an empty string removes this instruction entirely. Since this file appears to be a prompt/instruction generator (based on surrounding context like 'напиши тести що покривають основну логіку'), removing a non-executable instruction string does not change the observable behavior of the script generating the prompt.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:34.423Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:76:10:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal `\n')` to `\"`. Since this string is part of a list being joined by `\\n` (line 76), replacing `\n')` with `\"` will result in a different string content, but given the context of generating documentation/instructions, this change is highly unlikely to affect the observable behavior of the generated test instructions in a way that would cause a test failure, or it might simply result in a syntactically different but functionally equivalent instruction block.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:41.530Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:101:50:WyJTdHJ5a2VyIHdhcyBoZXJlIl0": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes an array termination `]` to an array containing a string literal `[\"Stryker was here\"]`. Since this line is not used to initialize or manipulate any variable in a way that affects the execution flow or output of `callPi`, the change is inert.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:46.399Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:89:15:YGA": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal used for logging (`console.log`). Since this is a side effect (logging) and there are no assertions or return values dependent on this specific string content, the mutant is behaviorally indistinguishable from the original.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:46:51.612Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:102:48:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes a command-line argument from '--no-session' to an empty string in spawnSync. This directly affects the arguments passed to the 'pi' executable, potentially altering its behavior or execution path.",
+      "suggestedTest": "Test the execution of callPi with inputs that would normally trigger the '--no-session' flag to ensure the command line arguments are correctly passed to the spawned process.",
+      "classifiedAt": "2026-06-26T08:46:57.665Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:104:12:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The function `callPi` uses `spawnSync` to execute an external command ('pi'). The `stdio: 'inherit'` setting is configuration for how the spawned process interacts with the parent's I/O streams, not core logic within this function. Behavior is determined by the 'pi' executable.",
+      "suggestedTest": "Integration test: Verify that running `callPi` successfully executes the 'pi' command and that its output is visible to the test runner (or mock the subprocess execution).",
+      "classifiedAt": "2026-06-26T08:47:03.986Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:12:15:KGVudi5OX0NVUlNPUl9DT1ZFUkFHRV9GSVhfTU9ERUwgPz8gZW52Lk5fQ0xPVURfTUFYX01PREVMKSAmJiAnJw": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code uses nullish coalescing to default to an empty string if both environment variables are missing. The mutant replaces this with `(A ?? B) && ''`, which evaluates to `''` if A or B is falsy (including null/undefined), and `''` if A or B is truthy, effectively always returning an empty string, thus being behaviorally equivalent to the original fallback.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:47:09.408Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:12:15:ZW52Lk5fQ1VSU09SX0NPVkVSQUdFX0ZJWF9NT0RFTCAmJiBlbnYuTl9DTE9VRF9NQVhfTU9ERUw": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the logical OR (??) to a logical AND (&&) for selecting the model name. If `env.N_CURSOR_COVERAGE_FIX_MODEL` is falsy (e.g., undefined or empty string), the original code falls back to `env.N_CLOUD_MAX_MODEL`. The mutant will only select `env.N_CLOUD_MAX_MODEL` if *both* are truthy, potentially leading to an incorrect model selection if the first is falsy but the second is truthy.",
+      "suggestedTest": "Test cases where N_CURSOR_COVERAGE_FIX_MODEL is falsy but N_CLOUD_MAX_MODEL is truthy to ensure the fallback logic is correctly triggered.",
+      "classifiedAt": "2026-06-26T08:47:17.586Z"
+    },
+    "0a836648bdef190c1ec21601ea598d08c10b936e:12:75:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal used to define the 'MODEL' constant from a single quote ('') to a multi-word string (\"Stryker was here!\"). Since this constant is only used as a fallback/default value for environment variables, changing its value does not alter the execution path or observable behavior of the surrounding code.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:47:25.184Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:139:29:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The constant `MEMORY_GUARD_MARKER` is used to identify a specific type of error ('memory ceiling') returned by the underlying LLM call. Changing it to an empty string (`\"\"`) changes the sentinel value used for error classification, potentially causing the system to misclassify a memory overflow error as something else or ignore it.",
+      "suggestedTest": "Write a unit test that mocks the underlying LLM call to return an error containing the original marker ('memory ceiling') and assert that the error is correctly classified as a systemic error, and then repeat the test with the mutated marker ('\"\"') to confirm the classification changes.",
+      "classifiedAt": "2026-06-26T08:47:33.043Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:141:27:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The constant AUTH_ERROR_MARKER is used as a string literal ('authentication_error') to identify a specific type of error. Mutating it to an empty string ('\"\"') will change the value, but if no code path explicitly checks for this exact string value, the mutant will be equivalent. Given the context, it's likely used for comparison against an error message.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:47:38.588Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:143:22:L3RvbyBsb25nfGV4Y2VlZHNbXi5dY29udGV4dHxub3QgZm91bmQvaQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex pattern is used to classify permanent errors (Line 143). The mutation changes `exceeds[^.]*context` to `exceeds[^.]context`, removing the `.*` quantifier. This changes the matching behavior for strings containing 'exceeds' followed by characters that are not dots, before 'context'.",
+      "suggestedTest": "Write a unit test that provides an error message matching the original regex but failing the mutated regex, specifically targeting the 'exceeds' pattern.",
+      "classifiedAt": "2026-06-26T08:47:44.705Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:143:22:L3RvbyBsb25nfGV4Y2VlZHNbLl0qY29udGV4dHxub3QgZm91bmQvaQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex change modifies the pattern for matching 'exceeds' errors. Original: `exceeds[^.]*context`. Mutated: `exceeds[.]*context`. The original allowed any character except '.' between 'exceeds' and 'context', while the mutant only allows zero or more dots. This change affects how context overflow errors are detected.",
+      "suggestedTest": "Write a unit test that triggers an error message matching the original pattern (e.g., 'exceeds some_text_without_dots context') and another test matching the mutant pattern (e.g., 'exceeds .context') to ensure the classification remains correct.",
+      "classifiedAt": "2026-06-26T08:47:53.882Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:42:26:ZW52Lk5fTE9DQUxfTUlOX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). Original code defaults to '' if env.N_LOCAL_MIN_MODEL is null/undefined. Mutated code returns '' if env.N_LOCAL_MIN_MODEL is falsy (e.g., empty string, 0, false), which is different if the original value was explicitly set to a falsy value that wasn't null/undefined.",
+      "suggestedTest": "Test case where env.N_LOCAL_MIN_MODEL is explicitly set to a falsy value (e.g., empty string or 0) to ensure the behavior matches the original ?? logic.",
+      "classifiedAt": "2026-06-26T08:48:02.481Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:45:51:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a static string literal default value (from ' to \"Stryker was here!\") for an environment variable fallback ('N_LOCAL_AVG_MODEL'). Since this value is only used as a default fallback for reading environment variables (lines 45, 53, 55), changing the default value to another literal string does not change the runtime behavior unless the environment variable is unset, in which case the function still returns a string.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:48:18.956Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:45:26:ZW52Lk5fTE9DQUxfQVZHX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). If env.N_LOCAL_AVG_MODEL is falsy (e.g., undefined or empty string), the original returns '', while the mutant returns ''. However, if env.N_LOCAL_AVG_MODEL is a non-empty string (truthy), the original returns the string, but the mutant returns the empty string ''. This logic change needs testing.",
+      "suggestedTest": "Test case where N_LOCAL_AVG_MODEL is set to a valid model name string to ensure the original value is returned.",
+      "classifiedAt": "2026-06-26T08:48:30.331Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:48:26:ZW52Lk5fTE9DQUxfTUFYX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to logical AND (&&). If env.N_LOCAL_MAX_MODEL is falsy (e.g., undefined or empty string), the original returns the environment variable value (or '') while the mutant returns ''. This changes the fallback behavior when the environment variable is missing or falsy.",
+      "suggestedTest": "Test case where N_LOCAL_MAX_MODEL is explicitly unset or set to a falsy value to ensure the correct fallback behavior is maintained.",
+      "classifiedAt": "2026-06-26T08:48:38.508Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:53:26:ZW52Lk5fQ0xPVURfTUlOX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to logical AND (&&). When `env.N_CLOUD_MIN_MODEL` is falsy (e.g., undefined or empty string), the original code yields an empty string (''), while the mutated code yields the falsy value (e.g., undefined or ''). This tests the fallback mechanism for environment variables.",
+      "suggestedTest": "Test case where N_CLOUD_MIN_MODEL is unset or empty, asserting that CLOUD_MIN resolves to '' as per the original logic.",
+      "classifiedAt": "2026-06-26T08:48:57.591Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:53:51:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal from a single quote (') to a multi-character string (\"Stryker was here!\"). Since this constant is only used as a default value (via ?? '') and is not directly used in any observable logic or comparison in the provided context, the behavior remains functionally identical.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:49:03.296Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:48:51:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal from a single quote (') to a double-quoted string (\"Stryker was here!\"). Since this constant is only used as a default value (via ?? '') and is not directly involved in any control flow or observable output in the provided context, the behavior remains identical.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:49:08.534Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:56:26:ZW52Lk5fQ0xPVURfQVZHX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). If env.N_CLOUD_AVG_MODEL is falsy (e.g., undefined or empty string), the original returns '' while the mutant returns '' (if falsy) or the value (if truthy). If the original was intended to provide a default fallback, the && operator changes the behavior when the environment variable is falsy but not nullish, potentially leading to an incorrect empty string return when a non-empty string was expected.",
+      "suggestedTest": "Test the case where env.N_CLOUD_AVG_MODEL is explicitly set to a falsy value (like an empty string or 0, if applicable) to ensure the fallback logic behaves as expected under the original ?? operator.",
+      "classifiedAt": "2026-06-26T08:49:19.662Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:56:51:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 1,
+      "reason": "The mutation changes a string literal from a single quote (') to a double-quoted string (\"Stryker was here!\"). Since this constant is exported and used as a default value fallback (e.g., `env.N_CLOUD_AVG_MODEL ?? ''`), changing the literal value does not alter the observable behavior unless the consuming code specifically checks for the exact string '\"Stryker was here!\"', which is unlikely for a model name constant.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:49:26.394Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:59:26:ZW52Lk5fQ0xPVURfTUFYX01PREVMICYmICcn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the nullish coalescing operator (??) to a logical AND (&&). If env.N_CLOUD_MAX_MODEL is falsy (e.g., undefined or empty string), the original returns '' while the mutant returns '' (if the original was undefined) or the falsy value itself (if the original was falsy). If it's truthy, both return the value. A test case where env.N_CLOUD_MAX_MODEL is undefined/null is required to distinguish the behavior.",
+      "suggestedTest": "Test the case where env.N_CLOUD_MAX_MODEL is undefined or null to ensure the fallback to '' occurs correctly.",
+      "classifiedAt": "2026-06-26T08:49:35.430Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:70:36:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code explicitly handles three valid tiers ('min', 'avg', 'max') and throws a TypeError for unknown tiers. Mutating the block statement to `{}` effectively removes the logic for all three valid tiers, causing the function to implicitly return undefined or proceed to the next line (if any), thus failing to throw the expected TypeError for invalid inputs or return the correct value for valid inputs.",
+      "suggestedTest": "Test all three valid tiers ('min', 'avg', 'max') to ensure correct resolution, and test an unknown tier (e.g., 'high') to assert that a TypeError is thrown.",
+      "classifiedAt": "2026-06-26T08:49:46.040Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:59:51:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes a string literal from a single quote (') to a longer string (\"Stryker was here!\"). Since this constant is assigned from environment variables (env.N_CLOUD_MAX_MODEL ?? ''), the mutation only affects the default value if the environment variable is unset. If the variable is set, the mutation is irrelevant. If it's unset, the default value changes, but this is a constant definition, not executable logic that requires testing for correctness against a specific value.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:49:54.485Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:71:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a specific conditional check (`tier === 'min'`) to always be true. This bypasses the intended logic flow for 'min' tier resolution, potentially causing incorrect return values if the original logic was necessary.",
+      "suggestedTest": "Test with an input tier that is NOT 'min' (e.g., 'avg' or 'max') to ensure the function still behaves correctly when the mutated branch is not taken.",
+      "classifiedAt": "2026-06-26T08:50:00.846Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:71:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `tier` is exactly 'min' (Line 71). The mutation replaces this condition with `false`, meaning the function will skip the 'min' logic and proceed to check `tier === 'avg'` (Line 72) or fail if 'min' was the input.",
+      "suggestedTest": "Test with input `tier = 'min'` to ensure the original logic (returning `LOCAL_MIN || ...`) is executed and that the mutant fails.",
+      "classifiedAt": "2026-06-26T08:50:08.358Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:71:7:dGllciAhPT0gJ21pbic": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a strict equality check (`tier === 'min'`) to a strict inequality check (`tier !== 'min'`) on line 71. This alters the control flow significantly: if tier is 'min', the original returns a value, but the mutant proceeds to check `tier === 'avg'` or `tier === 'max'`, potentially leading to an incorrect return or a TypeError.",
+      "suggestedTest": "Test with input tier='min' to ensure the original path is taken and the correct fallback value is returned.",
+      "classifiedAt": "2026-06-26T08:50:15.525Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:71:16:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition `tier === 'min'` to `tier === ''`. If the input `tier` is 'min', the original code returns a value; the mutant returns the first available local/cloud ID, but if the input is an empty string, the original code would fall through to the next check (`tier === 'avg'`), while the mutant would immediately return the first ID, potentially masking an input validation issue.",
+      "suggestedTest": "Test with input `tier = 'min'` and test with input `tier = ''` to ensure correct branching and default behavior.",
+      "classifiedAt": "2026-06-26T08:50:22.845Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:72:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `tier` is exactly 'avg' before returning `LOCAL_AVG || LOCAL_MAX || CLOUD_AVG`. The mutation changes this to `true`, meaning this branch is now always taken if the function execution reaches line 72, regardless of the input `tier`.",
+      "suggestedTest": "Test with an input tier that is not 'avg' (e.g., 'min' or 'max') to ensure the function does not incorrectly return the 'avg' fallback logic.",
+      "classifiedAt": "2026-06-26T08:50:30.219Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:72:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `tier` is exactly 'avg' on line 72. The mutation changes this condition to `false`, meaning the logic for 'avg' tier resolution (returning `LOCAL_AVG || LOCAL_MAX || CLOUD_AVG`) is completely bypassed, leading to the next condition being checked or the function returning early if the structure allowed it (though here it falls through to line 73/74).",
+      "suggestedTest": "Test with input `tier = 'avg'` to ensure the correct fallback logic (`LOCAL_AVG || LOCAL_MAX || CLOUD_AVG`) is executed and not skipped.",
+      "classifiedAt": "2026-06-26T08:50:39.752Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:72:7:dGllciAhPT0gJ2F2Zyc": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition from checking for equality (`ier === 'avg'`) to inequality (`ier !== 'avg'`) on line 72. This directly alters the control flow for the 'avg' tier, meaning a test case specifically using tier='avg' is required to verify the original logic path.",
+      "suggestedTest": "Test case calling resolveModel('avg') to ensure it returns LOCAL_AVG || LOCAL_MAX || CLOUD_AVG, and a test case calling resolveModel('min') to ensure the first branch is correctly handled.",
+      "classifiedAt": "2026-06-26T08:50:47.484Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:72:16:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the specific string literal 'avg' to an empty string in the conditional check on line 72. This alters the logic flow, meaning that if 'avg' is passed as input, the original code executes line 72, while the mutant skips it and proceeds to line 73, potentially leading to different return values or execution paths.",
+      "suggestedTest": "Test with input tier='avg' to ensure the correct fallback logic (LOCAL_AVG || LOCAL_MAX || CLOUD_AVG) is executed.",
+      "classifiedAt": "2026-06-26T08:50:54.008Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition `ier === 'max'` to `true` on line 73. This bypasses the intended logic for 'max' tier resolution, forcing the function to always return `LOCAL_MAX || CLOUD_MAX` regardless of the input `tier` if the original code path was taken. A test case specifically calling `resolveModel('min')` or `resolveModel('avg')` should fail if this mutant survives.",
+      "suggestedTest": "Test with tier='min' and assert the result is NOT LOCAL_MAX || CLOUD_MAX, or test with tier='avg' and assert the result is NOT LOCAL_MAX || CLOUD_MAX.",
+      "classifiedAt": "2026-06-26T08:51:02.411Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition `ier === 'max'` to `false` on line 73. This bypasses the logic for the 'max' tier, causing the function to fall through to the `TypeError` on line 74 if `tier` is 'max', which is incorrect behavior.",
+      "suggestedTest": "Test case where `tier` is explicitly set to 'max' to ensure it returns `LOCAL_MAX || CLOUD_MAX` and not throws a TypeError.",
+      "classifiedAt": "2026-06-26T08:51:08.536Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:7:dGllciAhPT0gJ21heCc": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the condition from checking for equality (`ier === 'max'`) to inequality (`tier !== 'max'`) on line 73. If the input `tier` is exactly 'max', the original code proceeds to return `LOCAL_MAX || CLOUD_MAX`, while the mutant will skip this block and fall through to the `TypeError` on line 74.",
+      "suggestedTest": "Test with input tier='max' to ensure the correct model ID is returned, verifying the original logic path.",
+      "classifiedAt": "2026-06-26T08:51:16.388Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:16:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the string literal 'max' to an empty string in the condition `if (tier === 'max')`. This changes the logic flow for the 'max' tier, potentially causing the function to skip the intended return path for 'max' and fall through to the TypeError if 'max' is passed.",
+      "suggestedTest": "Test the function specifically with tier='max' to ensure it correctly returns LOCAL_MAX || CLOUD_MAX and does not incorrectly throw a TypeError.",
+      "classifiedAt": "2026-06-26T08:51:22.290Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:30:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the logic from checking if either OCAL_MAX or CLOUD_MAX is truthy to always returning true. If the original code was intended to return a model ID string (or empty string), forcing 'true' will break the return type contract or return an incorrect value when both OCAL_MAX and CLOUD_MAX are falsy.",
+      "suggestedTest": "Test the case where both OCAL_MAX and CLOUD_MAX are falsy (e.g., null or undefined) to ensure the function returns the expected default value (likely an empty string or a specific fallback ID) instead of 'true'.",
+      "classifiedAt": "2026-06-26T08:51:30.629Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:30:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses `OCAL_MAX || CLOUD_MAX` to determine the model ID when `tier` is 'max'. Mutating this to `false` changes the fallback logic. If `LOCAL_MAX` is falsy, the original returns `CLOUD_MAX`, but the mutant always returns `false` (or whatever `false` evaluates to in the OR chain context, which is likely falsy). This logic needs testing.",
+      "suggestedTest": "Test the 'max' tier with inputs where LOCAL_MAX is falsy but CLOUD_MAX is truthy to ensure the correct fallback occurs.",
+      "classifiedAt": "2026-06-26T08:51:37.245Z"
+    },
+    "a3e5c30ca11a40cbd664487b4d5efeb3708f7a9a:73:30:TE9DQUxfTUFYICYmIENMT1VEX01BWA": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the logical OR (||) to a logical AND (&&) on line 73. The original logic returns LOCAL_MAX if it's truthy, otherwise it falls back to CLOUD_MAX. The mutated logic requires BOTH LOCAL_MAX and CLOUD_MAX to be truthy to return a value, which is a significant behavioral change.",
+      "suggestedTest": "Test case where LOCAL_MAX is truthy but CLOUD_MAX is falsy, expecting the original behavior (LOCAL_MAX) but the mutant will return falsy.",
+      "classifiedAt": "2026-06-26T08:51:44.278Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:28:29:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code initializes a Set with specific string values ('0', 'false', 'off', 'no') intended as kill switches. Mutating this to an empty Set [] removes the ability to detect these explicit disable flags via environment variables, which is a critical control flow path.",
+      "suggestedTest": "Test the `tracePath` function by setting `process.env.N_CURSOR_LLM_TRACE` to one of the original kill values ('0', 'false', 'off', 'no') and asserting that `tracePath()` returns null.",
+      "classifiedAt": "2026-06-26T08:51:52.628Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:25:29:NTAgLyAxMDI0": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `0 * 1024` to `50 / 1024`. Since `ROTATE_BYTES` is an exported constant (line 25), this mutation changes its value from 0 to approximately 48.828. However, as it is a constant definition, it is unlikely to be exercised by any unit test unless the test specifically checks this constant's value, and even then, the change is likely benign or irrelevant to core logic.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:51:59.896Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:25:29:NTAgKiAxMDI0IC8gMTAyNA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:52:29.518Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:28:44:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes the allowed kill-switch values from including 'off' to excluding it, changing `KILL_VALUES` from `new Set(['0', 'false', 'off', 'no'])` to `new Set(['0', 'false', ''])`. This affects the logic in `tracePath()` when checking `env.N_CURSOR_LLM_TRACE` against this set, potentially leading to incorrect trace file path determination if the environment variable is set to 'off'.",
+      "suggestedTest": "Test case where N_CURSOR_LLM_TRACE is set to 'off' to ensure tracePath() returns null, verifying the intended kill-switch behavior.",
+      "classifiedAt": "2026-06-26T08:52:37.062Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:28:30:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes the string literal '0' to an empty string \"\" in the KILL_VALUES Set initialization. If an environment variable N_CURSOR_LLM_TRACE is set to '0', the original code would treat it as a kill switch, but the mutant will not. This tests the boundary condition for disabling tracing.",
+      "suggestedTest": "Test case where N_CURSOR_LLM_TRACE is set to '0' to ensure tracePath() returns null.",
+      "classifiedAt": "2026-06-26T08:52:43.684Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:28:35:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes the string literal 'false' to an empty string \"\" in the KILL_VALUES Set definition (Line 28). This affects the logic that determines if tracing is disabled via the environment variable N_CURSOR_LLM_TRACE. If N_CURSOR_LLM_TRACE is set to 'false', the original code would exclude it, but the mutant allows it to be treated as a kill value.",
+      "suggestedTest": "Test the function tracePath() by setting N_CURSOR_LLM_TRACE to 'false' and asserting that the returned path is null.",
+      "classifiedAt": "2026-06-26T08:52:52.388Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:28:51:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutant changes the allowed values for disabling tracing from a set that includes 'no' (<code>no']</code>) to an empty string (<code>\"\"</code>). This means an environment variable set to 'no' will now fail the check, suggesting missing test coverage for this specific sentinel value.",
+      "suggestedTest": "Test `tracePath()` when `process.env.N_CURSOR_LLM_TRACE` is set to 'no' and assert that the function returns null (or equivalent 'off' state).",
+      "classifiedAt": "2026-06-26T08:53:07.923Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:26:33:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The constant DEFAULT_OMLX_URL defines the default endpoint for the omlx service. Mutating it to an empty string ('\"\"') changes the target URL, which should cause a network request failure or incorrect behavior if this default is ever used.",
+      "suggestedTest": "Write a unit test that explicitly uses DEFAULT_OMLX_URL to make a mock HTTP request and asserts the correct endpoint is used.",
+      "classifiedAt": "2026-06-26T08:53:14.027Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:48:21:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The constant OMLX_PREFIX is used as a string literal in the original code. Mutating it to an empty string (\"\" ) changes the prefix used for OMLX related paths, but since this constant is not used in the visible code context (lines 38-46), and no tests exist, we assume it's not exercised or its change is functionally irrelevant to the current observable behavior.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:53:19.764Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:81:22:Lzx0aGluaz4oW1xzXFNdKTxcL3RoaW5rPi8": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original regex `\"). The test must assert that the original function extracts the full 'some content', while the mutant (if run) would fail to extract or return incorrect content.",
+      "classifiedAt": "2026-06-26T08:53:36.632Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:51:20:W10": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code defines `BACKOFF_MS` as `[2000, 8000]`, which is used for backoff delays. The mutant changes it to `[]`. Since this constant is only used internally for defining a sequence of delays, and no code path is shown that would crash or behave differently when iterating over an empty array versus one containing two elements, the behavior is likely equivalent in the context of the surrounding logic (which is not fully visible).",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:53:43.038Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:81:22:Lzx0aGluaz4oW15cc1xTXSo_KTxcL3RoaW5rPi8": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:54:01.254Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:81:22:Lzx0aGluaz4oW1xTXFNdKj8pPFwvdGhpbms-Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:54:19.349Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:81:22:Lzx0aGluaz4oW1xzXHNdKj8pPFwvdGhpbms-Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:54:32.660Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:26:21:bGluZS5zbGljZSgzKQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code `line.slice(3).trim()` correctly handles whitespace after the file path marker 'SF:'. The mutation `line.slice(3)` removes the `.trim()`, meaning if the input line is 'SF:  file.js', the mutant will incorrectly include the trailing spaces in `currentFile`.",
+      "suggestedTest": "Test with an input line like 'SF:  some/file.js' to ensure the mutant fails due to incorrect file path capture.",
+      "classifiedAt": "2026-06-26T08:54:39.728Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:26:21:bGluZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code uses `line.slice(3).trim()` to extract the file path following 'SF:'. The mutation replaces `line.slice(3)` with `line`, which will include the 'SF:' prefix and potentially other characters, leading to incorrect file path extraction.",
+      "suggestedTest": "Provide an input string containing 'SF:path/to/file' and assert that the extracted file name in the resulting array matches 'path/to/file' and not 'SF:path/to/file'.",
+      "classifiedAt": "2026-06-26T08:54:47.195Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:33:16:bGluZSA9PT0gJ2VuZF9vZl9yZWNvcmQnIHx8IGN1cnJlbnRGaWxl": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `line === 'end_of_record' && currentFile` ensures that file statistics are only pushed when a record boundary is hit AND a file context has been established. The mutation changes this to `line === 'end_of_record' || currentFile`, which means the block will execute if `currentFile` is truthy even if the line is not 'end_of_record', or if the line is 'end_of_record' but `currentFile` is falsy (which shouldn't happen if the logic is sound, but the OR introduces new paths).",
+      "suggestedTest": "Test case where 'end_of_record' appears without a preceding 'SF:' marker, and a case where 'currentFile' is truthy but the line is not 'end_of_record'.",
+      "classifiedAt": "2026-06-26T08:54:55.582Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:33:16:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `line === 'end_of_record' && currentFile` controls whether a file record is pushed to the 'files' array. Mutating this to `true` forces a push on every line iteration, regardless of the actual content or if a file context (`currentFile`) was established.",
+      "suggestedTest": "Test with input data that contains lines other than 'end_of_record' to ensure the record is only pushed when the specific sentinel value is encountered.",
+      "classifiedAt": "2026-06-26T08:55:02.299Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:33:16:bGluZSAhPT0gJ2VuZF9vZl9yZWNvcmQn": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks for exact equality (`line === 'end_of_record'`) to trigger file processing. The mutant changes this to inequality (`line !== 'end_of_record'`). If the input text contains 'end_of_record', the original code processes the file, while the mutant skips this block, leading to different observable output (missing file entry).",
+      "suggestedTest": "Test with input text that explicitly ends with 'end_of_record' to ensure the file is correctly pushed to the 'files' array.",
+      "classifiedAt": "2026-06-26T08:55:09.153Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:36:14:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code checks if `lf` (lines found) is zero to assign 100% coverage. The mutant forces this to `false`, meaning if `lf` is 0, the coverage calculation will proceed, resulting in division by zero or an incorrect calculation if `lh` is also 0.",
+      "suggestedTest": "Test a scenario where a file is processed but contains zero lines found (`lf=0`) to ensure the mutant's forced `false` path is hit and the resulting coverage is handled correctly (e.g., remains 100% or avoids division by zero).",
+      "classifiedAt": "2026-06-26T08:55:16.459Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:52:48:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:55:34.336Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:59:9:IiI": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The code uses `spawnSync` to execute an external tool (`vitest`) to generate coverage reports. The string literal `--passWithNoTests` is an argument passed to this external process, making this function a wrapper around the test runner.",
+      "suggestedTest": "Integration test covering the successful execution of the subprocess and parsing of the resulting lcov.info file.",
+      "classifiedAt": "2026-06-26T08:55:39.779Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:64:26:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the stdio option from 'inherit' to an empty string ('\"\"'). Since this function uses spawnSync to execute external tools (vitest), changing stdio behavior could silently alter how stdout/stderr are captured or displayed during the coverage run, potentially masking errors or changing the output format that parseLcovPerFile expects.",
+      "suggestedTest": "Test the function by mocking spawnSync to return a known successful execution result, and assert that the subsequent parsing logic (or the return value) is correct, ensuring the stdio setting does not break the expected flow.",
+      "classifiedAt": "2026-06-26T08:55:46.361Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:62:9:YGA": {
+      "verdict": "wrapper",
+      "confidence": 0.95,
+      "reason": "The code uses `spawnSync` to execute 'bunx vitest run ...', which is a thin shell around an external tool (Vitest). The behavior is determined by the external process, not the logic in this file.",
+      "suggestedTest": "Integration test covering the execution of the command and checking the resulting lcov.info file.",
+      "classifiedAt": "2026-06-26T08:55:50.950Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:66:36:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code constructs a path string using template literals, specifically referencing 'lcov.info'. Mutating this to an empty string ('\"\"') will cause `join(lcovDir, '')` to resolve to just `lcovDir`, which is likely not the intended path, but the subsequent check `if (!existsSync(lcovPath))` will likely fail or behave identically if `lcovDir` itself doesn't exist or if the original path was invalid, leading to the same return value `[]`.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:55:57.072Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:68:62:IiI": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The mutation changes `readFileSync(lcovPath, 'utf8')` to `readFileSync(lcovPath, '')`. Since `readFileSync` expects an encoding string, passing an empty string `''` will likely default to UTF-8 or cause an error depending on the Node.js version, but functionally, it is highly likely to result in the same byte stream being read and then interpreted as UTF-8 by the subsequent `parseLcovPerFile` function, or it will fail consistently if the original code was relying on the explicit encoding.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:56:03.699Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:69:12:YWxsRmlsZXMubWFwKGYgPT4gKHsKICAuLi5mLAogIGZpbGU6IHJlbGF0aXZlKGRpciwgZi5maWxlKQp9KSk": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code filters out files whose relative path starts with '..' or matches the test file regex (TEST_FILE_RE). The mutant removes this filtering step entirely, meaning test files and paths outside the intended scope will now be included in the returned array.",
+      "suggestedTest": "Add a unit test that verifies the output array excludes files matching '..' or those matching TEST_FILE_RE, using a mock for parseLcovPerFile.",
+      "classifiedAt": "2026-06-26T08:56:09.746Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:71:20:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition filters out files whose paths start with '..' or match a regex in TEST_FILE_RE. Mutating this to 'true' means the filter will always pass, potentially including files that should be excluded (e.g., parent directory paths or test files).",
+      "suggestedTest": "Write a test case that generates coverage data including a file path starting with '..' or matching TEST_FILE_RE to ensure the filter correctly excludes it.",
+      "classifiedAt": "2026-06-26T08:56:15.591Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:71:20:IWYuZmlsZS5zdGFydHNXaXRoKCcuLicpIHx8ICFURVNUX0ZJTEVfUkUudGVzdChmLmZpbGUp": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original condition `f.file.startsWith('..') && !TEST_FILE_RE.test(f.file)` filters out files starting with '..' OR files matching TEST_FILE_RE. The mutation changes this to `!f.file.startsWith('..') || !TEST_FILE_RE.test(f.file)`, which is logically different. Specifically, the original excluded files starting with '..' even if they matched the regex, whereas the mutant includes them if they match the regex.",
+      "suggestedTest": "Test with a file path that starts with '..' and also matches TEST_FILE_RE to ensure the mutant's inclusion logic is correctly filtered out.",
+      "classifiedAt": "2026-06-26T08:56:23.013Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:71:21:Zi5maWxlLmVuZHNXaXRoKCcuLicp": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The original code filters out files whose relative path starts with '..', likely to exclude parent directories or paths outside the scope of the current test run. The mutation changes this to check if the path ends with '..', which is a different logical condition that could allow paths that should be excluded or exclude paths that should be included.",
+      "suggestedTest": "Add a unit test that processes a list of file paths, including one that starts with '..' and one that ends with '..', to ensure the filtering logic behaves as expected for both conditions.",
+      "classifiedAt": "2026-06-26T08:56:29.331Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:72:13:e30": {
+      "verdict": "equivalent",
+      "confidence": 0.95,
+      "reason": "The original code uses `.catch(() => {})` to suppress errors from `rm()`, ensuring the function continues execution even if directory removal fails. The mutation replaces this with `{}` which is syntactically invalid in this context (it's not a valid replacement for the promise chain), but assuming the intent was to remove the error handling, the functional outcome (ignoring removal errors) is equivalent to the original.",
+      "suggestedTest": "",
+      "classifiedAt": "2026-06-26T08:56:35.383Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:73:23:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes the options passed to `rm` from `{ recursive: true, force: true }` to `{}`. This removes the explicit instruction to recursively remove the directory and to force removal if it doesn't exist or is not empty. If the directory is non-empty or not recursively traversable, the original code would succeed, but the mutant might fail or behave differently.",
+      "suggestedTest": "Test the cleanup logic by creating a temporary directory structure that requires recursive removal and force flag to ensure the mutant's behavior matches the original.",
+      "classifiedAt": "2026-06-26T08:56:41.733Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:73:36:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a boolean literal from `true` to `false` on line 73, which controls the execution of `rm(lcovDir, { recursive: true, force: true }).catch(() => {})`. If this line is reached, the directory cleanup happens. Changing it to `false` means the cleanup is skipped, which could affect subsequent test runs or state if the directory is not cleaned up correctly.",
+      "suggestedTest": "Write a test case that verifies the state of the filesystem after the function runs, specifically checking that the temporary directory `lcovDir` is removed.",
+      "classifiedAt": "2026-06-26T08:56:48.646Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:73:49:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The mutation changes a boolean literal from `true` to `false` on line 73, which controls the execution of `rm(lcovDir, { recursive: true, force: true }).catch(() => {})`. This means the cleanup of the temporary directory `lcovDir` might be skipped if the original code intended to always clean up.",
+      "suggestedTest": "Write a test case that forces the execution path leading to line 73, ensuring that the temporary directory is removed after the function completes, even if an error occurs during processing.",
+      "classifiedAt": "2026-06-26T08:56:55.304Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlteLl0kfFsvXFxddGVzdHM_Wy9cXF0v": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex is used to identify test files. The mutation changes `[^.]+` to `[^.]`, which means it will incorrectly match files ending in `.test.js` if the original regex was intended to match only extensions like `.test` or `.spec` followed by nothing else, or if it was meant to capture extensions like `.test.js` correctly.",
+      "suggestedTest": "Provide a test case that includes a file name matching the original regex but failing the mutated regex, such as 'my.test.js' or 'my.spec.ts'.",
+      "classifiedAt": "2026-06-26T08:57:01.689Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlteLl0rfFsvXFxddGVzdHM_Wy9cXF0v": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T08:57:19.397Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlteLl0rJHxbXi9cXF10ZXN0cz9bL1xcXS8": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex is used to identify test files or directories within the lcov.info content. The mutation changes the second part of the OR condition from matching a path segment like `[/\\]tests?[/\\]/` to `[^/\\\\]tests?[/\\\\]/`, which incorrectly matches any sequence not containing a path separator before 'tests'. This could cause incorrect file identification.",
+      "suggestedTest": "Provide lcov.info content that contains a directory structure matching the original pattern but not the mutated pattern, or vice versa, to ensure correct file path parsing.",
+      "classifiedAt": "2026-06-26T08:57:25.922Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlsuXSskfFsvXFxddGVzdHM_Wy9cXF0v": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex is used to identify test files/directories within the lcov.info content. The mutation changes `[^.]+` (one or more non-dot characters) to `.` (a literal dot), which fundamentally changes how file extensions are matched, potentially missing valid test files.",
+      "suggestedTest": "Provide an input string containing lcov.info data that includes a test file name ending in a non-dot extension (e.g., 'my.testfile').",
+      "classifiedAt": "2026-06-26T08:57:31.689Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlteLl0rJHxbL1xcXXRlc3RzWy9cXF0v": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex is used to identify test files/directories within the lcov.info content. The mutation removes the optional 's?' quantifier from 'tests?', changing the pattern from matching 'tests' or 'test' directories to only matching 'tests'. This could incorrectly filter out test files/directories named 'test' if they are not at the root level or if the original regex was intended to be more permissive.",
+      "suggestedTest": "Provide an input string to parseLcovPerFile that contains a path matching the original regex but not the mutated one (e.g., a directory named 'test/').",
+      "classifiedAt": "2026-06-26T08:57:38.364Z"
+    },
+    "b9287c9573e98acd186f29d98d9da98fa46cb1ef:13:22:L1wuKHRlc3R8c3BlYylcLlteLl0rJHxbL1xcXXRlc3RzP1teL1xcXS8": {
+      "verdict": "worth-testing",
+      "confidence": 0.95,
+      "reason": "The regex is used to identify test files or directories within the lcov.info content. The mutation changes the path segment matching from `[/\\]tests?[/\\]` to `[/\\]tests?[^/\\\\]`, which alters how directory paths containing 'tests' are matched. This logic needs testing.",
+      "suggestedTest": "Provide lcov.info content that contains a directory path matching the original regex but not the mutated one, or vice versa.",
+      "classifiedAt": "2026-06-26T08:57:44.112Z"
+    }
+  }
+}

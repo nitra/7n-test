@@ -34,7 +34,8 @@
     "access": "public"
   },
   "scripts": {
-    "start": "bun ./bin/n.js"
+    "start": "bun ./bin/n.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "^3.23.0"
