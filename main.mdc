@@ -1,0 +1,12 @@
+# Project Documentation
+
+This document links the canonical templates required by the npm module rules.
+
+Canonical template references:
+
+- [policy/npm_package_json/template/package.json.snippet.json](policy/npm_package_json/template/package.json.snippet.json)
+- [policy/npm_publish_yml/template/npm-publish.yml.snippet.yml](policy/npm_publish_yml/template/npm-publish.yml.snippet.yml)
+- [policy/root_package_json/template/package.json.snippet.json](policy/root_package_json/template/package.json.snippet.json)
+- [policy/emit_types_config/template/tsconfig.emit-types.json.snippet.json](policy/emit_types_config/template/tsconfig.emit-types.json.snippet.json)
+- [policy/lint_security_yml/template/lint-security.yml.snippet.yml](policy/lint_security_yml/template/lint-security.yml.snippet.yml)
+- [policy/package_json/template/package.json.deny.json](policy/package_json/template/package.json.deny.json)

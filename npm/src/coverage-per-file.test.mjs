@@ -25,35 +25,97 @@ LH:0
 end_of_record
 `
 
+const SAMPLE_JSON_RESULTS = JSON.stringify({
+  testResults: [
+    {
+      testFilePath: '/proj/src/a.test.js',
+      status: 'passed',
+      assertionResults: [{ status: 'passed', title: 'works', ancestorTitles: [] }]
+    }
+  ]
+})
+
+const SAMPLE_JSON_RESULTS_FAILING = JSON.stringify({
+  testResults: [
+    {
+      testFilePath: '/proj/src/b.test.js',
+      status: 'failed',
+      assertionResults: [
+        {
+          status: 'failed',
+          title: 'does something',
+          ancestorTitles: ['b'],
+          failureMessages: ['Expected 1 to equal 2']
+        }
+      ]
+    }
+  ]
+})
+
 describe('coverage-per-file.mjs', () => {
   beforeEach(() => vi.clearAllMocks())
 
   describe('measureCoveragePerFile', () => {
-    it('returns per-file data from lcov.info', async () => {
+    it('returns { files, failingTests } from lcov.info and json results', async () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readFileSync).mockReturnValue(SAMPLE_LCOV)
+      vi.mocked(readFileSync).mockImplementation(p => {
+        if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS
+        return SAMPLE_LCOV
+      })
       vi.mocked(rm).mockResolvedValue(undefined)
 
       const result = await measureCoveragePerFile('/proj')
 
       expect(vi.mocked(spawnSync)).toHaveBeenCalledWith(
         'bunx',
-        expect.arrayContaining(['vitest', 'run', '--coverage', '--coverage.reporter=lcov']),
+        expect.arrayContaining(['vitest', 'run', '--coverage', '--coverage.reporter=lcov', '--reporter=json']),
         expect.objectContaining({ cwd: '/proj' })
       )
-      expect(result).toHaveLength(2)
-      expect(result[0].pct).toBe(80)
-      expect(result[1].pct).toBe(0)
+      expect(result).toHaveProperty('files')
+      expect(result).toHaveProperty('failingTests')
+      expect(result.files).toHaveLength(2)
+      expect(result.files[0].pct).toBe(80)
+      expect(result.files[1].pct).toBe(0)
+      expect(result.failingTests).toHaveLength(0)
     })
 
-    it('returns [] when lcov.info is missing', async () => {
+    it('returns failing tests when json reports failures', async () => {
+      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockReturnValue(true)
+      vi.mocked(readFileSync).mockImplementation(p => {
+        if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS_FAILING
+        return SAMPLE_LCOV
+      })
+      vi.mocked(rm).mockResolvedValue(undefined)
+
+      const result = await measureCoveragePerFile('/proj')
+
+      expect(result.failingTests).toHaveLength(1)
+      expect(result.failingTests[0].file).toBe('src/b.test.js')
+      expect(result.failingTests[0].errors[0]).toContain('b > does something')
+    })
+
+    it('returns { files: [], failingTests: [] } when lcov.info is missing and no json', async () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(false)
       vi.mocked(rm).mockResolvedValue(undefined)
 
       const result = await measureCoveragePerFile('/proj')
-      expect(result).toEqual([])
+      expect(result).toEqual({ files: [], failingTests: [] })
+    })
+
+    it('returns failingTests even when lcov.info is missing', async () => {
+      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockImplementation(p =>
+        String(p).endsWith('test-results.json')
+      )
+      vi.mocked(readFileSync).mockImplementation(() => SAMPLE_JSON_RESULTS_FAILING)
+      vi.mocked(rm).mockResolvedValue(undefined)
+
+      const result = await measureCoveragePerFile('/proj')
+      expect(result.files).toEqual([])
+      expect(result.failingTests).toHaveLength(1)
     })
   })
 

@@ -14,7 +14,7 @@
 import { measureCoveragePerFile, getUncoveredFiles } from './coverage-per-file.mjs'
 import { assessNeed } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
-import { fixFailingTests, getFailingTests } from './fix-tests.mjs'
+import { fixFailingTests } from './fix-tests.mjs'
 import { runCoverageSteps } from './coverage/coverage.mjs'
 import { withLock } from './scripts/utils/with-lock.mjs'
 
@@ -34,14 +34,15 @@ export async function runAutoTest(dir, opts = {}) {
   for (let i = 1; i <= MAX_ITERATIONS; i++) {
     console.log(`\n── Ітерація ${i}/${MAX_ITERATIONS}: coverage ──\n`)
 
-    const allFiles = await measureCoveragePerFile(dir)
+    const { files: allFiles, failingTests } = await measureCoveragePerFile(dir)
+
+    if (failingTests.length > 0) {
+      console.log(`\n── ${failingTests.length} тестів падають — виправляю (pi agent) ──\n`)
+      const { remaining } = await fixFailingTests(dir, { failures: failingTests })
+      if (remaining === 0) continue
+    }
+
     if (allFiles.length === 0) {
-      const failures = await getFailingTests(dir)
-      if (failures.length > 0) {
-        console.log(`\n── ${failures.length} тестів падають — виправляю (pi agent) ──\n`)
-        const { remaining } = await fixFailingTests(dir, { failures })
-        if (remaining === 0) continue
-      }
       console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
       break
     }

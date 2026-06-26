@@ -1,0 +1,10 @@
+---
+description: Головний індекс шаблонів і політик правил
+alwaysApply: false
+version: '1.0'
+---
+
+# Main
+
+- [package.json deny template](./policy/package_json/template/package.json.deny.json)
+- [bunfig template](./policy/bunfig/template/bunfig.toml.snippet.toml)
