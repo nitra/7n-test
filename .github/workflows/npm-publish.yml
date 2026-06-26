@@ -61,5 +61,5 @@ jobs:
       - name: Publish package
         uses: JS-DevTools/npm-publish@v4.1.5
         with:
-          token: ${{ secrets.NPM_TOKEN }}
           package: npm/package.json
+          provenance: true
