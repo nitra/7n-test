@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.2] - 2026-06-26
+
+### Fixed
+
+- Виправлено відсутність `src/coverage/coverage.mjs` у npm-пакеті: директорія ігнорувалась git через паттерн `**/coverage/` у `.gitignore`. Додано виняток `!npm/src/coverage/`.
+
 ## [0.3.1] - 2026-06-26
 
 ### Changed
