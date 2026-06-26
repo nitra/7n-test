@@ -15,15 +15,18 @@ import { createAgentSession, SessionManager } from '@earendil-works/pi-coding-ag
  * @param {string} prompt
  * @param {object} [opts]
  * @param {string} [opts.cwd]
+ * @param {string} [opts.model] provider/model-id passed to pi (e.g. "openai/gpt-4o"); omit for pi default
  * @returns {Promise<string>}
  */
 export async function callText(prompt, opts = {}) {
   const cwd = opts.cwd ?? process.cwd()
-  const { session } = await createAgentSession({
+  const sessionOpts = {
     tools: [],
     sessionManager: SessionManager.inMemory(cwd),
-    cwd
-  })
+    cwd,
+    ...(opts.model ? { model: opts.model } : {})
+  }
+  const { session } = await createAgentSession(sessionOpts)
 
   await session.prompt(prompt)
 

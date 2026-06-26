@@ -1,6 +1,6 @@
 {
   "name": "@7n/test",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI-утиліта @7n/test",
   "keywords": [
     "7n",
@@ -23,6 +23,7 @@
   "files": [
     "bin",
     "src",
+    "!src/**/*.test.mjs",
     "CHANGELOG.md",
     "README.md",
     "types"
@@ -38,6 +39,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@earendil-works/pi-coding-agent": "^0.80.2",
     "zod": "^3.23.0"
   },
   "engines": {
