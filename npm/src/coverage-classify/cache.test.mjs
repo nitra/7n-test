@@ -30,7 +30,9 @@ describe('cache.mjs', () => {
 
     it('falls back to sha256 when git fails', () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(execFileSync).mockImplementation(() => { throw new Error('git error') })
+      vi.mocked(execFileSync).mockImplementation(() => {
+        throw new Error('git error')
+      })
       vi.mocked(readFileSync).mockReturnValue('content')
       const hash = deriveBlobHash(FILE)
       expect(typeof hash).toBe('string')

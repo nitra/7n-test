@@ -62,7 +62,7 @@ describe('coverage-per-file.mjs', () => {
       const files = [
         { file: 'a.js', pct: 79 },
         { file: 'b.js', pct: 80 },
-        { file: 'd.js', pct: 50 },
+        { file: 'd.js', pct: 50 }
       ]
       const result = getUncoveredFiles(files, 80)
       expect(result.map(f => f.file)).toEqual(['a.js', 'd.js'])

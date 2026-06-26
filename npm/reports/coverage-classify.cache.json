@@ -1901,6 +1901,1092 @@
       "confidence": 0,
       "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
       "classifiedAt": "2026-06-26T09:26:56.263Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:16:29:L1wuW14uXSsv": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:22.472Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:16:29:L1wuW14uXSQv": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:22.912Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:16:29:L1wuWy5dKyQv": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:23.336Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:16:41:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:23.759Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:17:38:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:24.181Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:16:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:24.603Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:16:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:25.024Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:16:bGFzdFNsYXNoICE9PSAtMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:25.447Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:30:KzE": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:25.863Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:42:YmFzZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:26.279Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:18:53:bGFzdFNsYXNoIC0gMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:26.721Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:19:15:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:27.132Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:19:15:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:27.553Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:19:15:bGFzdFNsYXNoICE9PSAtMQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:27.992Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:19:29:KzE": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:28.416Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:19:39:YmFzZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:28.843Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:21:5:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:29.271Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:22:5:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:29.703Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:23:16:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:30.116Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:69:25:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:30.527Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:71:58:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:30.951Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:77:37:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:31.372Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:49:11:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:31.787Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:48:39:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:32.213Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:49:11:Y29udGVudC5sZW5ndGggPj0gTUFYX1NSQ19CWVRFUw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:32.629Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:49:53:Y29udGVudA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:33.046Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:53:44:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:33.454Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:56:11:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:33.876Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:134:22:b3B0cy5jYWxsVGV4dCAmJiBjYWxsVGV4dA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:34.306Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:137:15:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:34.727Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:140:17:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:35.149Z"
+    },
+    "30795848ccbfa29ac5c271fe3db3de3e4bdbae44:132:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:35.565Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:11:23:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:35.997Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:39:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:36.425Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:39:7:Y29udGVudC5sZW5ndGggPj0gTUFYX0NPTlRFTlRfQllURVM": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:36.842Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:39:53:Y29udGVudA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:37.258Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:42:5:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:37.677Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:48:30:L1x7W1xTXFNdKj8ibmVlZHNUZXN0cyJbXHNcU10qP1x9Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:38.106Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:48:30:L1x7W1xzXHNdKj8ibmVlZHNUZXN0cyJbXHNcU10qP1x9Lw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:38.531Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:49:45:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:38.956Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:49:31:bWF0Y2hbMF0": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:39.367Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:54:67:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:39.777Z"
+    },
+    "a856c0c1a9309f8d3f1d032b6aaa14ce9c121fd1:57:80:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:40.197Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:33:47:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:40.630Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:33:57:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:41.045Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:33:67:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:41.472Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:97:5:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:41.892Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:99:5:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:42.311Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:110:16:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:42.727Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:110:42:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:43.155Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:110:95:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:43.583Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:113:18:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:44.002Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:110:46:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:44.427Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:113:43:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:44.852Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:113:47:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:45.270Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:113:86:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:45.692Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:117:11:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:46.110Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:119:11:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:46.528Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:122:11:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:46.943Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:121:11:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:47.373Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:123:11:Z3JvdXAuZXhhbXBsZVRlc3QuY29kZSAmJiAnJw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:47.789Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:124:11:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:48.220Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:127:11:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:48.650Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:128:20:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:49.068Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:127:37:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:49.499Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:127:11:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:49.926Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:128:24:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:50.351Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:128:54:IlN0cnlrZXIgd2FzIGhlcmUhIg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:50.776Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:133:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:51.202Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:133:7:YWxsb3dlZEdhcHMubGVuZ3RoID49IDA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:51.627Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:133:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:52.039Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:133:7:YWxsb3dlZEdhcHMubGVuZ3RoIDw9IDA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:52.477Z"
+    },
+    "859f91b81803a2a162e8de2b2875074882c425ff:166:24:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:52.917Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:42:31:KCkgPT4gdW5kZWZpbmVk": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:53.985Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:42:52:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:54.420Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:43:29:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:54.846Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:23:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:55.270Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:43:30:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:55.688Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:30:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:56.110Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:58:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:56.541Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:29:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:56.967Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:74:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:57.385Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:84:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:57.809Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:92:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:58.232Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:45:15:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:58.662Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:44:107:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:59.081Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:49:63:ci5zdGRlcnI_LnNsaWNlKDAsIDMwMCkgJiYgJyc": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:59.505Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:49:63:ci5zdGRlcnI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:17:59.921Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:50:10:ci5zdGRvdXQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:00.364Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:49:63:ci5zdGRlcnIuc2xpY2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:00.797Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:50:10:ci5zdGRvdXQudHJpbQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:01.226Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:64:26:Y2FsbGVyICYmIGVudi5OX0NVUlNPUl9UUkFDRV9DQUxMRVI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:01.656Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:64:26:KGNhbGxlciA_PyBlbnYuTl9DVVJTT1JfVFJBQ0VfQ0FMTEVSKSAmJiAndW5rbm93bic": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:02.074Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:64:65:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:02.500Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:99:13:RGF0ZS5ub3coKSArIHQw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:02.916Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:101:13:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:03.338Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:86:24:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:03.764Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:108:24:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:04.187Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:116:13:RGF0ZS5ub3coKSArIHQw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:04.611Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:118:13:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:05.028Z"
+    },
+    "8a3b352db4e0c4cbac2ab7d59e362f8f14cd0ce6:119:16:U3RyaW5nKGVycm9yLm1lc3NhZ2Up": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:05.451Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:38:7:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:06.038Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:40:9:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:06.458Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:56:9:Y29udGVudC5sZW5ndGggPj0gTUFYX01TR19DSEFSUw": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:06.883Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:55:21:bS5jb250ZW50": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:07.306Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:60:20:bS5yb2xl": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:07.724Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:62:38:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:08.150Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:62:83:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:08.575Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:103:20:aS5maW5pc2hSZWFzb24gJiYgbnVsbA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:08.991Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:102:23:aS5yZWFzb25pbmdTb3VyY2UgJiYgbnVsbA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:09.416Z"
+    },
+    "2ee3c39014458244b30835aa00c811335a9472a8:104:12:aS51c2FnZSAmJiBudWxs": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:09.841Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:41:71:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:10.291Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:41:62:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:10.716Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:41:89:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:11.151Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:42:12:c2V0dGluZ3MuYXV0aA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:11.575Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:42:12:c2V0dGluZ3M_LmF1dGguYXBpX2tleQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:11.993Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:95:17:bWVzc2FnZS5yZWFzb25pbmdfY29udGVudA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:12.415Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:96:16:ZmllbGQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:12.831Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:97:19:bWVzc2FnZS5jb250ZW50": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:13.257Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:99:30:bVsxXQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:13.671Z"
+    },
+    "b28041482f887fe73aaa859841cdc51c798d6e13:100:36:Y29udGVudA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:14.089Z"
+    },
+    "a45b908abd2e9f298528662eb613425f8c686ac7:35:42:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:14.509Z"
+    },
+    "a45b908abd2e9f298528662eb613425f8c686ac7:57:7:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:14.930Z"
+    },
+    "f1ad2d5a6e65b303d0a4618c7a58bc242e6e8da2:53:7:RGF0ZS5ub3coKSAtIHJlc3VsdC5maW5pc2hlZEF0ID4gdHRs": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:15.350Z"
+    },
+    "129d753b38db68b29a30af2f916d966f6ab757c3:36:10:bGFzdC5jb250ZW50": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:15.765Z"
+    },
+    "129d753b38db68b29a30af2f916d966f6ab757c3:37:18:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:16.194Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:32:19:aSA8IE1BWF9JVEVSQVRJT05T": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:16.623Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:32:40:aS0t": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:17.069Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:28:15:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:17.495Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:37:19:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:17.928Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:33:17:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:18.349Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:43:19:Y292ZXJlZCAqIGFsbEZpbGVzLmxlbmd0aA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:18.775Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:43:18:Y292ZXJlZCAvIGFsbEZpbGVzLmxlbmd0aCAvIDEwMA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:19.187Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:42:21:YWxsRmlsZXMubGVuZ3RoICsgdW5jb3ZlcmVkLmxlbmd0aA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:19.609Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:45:17:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:20.027Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:48:19:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:20.457Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:53:19:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:20.881Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:58:17:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:21.295Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:63:19:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:21.714Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:67:17:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:22.624Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:68:33:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:23.047Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:69:19:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:23.461Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:75:15:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:23.882Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:76:31:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:24.304Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:78:17:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:24.731Z"
+    },
+    "5a7da48e5cb633a66a6ee9dc8556a22293578c58:79:21:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:25.149Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:26:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:25.572Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:19:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:25.990Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:40:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:26.417Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:27:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:26.837Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:61:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:27.264Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:28:78:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:27.680Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:29:21:dHJ1ZQ": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:28.097Z"
+    },
+    "49081682c288fe054db9c33238528d8262467dcd:29:21:ci5zdGF0dXMgPT09IDAgfHwgIXIuZXJyb3I": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:28.528Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:15:21:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:28.951Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:15:34:e30": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:29.377Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:15:46:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:29.795Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:16:9:ci5zdGF0dXMgIT09IDAgJiYgci5lcnJvcg": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:30.210Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:16:9:ZmFsc2U": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:30.635Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:16:52:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:31.064Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:21:42:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:31.479Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:22:26:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:31.894Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:21:24:Z2l0KFsncmV2LXBhcnNlJywgJ0hFQUQnXSk": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:32.324Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:21:28:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:32.749Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:22:35:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:33.172Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:21:29:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:33.596Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:22:27:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:34.016Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:25:31:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:34.439Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:25:30:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:34.857Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:25:49:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:35.283Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:25:43:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:35.702Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:26:28:dW50cmFja2VkUmF3LnNwbGl0KCdcMCcp": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:36.117Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:25:61:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:36.544Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:27:51:Z2l0KFsnaGFzaC1vYmplY3QnLCBmXSk": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:36.958Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:26:47:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:37.385Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:27:38:KCkgPT4gdW5kZWZpbmVk": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:37.801Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:27:43:YGA": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:38.228Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:27:55:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:38.642Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:27:56:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:39.058Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:28:17:W10": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:39.485Z"
+    },
+    "e4887ce67b69a820c3de9959b0d54ea6b7c92dd0:28:55:IiI": {
+      "verdict": "worth-testing",
+      "confidence": 0,
+      "reason": "LLM-classification unavailable, conservative fallback (treat as worth-testing)",
+      "classifiedAt": "2026-06-26T11:18:39.911Z"
     }
   }
 }

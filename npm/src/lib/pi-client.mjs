@@ -22,7 +22,7 @@ export async function callText(prompt, opts = {}) {
   const { session } = await createAgentSession({
     tools: [],
     sessionManager: SessionManager.inMemory(cwd),
-    cwd,
+    cwd
   })
 
   await session.prompt(prompt)
@@ -51,7 +51,7 @@ export async function callAgent(prompt, cwd) {
   const { session } = await createAgentSession({
     tools: ['read', 'write', 'edit', 'bash', 'grep', 'find', 'ls'],
     sessionManager: SessionManager.inMemory(cwd),
-    cwd,
+    cwd
   })
 
   await session.prompt(prompt)

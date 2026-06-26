@@ -75,7 +75,7 @@ describe('assess-need.mjs', () => {
 
     const files = [
       { file: 'src/a.mjs', pct: 10 },
-      { file: 'src/b.mjs', pct: 20 },
+      { file: 'src/b.mjs', pct: 20 }
     ]
     const result = await assessNeed(files, DIR, { callText: mockCallText })
     expect(result).toHaveLength(2)

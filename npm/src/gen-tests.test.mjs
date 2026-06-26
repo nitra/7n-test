@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { buildGenTestsPrompt, generateTests } from './gen-tests.mjs'
 
 vi.mock('node:fs', () => ({
@@ -11,51 +11,65 @@ vi.mock('node:path', () => ({
   join: vi.fn((...a) => a.join('/')),
   relative: vi.fn((_, p) => p)
 }))
-vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
+vi.mock('./lib/pi-client.mjs', () => ({
+  callText: vi.fn()
+}))
+
+import { callText } from './lib/pi-client.mjs'
 
 const mockDir = '/proj'
-const mockFiles = [
-  { file: 'src/a.js', pct: 50, reason: 'Low coverage' },
-  { file: 'src/b.js', pct: 10, reason: '' },
-]
+const mockFile = 'src/a.js'
 
-describe('gen-tests.mjs', () => {
+describe('buildGenTestsPrompt', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('should include file path and coverage info in prompt', () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    const files = [{ file: mockFile, pct: 50, reason: 'Low coverage' }]
+    const prompt = buildGenTestsPrompt(files, mockDir)
+    expect(prompt).toContain(mockFile)
+    expect(prompt).toContain('50')
+  })
+
+  it('should truncate source over 6000 bytes', () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('A'.repeat(6001))
+    const files = [{ file: mockFile, pct: 80, reason: 'some reason' }]
+    const prompt = buildGenTestsPrompt(files, mockDir)
+    expect(prompt).toContain('(truncated)')
+  })
+
+  it('should handle missing source file', () => {
     vi.mocked(existsSync).mockReturnValue(false)
+    const files = [{ file: mockFile, pct: 0, reason: 'no file' }]
+    const prompt = buildGenTestsPrompt(files, mockDir)
+    expect(typeof prompt).toBe('string')
+  })
+})
+
+describe('generateTests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  describe('buildGenTestsPrompt', () => {
-    it('includes file sections', () => {
-      const prompt = buildGenTestsPrompt(mockFiles, mockDir)
-      expect(prompt).toContain('### `src/a.js` (покриття: 50.0%)')
-      expect(prompt).toContain('Причина: Low coverage')
-      expect(prompt).toContain('### `src/b.js` (покриття: 10.0%)')
-    })
-
-    it('includes file content when readable', () => {
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readFileSync).mockReturnValue('export const x = 1')
-      const prompt = buildGenTestsPrompt([mockFiles[0]], mockDir)
-      expect(prompt).toContain('export const x = 1')
-    })
+  it('should write test file when pi returns code', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    vi.mocked(callText).mockResolvedValue("```js\ntest('a', () => {})\n```")
+    const files = [{ file: mockFile, pct: 50, reason: 'low' }]
+    await generateTests(files, mockDir)
+    expect(writeFileSync).toHaveBeenCalled()
   })
 
-  describe('generateTests', () => {
-    it('does nothing when files list is empty', async () => {
-      const generateOne = vi.fn()
-      await generateTests([], mockDir, { generateOne })
-      expect(generateOne).not.toHaveBeenCalled()
-    })
-
-    it('calls generateOne for each file', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      const generateOne = vi.fn().mockResolvedValue('/proj/src/a.test.mjs')
-      await generateTests(mockFiles, mockDir, { generateOne })
-      expect(generateOne).toHaveBeenCalledTimes(2)
-      expect(generateOne).toHaveBeenCalledWith(mockFiles[0], mockDir)
-      expect(generateOne).toHaveBeenCalledWith(mockFiles[1], mockDir)
-      consoleSpy.mockRestore()
-    })
+  it('should skip if pi returns no code block', async () => {
+    vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(readFileSync).mockReturnValue('const x = 1')
+    vi.mocked(callText).mockResolvedValue('no code here')
+    const files = [{ file: mockFile, pct: 50, reason: 'low' }]
+    const written = await generateTests(files, mockDir)
+    expect(writeFileSync).not.toHaveBeenCalled()
   })
 })

@@ -54,7 +54,12 @@ async function assessOne(fileInfo, dir, callTextFn) {
       reason: typeof parsed.reason === 'string' ? parsed.reason : ''
     }
   } catch {
-    return { file: fileInfo.file, pct: fileInfo.pct, needsTests: true, reason: 'оцінка не вдалась — вважаємо що потрібні тести' }
+    return {
+      file: fileInfo.file,
+      pct: fileInfo.pct,
+      needsTests: true,
+      reason: 'оцінка не вдалась — вважаємо що потрібні тести'
+    }
   }
 }
 

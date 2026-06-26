@@ -17,11 +17,7 @@ function testCandidates(file) {
   const lastSlash = base.lastIndexOf('/')
   const name = lastSlash === -1 ? base : base.slice(lastSlash + 1)
   const dir = lastSlash === -1 ? '' : base.slice(0, lastSlash)
-  return [
-    `${base}.test.mjs`,
-    `${base}.test.js`,
-    ...(dir ? [`${dir}/tests/${name}.test.mjs`] : [])
-  ]
+  return [`${base}.test.mjs`, `${base}.test.js`, ...(dir ? [`${dir}/tests/${name}.test.mjs`] : [])]
 }
 
 /**
@@ -41,19 +37,21 @@ function extractCode(text) {
  * @returns {string}
  */
 export function buildGenTestsPrompt(files, dir) {
-  return files.map(({ file, pct, reason }) => {
-    const absPath = join(dir, file)
-    let content = ''
-    if (existsSync(absPath)) {
-      content = readFileSync(absPath, 'utf8')
-      if (content.length > MAX_SRC_BYTES) content = content.slice(0, MAX_SRC_BYTES) + '\n...(truncated)'
-    }
-    return (
-      `### \`${file}\` (покриття: ${pct.toFixed(1)}%)\n` +
-      (reason ? `Причина: ${reason}\n\n` : '') +
-      (content ? `\`\`\`js\n${content}\n\`\`\`` : '(вміст недоступний)')
-    )
-  }).join('\n\n')
+  return files
+    .map(({ file, pct, reason }) => {
+      const absPath = join(dir, file)
+      let content = ''
+      if (existsSync(absPath)) {
+        content = readFileSync(absPath, 'utf8')
+        if (content.length > MAX_SRC_BYTES) content = content.slice(0, MAX_SRC_BYTES) + '\n...(truncated)'
+      }
+      return (
+        `### \`${file}\` (покриття: ${pct.toFixed(1)}%)\n` +
+        (reason ? `Причина: ${reason}\n\n` : '') +
+        (content ? `\`\`\`js\n${content}\n\`\`\`` : '(вміст недоступний)')
+      )
+    })
+    .join('\n\n')
 }
 
 function buildSingleFilePrompt(fileInfo, dir) {
@@ -88,7 +86,9 @@ function buildSingleFilePrompt(fileInfo, dir) {
     content || '(недоступно)',
     '```',
     existingSection
-  ].filter(Boolean).join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 /**

@@ -22,9 +22,10 @@ const COVERAGE_THRESHOLD = 80
 
 /**
  * @param {string} dir absolute path to project root
+ * @param {{ noMutation?: boolean }} [opts]
  * @returns {Promise<number>} exit code
  */
-export async function runAutoTest(dir) {
+export async function runAutoTest(dir, opts = {}) {
   console.log(`\n📁 ${dir}\n`)
 
   let prevUncoveredCount = Infinity
@@ -70,6 +71,11 @@ export async function runAutoTest(dir) {
     }
 
     await generateTests(needsTests, dir)
+  }
+
+  if (opts.noMutation) {
+    console.log('\n── Мутаційне тестування пропущено (--no-mutation) ──\n')
+    return 0
   }
 
   console.log('\n── Мутаційне тестування + автофікс ──\n')
