@@ -29,7 +29,7 @@ end_of_record
 const SAMPLE_JSON_RESULTS = JSON.stringify({
   testResults: [
     {
-      testFilePath: '/proj/src/a.test.js',
+      name: '/proj/src/a.test.js',
       status: 'passed',
       assertionResults: [{ status: 'passed', title: 'works', ancestorTitles: [] }]
     }
@@ -39,7 +39,7 @@ const SAMPLE_JSON_RESULTS = JSON.stringify({
 const SAMPLE_JSON_RESULTS_FAILING = JSON.stringify({
   testResults: [
     {
-      testFilePath: '/proj/src/b.test.js',
+      name: '/proj/src/b.test.js',
       status: 'failed',
       assertionResults: [
         {
@@ -121,7 +121,7 @@ describe('coverage-per-file.mjs', () => {
       const suiteErrorJson = JSON.stringify({
         testResults: [
           {
-            testFilePath: '/proj/src/index.test.mjs',
+            name: '/proj/src/index.test.mjs',
             status: 'failed',
             message: 'Error: vi.spyOn() can only spy on a function. Received object.',
             assertionResults: []

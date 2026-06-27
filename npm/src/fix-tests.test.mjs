@@ -26,7 +26,7 @@ const mockVitestResult = {
   numFailedTestSuites: 1,
   testResults: [
     {
-      testFilePath: '/proj/src/foo.test.mjs',
+      name: '/proj/src/foo.test.mjs',
       status: 'failed',
       assertionResults: [
         {
@@ -38,7 +38,7 @@ const mockVitestResult = {
       ]
     },
     {
-      testFilePath: '/proj/src/ok.test.mjs',
+      name: '/proj/src/ok.test.mjs',
       status: 'passed',
       assertionResults: []
     }
@@ -156,7 +156,7 @@ describe('fixFailingTests', () => {
       JSON.stringify({
         testResults: [
           {
-            testFilePath: '/proj/b.test.mjs',
+            name: '/proj/b.test.mjs',
             status: 'failed',
             assertionResults: [
               { ancestorTitles: [], title: 'still failing', status: 'failed', failureMessages: ['err'] }

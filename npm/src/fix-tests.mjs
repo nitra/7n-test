@@ -16,10 +16,7 @@ import { join, relative, dirname } from 'node:path'
 import { env } from 'node:process'
 
 const _require = createRequire(import.meta.url)
-const VITEST_BIN = join(
-  dirname(_require.resolve('vitest/package.json')),
-  'vitest.mjs'
-)
+const VITEST_BIN = join(dirname(_require.resolve('vitest/package.json')), 'vitest.mjs')
 
 const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? env.N_CLOUD_MAX_MODEL ?? ''
 const MAX_ERRORS_PER_FILE = 5
@@ -35,11 +32,15 @@ export async function getFailingTests(dir) {
   const outputFile = join(tmpDir, 'results.json')
 
   try {
-    spawnSync(process.execPath, [VITEST_BIN, 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'], {
-      cwd: dir,
-      stdio: 'inherit',
-      env
-    })
+    spawnSync(
+      process.execPath,
+      [VITEST_BIN, 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'],
+      {
+        cwd: dir,
+        stdio: 'inherit',
+        env
+      }
+    )
 
     if (!existsSync(outputFile)) return []
 
@@ -52,9 +53,8 @@ export async function getFailingTests(dir) {
 
     return (data.testResults ?? [])
       .filter(r => r.status === 'failed')
-      .map(r => ({
-        file: relative(dir, r.testFilePath),
-        errors: (r.assertionResults ?? [])
+      .map(r => {
+        const assertionErrors = (r.assertionResults ?? [])
           .filter(a => a.status === 'failed')
           .slice(0, MAX_ERRORS_PER_FILE)
           .map(a => {
@@ -62,8 +62,12 @@ export async function getFailingTests(dir) {
             const msg = (a.failureMessages?.[0] ?? '').split('\n').slice(0, MAX_ERROR_LINES).join('\n')
             return `${name}:\n${msg}`
           })
-      }))
-      .filter(f => !f.file.startsWith('..') && f.errors.length > 0)
+        const errors = assertionErrors.length > 0
+          ? assertionErrors
+          : [`Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`]
+        return { file: relative(dir, r.testFilePath ?? r.name), errors }
+      })
+      .filter(f => !f.file.startsWith('..'))
   } finally {
     await rm(tmpDir, { recursive: true, force: true }).catch(() => {})
   }

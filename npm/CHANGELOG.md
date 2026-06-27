@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.2] - 2026-06-27
+
+### Fixed
+
+- Виправлено парсинг JSON-репорту vitest 4.x: поле `name` замість `testFilePath` (breaking change у vitest JSON reporter). Наслідок: падаючі тести тепер коректно детектуються і передаються у fix-loop замість bootstrap.
+
 ## [0.7.1] - 2026-06-27
 
 ### Fixed

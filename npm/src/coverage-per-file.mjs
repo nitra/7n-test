@@ -13,10 +13,7 @@ import { join, relative, dirname } from 'node:path'
 import { env } from 'node:process'
 
 const _require = createRequire(import.meta.url)
-const VITEST_BIN = join(
-  dirname(_require.resolve('vitest/package.json')),
-  'vitest.mjs'
-)
+const VITEST_BIN = join(dirname(_require.resolve('vitest/package.json')), 'vitest.mjs')
 
 const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|[/\\]tests?[/\\]/
 const MAX_ERRORS_PER_FILE = 5
@@ -73,10 +70,13 @@ function parseFailingTests(jsonPath, dir) {
             return `${name}:\n${msg}`
           })
         // Module-level errors (import/syntax) produce no assertionResults
-        const errors = assertionErrors.length > 0
-          ? assertionErrors
-          : [`Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`]
-        return { file: relative(dir, r.testFilePath), errors }
+        const errors =
+          assertionErrors.length > 0
+            ? assertionErrors
+            : [
+                `Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`
+              ]
+        return { file: relative(dir, r.testFilePath ?? r.name), errors }
       })
       .filter(f => !f.file.startsWith('..'))
   } catch {
@@ -140,8 +140,19 @@ export function getUncoveredFiles(files, threshold = 80) {
 
 const SOURCE_EXT_RE = /\.(mjs|js|ts|vue|py)$/
 const IGNORE_DIRS = new Set([
-  'node_modules', 'dist', 'build', 'out', '.git', '__pycache__',
-  'coverage', '.cursor', '.claude', '.pi', 'docs', 'bin', 'reports'
+  'node_modules',
+  'dist',
+  'build',
+  'out',
+  '.git',
+  '__pycache__',
+  'coverage',
+  '.cursor',
+  '.claude',
+  '.pi',
+  'docs',
+  'bin',
+  'reports'
 ])
 
 /**
