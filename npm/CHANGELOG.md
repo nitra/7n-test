@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.1] - 2026-06-27
+
+### Fixed
+
+- `parseFailingTests` тепер коректно обробляє module-level помилки (import/syntax errors) — тести, що падають ще до запуску (`assertionResults: []`), більше не пропускаються, що усувало нескінченну bootstrap-петлю.
+
 ## [0.7.0] - 2026-06-27
 
 ### Added

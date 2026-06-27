@@ -116,6 +116,29 @@ describe('coverage-per-file.mjs', () => {
       expect(result.files).toEqual([])
       expect(result.failingTests).toHaveLength(1)
     })
+
+    it('detects module-level suite errors (empty assertionResults)', async () => {
+      const suiteErrorJson = JSON.stringify({
+        testResults: [
+          {
+            testFilePath: '/proj/src/index.test.mjs',
+            status: 'failed',
+            message: 'Error: vi.spyOn() can only spy on a function. Received object.',
+            assertionResults: []
+          }
+        ]
+      })
+      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
+      vi.mocked(readFileSync).mockImplementation(() => suiteErrorJson)
+      vi.mocked(rm).mockResolvedValue(undefined)
+
+      const result = await measureCoveragePerFile('/proj')
+      expect(result.failingTests).toHaveLength(1)
+      expect(result.failingTests[0].file).toBe('src/index.test.mjs')
+      expect(result.failingTests[0].errors[0]).toContain('Suite error')
+      expect(result.failingTests[0].errors[0]).toContain('vi.spyOn')
+    })
   })
 
   describe('getUncoveredFiles', () => {

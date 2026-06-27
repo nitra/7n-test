@@ -63,9 +63,8 @@ function parseFailingTests(jsonPath, dir) {
     const data = JSON.parse(readFileSync(jsonPath, 'utf8'))
     return (data.testResults ?? [])
       .filter(r => r.status === 'failed')
-      .map(r => ({
-        file: relative(dir, r.testFilePath),
-        errors: (r.assertionResults ?? [])
+      .map(r => {
+        const assertionErrors = (r.assertionResults ?? [])
           .filter(a => a.status === 'failed')
           .slice(0, MAX_ERRORS_PER_FILE)
           .map(a => {
@@ -73,8 +72,13 @@ function parseFailingTests(jsonPath, dir) {
             const msg = (a.failureMessages?.[0] ?? '').split('\n').slice(0, MAX_ERROR_LINES).join('\n')
             return `${name}:\n${msg}`
           })
-      }))
-      .filter(f => !f.file.startsWith('..') && f.errors.length > 0)
+        // Module-level errors (import/syntax) produce no assertionResults
+        const errors = assertionErrors.length > 0
+          ? assertionErrors
+          : [`Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`]
+        return { file: relative(dir, r.testFilePath), errors }
+      })
+      .filter(f => !f.file.startsWith('..'))
   } catch {
     return []
   }
