@@ -3,7 +3,8 @@ import { runAutoTest } from './run.mjs'
 
 vi.mock('./coverage-per-file.mjs', () => ({
   measureCoveragePerFile: vi.fn(),
-  getUncoveredFiles: vi.fn()
+  getUncoveredFiles: vi.fn(),
+  findSourceFiles: vi.fn()
 }))
 vi.mock('./assess-need.mjs', () => ({ assessNeed: vi.fn() }))
 vi.mock('./gen-tests.mjs', () => ({ generateTests: vi.fn() }))
@@ -11,7 +12,7 @@ vi.mock('./fix-tests.mjs', () => ({ fixFailingTests: vi.fn() }))
 vi.mock('./coverage/coverage.mjs', () => ({ runCoverageSteps: vi.fn() }))
 vi.mock('./scripts/utils/with-lock.mjs', () => ({ withLock: vi.fn() }))
 
-import { measureCoveragePerFile, getUncoveredFiles } from './coverage-per-file.mjs'
+import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
 import { assessNeed } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
 import { fixFailingTests } from './fix-tests.mjs'
@@ -30,6 +31,7 @@ describe('runAutoTest', () => {
     vi.mocked(withLock).mockImplementation(async (key, fn) => fn())
     vi.mocked(runCoverageSteps).mockResolvedValue(0)
     vi.mocked(fixFailingTests).mockResolvedValue({ count: 0, fixed: 0, remaining: 0 })
+    vi.mocked(findSourceFiles).mockResolvedValue([])
   })
 
   it('should complete successfully when all files meet the coverage threshold', async () => {
@@ -101,6 +103,35 @@ describe('runAutoTest', () => {
 
     expect(getUncoveredFiles).not.toHaveBeenCalled()
     expect(assessNeed).not.toHaveBeenCalled()
+  })
+
+  it('should bootstrap tests when no coverage and no failing tests', async () => {
+    vi.mocked(measureCoveragePerFile)
+      .mockResolvedValueOnce(coverageResult([]))
+      .mockResolvedValueOnce(coverageResult([{ file: 'src/a.js', pct: 90 }]))
+    vi.mocked(findSourceFiles).mockResolvedValue(['src/a.js'])
+    vi.mocked(assessNeed).mockResolvedValueOnce([{ file: 'src/a.js', pct: 0, needsTests: true, reason: 'no tests' }])
+    vi.mocked(getUncoveredFiles).mockReturnValue([])
+
+    await runAutoTest(mockDir)
+
+    expect(findSourceFiles).toHaveBeenCalledWith(mockDir)
+    expect(assessNeed).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ file: 'src/a.js', pct: 0 })]),
+      mockDir
+    )
+    expect(generateTests).toHaveBeenCalledTimes(1)
+    expect(measureCoveragePerFile).toHaveBeenCalledTimes(2)
+  })
+
+  it('should stop bootstrap when LLM says no files need tests', async () => {
+    vi.mocked(measureCoveragePerFile).mockResolvedValue(coverageResult([]))
+    vi.mocked(findSourceFiles).mockResolvedValue(['src/a.js'])
+    vi.mocked(assessNeed).mockResolvedValue([{ file: 'src/a.js', pct: 0, needsTests: false }])
+
+    await runAutoTest(mockDir)
+
+    expect(generateTests).not.toHaveBeenCalled()
   })
 
   it('should fix failing tests and retry when tests fail', async () => {

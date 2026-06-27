@@ -1,11 +1,11 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
-import { measureCoveragePerFile, getUncoveredFiles } from './coverage-per-file.mjs'
+import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
 
 vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn() }))
-vi.mock('node:fs/promises', () => ({ mkdtemp: vi.fn(), rm: vi.fn() }))
+vi.mock('node:fs/promises', () => ({ mkdtemp: vi.fn(), rm: vi.fn(), readdir: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
 vi.mock('node:path', () => ({
@@ -131,6 +131,48 @@ describe('coverage-per-file.mjs', () => {
 
     it('returns [] when all files meet threshold', () => {
       expect(getUncoveredFiles([{ file: 'a.js', pct: 100 }], 80)).toEqual([])
+    })
+  })
+
+  describe('findSourceFiles', () => {
+    function makeEntry(name, isDirectory = false) {
+      return { name, isDirectory: () => isDirectory, isFile: () => !isDirectory }
+    }
+
+    it('returns source files excluding tests and node_modules', async () => {
+      vi.mocked(readdir)
+        .mockResolvedValueOnce([
+          makeEntry('src', true),
+          makeEntry('node_modules', true),
+          makeEntry('index.js')
+        ])
+        .mockResolvedValueOnce([
+          makeEntry('a.mjs'),
+          makeEntry('a.test.mjs'),
+          makeEntry('b.ts')
+        ])
+
+      const result = await findSourceFiles('/proj')
+      expect(result).toContain('index.js')
+      expect(result).toContain('src/a.mjs')
+      expect(result).toContain('src/b.ts')
+      expect(result).not.toContain('src/a.test.mjs')
+      expect(result.some(f => f.includes('node_modules'))).toBe(false)
+    })
+
+    it('returns empty array when no source files exist', async () => {
+      vi.mocked(readdir).mockResolvedValue([])
+      const result = await findSourceFiles('/proj')
+      expect(result).toEqual([])
+    })
+
+    it('skips hidden directories', async () => {
+      vi.mocked(readdir).mockResolvedValueOnce([
+        makeEntry('.git', true),
+        makeEntry('src.js')
+      ])
+      const result = await findSourceFiles('/proj')
+      expect(result).toEqual(['src.js'])
     })
   })
 })

@@ -6,7 +6,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 import { join, relative, dirname } from 'node:path'
@@ -132,4 +132,42 @@ export async function measureCoveragePerFile(dir) {
  */
 export function getUncoveredFiles(files, threshold = 80) {
   return files.filter(f => f.pct < threshold)
+}
+
+const SOURCE_EXT_RE = /\.(mjs|js|ts|vue|py)$/
+const IGNORE_DIRS = new Set([
+  'node_modules', 'dist', 'build', 'out', '.git', '__pycache__',
+  'coverage', '.cursor', '.claude', '.pi', 'docs', 'bin', 'reports'
+])
+
+/**
+ * Recursively finds source code files in a directory, excluding tests and
+ * ignored directories. Used for bootstrap when no coverage data exists.
+ *
+ * @param {string} dir project root
+ * @returns {Promise<string[]>} relative paths to source files
+ */
+export async function findSourceFiles(dir) {
+  const results = []
+
+  async function walk(current, relBase) {
+    let entries
+    try {
+      entries = await readdir(current, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const rel = relBase ? `${relBase}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        if (!IGNORE_DIRS.has(entry.name)) await walk(join(current, entry.name), rel)
+      } else if (entry.isFile() && SOURCE_EXT_RE.test(entry.name) && !TEST_FILE_RE.test(rel)) {
+        results.push(rel)
+      }
+    }
+  }
+
+  await walk(dir, '')
+  return results
 }

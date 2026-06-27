@@ -11,7 +11,7 @@
  *   5. Mutation testing via existing coverage providers (requires .n-cursor.json#rules).
  *   6. Auto-fix survived mutants via pi agent.
  */
-import { measureCoveragePerFile, getUncoveredFiles } from './coverage-per-file.mjs'
+import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
 import { assessNeed } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
 import { fixFailingTests } from './fix-tests.mjs'
@@ -43,8 +43,28 @@ export async function runAutoTest(dir, opts = {}) {
     }
 
     if (allFiles.length === 0) {
-      console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
-      break
+      if (failingTests.length > 0) {
+        console.log('⚠ Тести падають, але coverage все одно порожня — зупиняю цикл.')
+        break
+      }
+      // Bootstrap: no tests at all — scan source files and generate initial tests
+      const sourceFiles = await findSourceFiles(dir)
+      if (sourceFiles.length === 0) {
+        console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
+        break
+      }
+      console.log(`\n── Bootstrap: ${sourceFiles.length} файлів без тестів — оцінюю потребу ──\n`)
+      const bootstrapFiles = sourceFiles.map(f => ({ file: f, pct: 0 }))
+      const assessed = await assessNeed(bootstrapFiles, dir)
+      const needsTests = assessed.filter(f => f.needsTests)
+      if (needsTests.length === 0) {
+        console.log('✓ LLM вирішила: жоден файл не потребує unit-тестів.')
+        break
+      }
+      console.log(`\n→ Bootstrap-тести для (${needsTests.length}):`)
+      for (const f of needsTests) console.log(`  • ${f.file} — ${f.reason}`)
+      await generateTests(needsTests, dir)
+      continue
     }
 
     const uncovered = getUncoveredFiles(allFiles, COVERAGE_THRESHOLD)
