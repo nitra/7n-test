@@ -13,7 +13,8 @@ vi.mock('node:fs/promises', () => ({
 vi.mock('node:os', () => ({ tmpdir: vi.fn(() => '/tmp') }))
 vi.mock('node:path', () => ({
   join: vi.fn((...args) => args.join('/')),
-  relative: vi.fn((base, full) => full.replace(base + '/', ''))
+  relative: vi.fn((base, full) => full.replace(base + '/', '')),
+  dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
 
 import * as fs from 'node:fs'

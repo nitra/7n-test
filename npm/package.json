@@ -1,6 +1,6 @@
 {
   "name": "@7n/test",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CLI-утиліта @7n/test",
   "keywords": [
     "7n",
@@ -18,6 +18,7 @@
     "url": "git+https://github.com/nitra/7n-test.git"
   },
   "bin": {
+    "7n-test": "bin/7n-test.js",
     "test": "bin/7n-test.js"
   },
   "files": [
@@ -40,6 +41,8 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.2",
+    "@vitest/coverage-v8": "^4.1.9",
+    "vitest": "^4.1.9",
     "zod": "^3.23.0"
   },
   "engines": {

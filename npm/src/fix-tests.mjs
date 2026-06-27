@@ -2,7 +2,7 @@
  * fix-tests: виявляє падаючі unit-тести і викликає pi-агента для їх виправлення.
  *
  * Порядок роботи:
- *   1. getFailingTests(dir) — запускає `bunx vitest run --reporter=json` і повертає
+ *   1. getFailingTests(dir) — запускає vitest run --reporter=json і повертає
  *      список падаючих файлів з повідомленнями про помилки.
  *   2. fixFailingTests(dir, opts) — якщо є падіння, будує prompt і викликає pi CLI
  *      в агентному режимі; перевіряє результат повторним getFailingTests.
@@ -10,9 +10,16 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { join, relative, dirname } from 'node:path'
 import { env } from 'node:process'
+
+const _require = createRequire(import.meta.url)
+const VITEST_BIN = join(
+  dirname(_require.resolve('vitest/package.json')),
+  'vitest.mjs'
+)
 
 const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? env.N_CLOUD_MAX_MODEL ?? ''
 const MAX_ERRORS_PER_FILE = 5
@@ -28,7 +35,7 @@ export async function getFailingTests(dir) {
   const outputFile = join(tmpDir, 'results.json')
 
   try {
-    spawnSync('bunx', ['vitest', 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'], {
+    spawnSync(process.execPath, [VITEST_BIN, 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'], {
       cwd: dir,
       stdio: 'inherit',
       env

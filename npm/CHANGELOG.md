@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.0] - 2026-06-27
+
+### Added
+
+- `vitest` і `@vitest/coverage-v8` тепер є залежностями `@7n/test` — цільовий проєкт більше не потребує їх у `devDependencies`. Vitest викликається з node_modules самого пакету через `process.execPath`. Додано бінарний аліас `7n-test` поряд з `test` — усуває конфлікт з shell built-in при `npx @7n/test`.
+
 ## [0.5.0] - 2026-06-27
 
 ### Changed

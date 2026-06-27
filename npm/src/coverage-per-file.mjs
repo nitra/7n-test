@@ -1,14 +1,22 @@
 /**
  * Per-file coverage via vitest + lcov.
- * Runs `bunx vitest run --coverage --coverage.reporter=lcov --reporter=json`
- * in a single pass and returns both per-file coverage data and failing tests.
+ * Runs vitest (bundled with @7n/test) in a single pass and returns
+ * both per-file coverage data and failing tests.
+ * Target projects do NOT need vitest or @vitest/coverage-v8 installed.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, relative } from 'node:path'
+import { createRequire } from 'node:module'
+import { join, relative, dirname } from 'node:path'
 import { env } from 'node:process'
+
+const _require = createRequire(import.meta.url)
+const VITEST_BIN = join(
+  dirname(_require.resolve('vitest/package.json')),
+  'vitest.mjs'
+)
 
 const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|[/\\]tests?[/\\]/
 const MAX_ERRORS_PER_FILE = 5
@@ -85,9 +93,9 @@ export async function measureCoveragePerFile(dir) {
 
   try {
     spawnSync(
-      'bunx',
+      process.execPath,
       [
-        'vitest',
+        VITEST_BIN,
         'run',
         '--passWithNoTests',
         '--coverage',

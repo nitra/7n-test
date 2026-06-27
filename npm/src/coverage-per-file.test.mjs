@@ -10,7 +10,8 @@ vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
 vi.mock('node:path', () => ({
   join: vi.fn((...a) => a.join('/')),
-  relative: vi.fn((root, p) => p.replace(root + '/', ''))
+  relative: vi.fn((root, p) => p.replace(root + '/', '')),
+  dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
 
 const SAMPLE_LCOV = `TN:
@@ -68,8 +69,8 @@ describe('coverage-per-file.mjs', () => {
       const result = await measureCoveragePerFile('/proj')
 
       expect(vi.mocked(spawnSync)).toHaveBeenCalledWith(
-        'bunx',
-        expect.arrayContaining(['vitest', 'run', '--coverage', '--coverage.reporter=lcov', '--reporter=json']),
+        expect.stringContaining('node'),
+        expect.arrayContaining(['run', '--coverage', '--coverage.reporter=lcov', '--reporter=json']),
         expect.objectContaining({ cwd: '/proj' })
       )
       expect(result).toHaveProperty('files')
