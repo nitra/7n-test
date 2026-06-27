@@ -91,9 +91,7 @@ describe('getFailingTests', () => {
 
 describe('buildFixTestsPrompt', () => {
   it('includes failing file names', () => {
-    const prompt = buildFixTestsPrompt([
-      { file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }
-    ])
+    const prompt = buildFixTestsPrompt([{ file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }])
     expect(prompt).toContain('src/foo.test.mjs')
     expect(prompt).toContain('AssertionError')
   })

@@ -1,7 +1,7 @@
 amends "package://hk/hk.pkl"
 
 hooks {
-  preCommit {
+  ["pre-commit"] {
     command = "bunx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
   }
 }

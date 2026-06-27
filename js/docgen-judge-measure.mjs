@@ -1,68 +1,95 @@
 #!/usr/bin/env node
 
-import { readFile } from 'node:fs/promises';
-import process from 'node:process';
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const args = process.argv.slice(2);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = process.argv.slice(2)
 
-if (args.length === 0) {
-  process.exit(0);
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage()
+    process.exit(0)
+  }
+
+  if (args.length === 0) {
+    process.exit(0)
+  }
+
+  const results = []
+
+  for (const file of args) {
+    const content = await readFile(file, 'utf8')
+    const records = parseRecords(content)
+    results.push(measureFile(file, records))
+  }
+
+  console.log(JSON.stringify({ files: results }, null, 2))
 }
 
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+function printUsage() {
+  console.log('Usage: node docgen-judge-measure.mjs <file1> <file2> ...')
+}
 
-const measure = async (filePath) => {
-  const content = await readFile(filePath, 'utf8');
-  const lines = content.split(/\r?\n/);
-  const trimmed = content.trim();
-  const nonEmptyLines = lines.filter((line) => line.trim() !== '');
-  const hasFrontmatter = trimmed.startsWith('---\n') || trimmed.startsWith('---\r\n');
-  const hasHeading = lines.some((line) => /^#\s+/.test(line));
-  const hasBullets = lines.some((line) => /^-\s+/.test(line));
-  const hasCodeFence = lines.some((line) => /^```/.test(line));
+function parseRecords(content) {
+  const trimmed = content.trim()
 
-  let score = 0;
-  score += hasFrontmatter ? 0.25 : 0;
-  score += hasHeading ? 0.25 : 0;
-  score += hasBullets ? 0.2 : 0;
-  score += hasCodeFence ? 0.1 : 0;
-  score += clamp(nonEmptyLines.length / 20, 0, 1) * 0.2;
+  if (!trimmed) {
+    return []
+  }
 
-  const normalizedScore = Number(clamp(score, 0, 1).toFixed(3));
+  if (trimmed.startsWith('[')) {
+    const parsed = JSON.parse(trimmed)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  }
+
+  return trimmed
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line))
+}
+
+function measureFile(file, records) {
+  const scores = records.map(readScore).filter(score => Number.isFinite(score))
+  const passed = records.filter(record => readPassed(record)).length
 
   return {
-    file: filePath,
-    score: normalizedScore,
-    degraded: normalizedScore < 0.6,
-    metrics: {
-      bytes: Buffer.byteLength(content, 'utf8'),
-      lines: lines.length,
-      nonEmptyLines: nonEmptyLines.length,
-      hasFrontmatter,
-      hasHeading,
-      hasBullets,
-      hasCodeFence
-    }
-  };
-};
-
-const results = [];
-let hasError = false;
-
-for (const filePath of args) {
-  try {
-    results.push(await measure(filePath));
-  } catch (error) {
-    hasError = true;
-    results.push({
-      file: filePath,
-      error: error instanceof Error ? error.message : String(error)
-    });
+    file: path.relative(process.cwd(), file),
+    records: records.length,
+    scored: scores.length,
+    passed,
+    failed: records.length - passed,
+    averageScore: scores.length === 0 ? null : round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
   }
 }
 
-process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+function readScore(record) {
+  if (!record || typeof record !== 'object') {
+    return Number.NaN
+  }
 
-if (hasError) {
-  process.exitCode = 1;
+  const score = record.score ?? record.totalScore ?? record.result?.score ?? record.result?.totalScore
+  return typeof score === 'number' ? score : Number(score)
+}
+
+function readPassed(record) {
+  if (!record || typeof record !== 'object') {
+    return false
+  }
+
+  if (typeof record.passed === 'boolean') {
+    return record.passed
+  }
+
+  if (typeof record.ok === 'boolean') {
+    return record.ok
+  }
+
+  const score = readScore(record)
+  return Number.isFinite(score) && score >= 0.8
+}
+
+function round(value) {
+  return Math.round(value * 1000) / 1000
 }

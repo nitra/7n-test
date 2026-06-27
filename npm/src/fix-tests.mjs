@@ -28,11 +28,11 @@ export async function getFailingTests(dir) {
   const outputFile = join(tmpDir, 'results.json')
 
   try {
-    spawnSync(
-      'bunx',
-      ['vitest', 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'],
-      { cwd: dir, stdio: 'inherit', env }
-    )
+    spawnSync('bunx', ['vitest', 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'], {
+      cwd: dir,
+      stdio: 'inherit',
+      env
+    })
 
     if (!existsSync(outputFile)) return []
 

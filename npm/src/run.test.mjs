@@ -34,7 +34,10 @@ describe('runAutoTest', () => {
 
   it('should complete successfully when all files meet the coverage threshold', async () => {
     vi.mocked(measureCoveragePerFile).mockResolvedValue(
-      coverageResult([{ file: 'a.js', pct: 90.0 }, { file: 'b.js', pct: 85.0 }])
+      coverageResult([
+        { file: 'a.js', pct: 90.0 },
+        { file: 'b.js', pct: 85.0 }
+      ])
     )
     vi.mocked(getUncoveredFiles).mockReturnValue([])
 
@@ -81,9 +84,7 @@ describe('runAutoTest', () => {
   })
 
   it('should stop iterating if LLM assesses no files need tests', async () => {
-    vi.mocked(measureCoveragePerFile).mockResolvedValue(
-      coverageResult([{ file: 'a.js', pct: 60.0 }])
-    )
+    vi.mocked(measureCoveragePerFile).mockResolvedValue(coverageResult([{ file: 'a.js', pct: 60.0 }]))
     vi.mocked(getUncoveredFiles).mockReturnValue([{ file: 'a.js', pct: 60.0 }])
     vi.mocked(assessNeed).mockResolvedValue([{ file: 'a.js', needsTests: false }])
 
@@ -116,9 +117,7 @@ describe('runAutoTest', () => {
   })
 
   it('should return non-zero code when Phase 2 fix step fails', async () => {
-    vi.mocked(measureCoveragePerFile).mockResolvedValue(
-      coverageResult([{ file: 'a.js', pct: 90.0 }])
-    )
+    vi.mocked(measureCoveragePerFile).mockResolvedValue(coverageResult([{ file: 'a.js', pct: 90.0 }]))
     vi.mocked(getUncoveredFiles).mockReturnValue([])
     vi.mocked(runCoverageSteps).mockResolvedValue(1)
 

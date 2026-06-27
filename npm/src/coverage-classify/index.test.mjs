@@ -60,9 +60,7 @@ describe('classify', () => {
       confidence: 0.9,
       reason: 'This mutant is semantically equivalent to the original code'
     })
-    const mockCallModel = vi.fn()
-      .mockRejectedValueOnce(new Error('Tier 1 Fail'))
-      .mockResolvedValueOnce(validVerdict)
+    const mockCallModel = vi.fn().mockRejectedValueOnce(new Error('Tier 1 Fail')).mockResolvedValueOnce(validVerdict)
 
     await classify(mockSurvived, mockCwd, { callModel: mockCallModel })
 

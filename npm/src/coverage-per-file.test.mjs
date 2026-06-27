@@ -107,9 +107,7 @@ describe('coverage-per-file.mjs', () => {
 
     it('returns failingTests even when lcov.info is missing', async () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
-      vi.mocked(existsSync).mockImplementation(p =>
-        String(p).endsWith('test-results.json')
-      )
+      vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
       vi.mocked(readFileSync).mockImplementation(() => SAMPLE_JSON_RESULTS_FAILING)
       vi.mocked(rm).mockResolvedValue(undefined)
 

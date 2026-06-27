@@ -2772,12 +2772,12 @@ needsTests: true when:
 - File contains utility functions, parsers, transformers with branches
 - Business logic with conditions or non-trivial contracts
 - Pure functions that can be unit-tested cheaply``| ```` | StringLiteral |
-| 39 |`ontent.length > MAX_CONTENT_BYTES)`|`true`| ConditionalExpression |
+| 39 |`ontent.length > MAX*CONTENT_BYTES)`|`true`| ConditionalExpression |
 | 39 |`ontent.length > MAX_CONTENT_BYTES)`|`content.length >= MAX_CONTENT_BYTES`| EqualityOperator |
 | 39 |`ontent.slice(0, MAX_CONTENT_BYTES) `|`content`| MethodExpression |
 | 42 |`${SYSTEM_PROMPT}\n\n` ` | ````| StringLiteral |
-| 48 |`\{[\s\S]_?"needsTests"[\s\S]_?\}/)`|`/\{[\S\S]_?"needsTests"[\s\S]_?\}/`| Regex |
-| 48 |`\{[\s\S]_?"needsTests"[\s\S]_?\}/)`|`/\{[\s\s]_?"needsTests"[\s\S]_?\}/`| Regex |
+| 48 |`\{[\s\S]*?"needsTests"[\s\S]_?\}/)`|`/\{[\S\S]_?"needsTests"[\s\S]_?\}/`| Regex |
+| 48 |`\{[\s\S]_?"needsTests"[\s\S]_?\}/)`|`/\{[\s\s]_?"needsTests"[\s\S]\_?\}/`| Regex |
 | 49 |`atch?.[0] `|`match[0]`| OptionalChaining |
 | 49 |`{}')`|`""`| StringLiteral |
 | 54 |`'`|`"Stryker was here!"`| StringLiteral |

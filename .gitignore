@@ -16,5 +16,9 @@ dist/
 # Test artifacts: coverage (test.mdc)
 **/coverage/
 !npm/src/coverage/
+
+# Test artifacts: relocated JS tests (test.mdc)
+npm/src/**/*.test.mjs
+!npm/src/**/tests/**/*.test.mjs
 # @nitra/cursor (adr) — локальні артефакти Stop-hook, не коміти
 .claude/scheduled_tasks.lock

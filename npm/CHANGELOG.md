@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2026-06-27
+
+### Changed
+
+- `measureCoveragePerFile` тепер повертає `{ files, failingTests }` — vitest coverage і JSON reporter запускаються в одному виклику. `run.mjs` перевіряє `failingTests` щоразу перед покриттям (не лише коли coverage порожня), автоматично викликає pi agent і повторює ітерацію при успішному виправленні.
+
 ## [0.4.3] - 2026-06-26
 
 ### Changed
@@ -34,7 +40,7 @@
 
 ### Changed
 
-- fix: unignore npm/src/coverage/ (was blocked by **/coverage/ in .gitignore)
+- fix: unignore npm/src/coverage/ (was blocked by \*\*/coverage/ in .gitignore)
 
 ## [0.3.0] - 2026-06-26
 

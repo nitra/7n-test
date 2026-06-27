@@ -1,11 +1,11 @@
-import { vi, describe, it, expect, beforeEach } from "vitest"
-import { shouldDedup, withLock } from "./with-lock.mjs"
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { shouldDedup, withLock } from './with-lock.mjs'
 
 vi.mock('node:fs', () => ({
   mkdirSync: vi.fn(),
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(),
-  rmSync: vi.fn(),
+  rmSync: vi.fn()
 }))
 vi.mock('node:os', () => ({ hostname: vi.fn(() => 'test-host') }))
 vi.mock('node:path', () => ({ join: vi.fn((...args) => args.join('/')) }))
@@ -63,7 +63,9 @@ describe('withLock', () => {
 
   it('acquires lock and runs fn when no cached result', async () => {
     vi.mocked(fs.mkdirSync).mockReturnValue(undefined)
-    vi.mocked(fs.readFileSync).mockImplementation(() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }) })
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
+      throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    })
     vi.mocked(fs.writeFileSync).mockReturnValue(undefined)
     vi.mocked(fs.rmSync).mockReturnValue(undefined)
     const runFn = vi.fn().mockResolvedValue(0)
@@ -93,18 +95,26 @@ describe('withLock', () => {
 
   it('cleans stale lock (by timeout) and re-acquires', async () => {
     let lockExists = true
-    vi.mocked(fs.mkdirSync).mockImplementation((dir) => {
+    vi.mocked(fs.mkdirSync).mockImplementation(dir => {
       if (dir === LOCK_DIR && lockExists) {
         const err = new Error('EEXIST')
         err.code = 'EEXIST'
         throw err
       }
     })
-    vi.mocked(fs.readFileSync).mockImplementation((file) => {
-      if (file === OWNER_FILE) return JSON.stringify({ pid: 9999, host: 'test-host', startedAt: Date.now() - 2_000_000, fingerprint: 'fp-123' })
+    vi.mocked(fs.readFileSync).mockImplementation(file => {
+      if (file === OWNER_FILE)
+        return JSON.stringify({
+          pid: 9999,
+          host: 'test-host',
+          startedAt: Date.now() - 2_000_000,
+          fingerprint: 'fp-123'
+        })
       throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     })
-    vi.mocked(fs.rmSync).mockImplementation(() => { lockExists = false })
+    vi.mocked(fs.rmSync).mockImplementation(() => {
+      lockExists = false
+    })
     vi.mocked(fs.writeFileSync).mockReturnValue(undefined)
     const runFn = vi.fn().mockResolvedValue(0)
 
@@ -116,7 +126,7 @@ describe('withLock', () => {
   })
 
   it('throws fail-closed when waitTimeout exceeded with fail policy', async () => {
-    vi.mocked(fs.mkdirSync).mockImplementation((dir) => {
+    vi.mocked(fs.mkdirSync).mockImplementation(dir => {
       if (dir === LOCK_DIR) {
         const err = new Error('EEXIST')
         err.code = 'EEXIST'
@@ -128,12 +138,17 @@ describe('withLock', () => {
     )
 
     await expect(
-      withLock('test-key', vi.fn(), { cacheDir: '/cache/test-key', waitTimeout: 0, onWaitTimeout: 'fail', pollInterval: 0 })
+      withLock('test-key', vi.fn(), {
+        cacheDir: '/cache/test-key',
+        waitTimeout: 0,
+        onWaitTimeout: 'fail',
+        pollInterval: 0
+      })
     ).rejects.toThrow(/fail-closed/)
   })
 
   it('runs unlocked when waitTimeout exceeded with run-unlocked policy', async () => {
-    vi.mocked(fs.mkdirSync).mockImplementation((dir) => {
+    vi.mocked(fs.mkdirSync).mockImplementation(dir => {
       if (dir === LOCK_DIR) {
         const err = new Error('EEXIST')
         err.code = 'EEXIST'
@@ -145,7 +160,12 @@ describe('withLock', () => {
     )
     const runFn = vi.fn().mockResolvedValue(42)
 
-    const code = await withLock('test-key', runFn, { cacheDir: '/cache/test-key', waitTimeout: 0, onWaitTimeout: 'run-unlocked', pollInterval: 0 })
+    const code = await withLock('test-key', runFn, {
+      cacheDir: '/cache/test-key',
+      waitTimeout: 0,
+      onWaitTimeout: 'run-unlocked',
+      pollInterval: 0
+    })
 
     expect(runFn).toHaveBeenCalledTimes(1)
     expect(code).toBe(42)
