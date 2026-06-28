@@ -6,7 +6,14 @@
  *   callText(prompt, model?)  — text-only, no tools, returns string
  *   callAgent(prompt, cwd)    — coding tools enabled, writes files directly
  */
-import { createAgentSession, SessionManager } from '@earendil-works/pi-coding-agent'
+import { createAgentSession, SessionManager, ModelRegistry, AuthStorage } from '@earendil-works/pi-coding-agent'
+
+let _registry = null
+async function getRegistry() {
+  if (_registry) return _registry
+  _registry = ModelRegistry.create(AuthStorage.create())
+  return _registry
+}
 
 /**
  * Sends a single prompt to pi in text mode (no tools) and returns the response.
@@ -23,8 +30,16 @@ export async function callText(prompt, opts = {}) {
   const sessionOpts = {
     tools: [],
     sessionManager: SessionManager.inMemory(cwd),
-    cwd,
-    ...(opts.model ? { model: opts.model } : {})
+    cwd
+  }
+  if (opts.model) {
+    const registry = await getRegistry()
+    const slashIdx = opts.model.indexOf('/')
+    const provider = slashIdx >= 0 ? opts.model.slice(0, slashIdx) : null
+    const modelId = slashIdx >= 0 ? opts.model.slice(slashIdx + 1) : opts.model
+    const resolved = provider ? registry.find(provider, modelId) : null
+    sessionOpts.modelRegistry = registry
+    sessionOpts.model = resolved ?? opts.model
   }
   const { session } = await createAgentSession(sessionOpts)
 

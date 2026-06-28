@@ -21,14 +21,14 @@ isRuleEnabled визначає, чи активне певне правило н
 
 ## Публічний API
 
-I understand. As a technical writer, I will generate concise behavioral documentation in Ukrainian, adhering strictly to the specified constraints: clean Markdown, focusing on *What* and *Why* (not *How*), no introductions or conclusions, no code blocks, and excluding signatures, types, parameters, `stdlib` modules, regex descriptions, or private internal names.
+I understand. As a technical writer, I will generate concise behavioral documentation in Ukrainian, adhering strictly to the specified constraints: clean Markdown, focusing on _What_ and _Why_ (not _How_), no introductions or conclusions, no code blocks, and excluding signatures, types, parameters, `stdlib` modules, regex descriptions, or private internal names.
 
 I must use the exact names provided for the functions in the bulleted list, transforming them into short, intent-driven descriptions.
 
 Here is the required output format:
 
-*   `readNCursorConfigLite` — [Concise description of the file's purpose/action]
-*   `isRuleEnabled` — [Concise description based on the configuration logic provided]
+- `readNCursorConfigLite` — [Concise description of the file's purpose/action]
+- `isRuleEnabled` — [Concise description based on the configuration logic provided]
 
 I will ensure the anchors point to `.n-cursor.json` and avoid generic filler phrases.
 
