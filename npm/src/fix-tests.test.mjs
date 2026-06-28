@@ -4,7 +4,8 @@ import { getFailingTests, buildFixTestsPrompt, fixFailingTests } from './fix-tes
 vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
-  readFileSync: vi.fn()
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn()
 }))
 vi.mock('node:fs/promises', () => ({
   mkdtemp: vi.fn().mockResolvedValue('/tmp/7n-fix-test'),
@@ -16,6 +17,7 @@ vi.mock('node:path', () => ({
   relative: vi.fn((base, full) => full.replace(base + '/', '')),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
+vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
 vi.mock('./gen-tests.mjs', () => ({
   findTestRules: vi.fn().mockReturnValue(null)
 }))
@@ -95,35 +97,56 @@ describe('getFailingTests', () => {
 })
 
 describe('buildFixTestsPrompt', () => {
-  it('includes failing file names', () => {
-    const prompt = buildFixTestsPrompt([{ file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }])
+  it('includes failing file names and errors', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+    const prompt = buildFixTestsPrompt(
+      [{ file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }],
+      mockDir
+    )
     expect(prompt).toContain('src/foo.test.mjs')
     expect(prompt).toContain('AssertionError')
   })
 
-  it('includes pi agent instructions with correct vitest binary', () => {
-    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }])
-    expect(prompt).toContain('vitest.mjs')
+  it('includes instructions to return full file content with file markers', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }], mockDir)
+    expect(prompt).toContain('<!-- file:')
+    expect(prompt).toContain('ПОВНИЙ вміст')
     expect(prompt).toContain('source-файли не чіпай')
   })
 
   it('includes TypeScript and env mocking rules', () => {
-    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }])
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }], mockDir)
     expect(prompt).toContain('as Type')
     expect(prompt).toContain('vi.mocked(fn)')
     expect(prompt).toContain('vi.stubEnv')
+    expect(prompt).toContain('beforeAll, afterAll')
+  })
+
+  it('includes current test file content when file exists', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true)
+    vi.mocked(fs.readFileSync).mockReturnValueOnce("import { vi } from 'vitest'")
+    const prompt = buildFixTestsPrompt([{ file: 'src/foo.test.mjs', errors: ['err'] }], mockDir)
+    expect(prompt).toContain("import { vi } from 'vitest'")
+    expect(prompt).toContain('Поточний тест-файл')
   })
 
   it('handles multiple failing files', () => {
-    const prompt = buildFixTestsPrompt([
-      { file: 'a.test.mjs', errors: ['err1'] },
-      { file: 'b.test.mjs', errors: ['err2'] }
-    ])
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+    const prompt = buildFixTestsPrompt(
+      [
+        { file: 'a.test.mjs', errors: ['err1'] },
+        { file: 'b.test.mjs', errors: ['err2'] }
+      ],
+      mockDir
+    )
     expect(prompt).toContain('a.test.mjs')
     expect(prompt).toContain('b.test.mjs')
   })
 
   it('includes project test rules when findTestRules returns content', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false)
     vi.mocked(findTestRules).mockReturnValueOnce('## Правила\n- тести у tests/ директорії')
     const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }], '/proj')
     expect(prompt).toContain('Конвенції тестів цього проєкту')
@@ -139,20 +162,44 @@ describe('fixFailingTests', () => {
     expect(result).toEqual({ count: 0, fixed: 0, remaining: 0 })
   })
 
-  it('calls pi agent when there are failures', async () => {
+  it('calls callTextFn and writes fixed file when response contains code', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ testResults: [] }))
 
-    const mockCallPi = vi.fn()
+    const fixedCode = "import { vi } from 'vitest'\nit('works', () => {})"
+    const mockCallTextFn = vi.fn().mockResolvedValue(
+      `<!-- file: src/foo.test.mjs -->\n\`\`\`js\n${fixedCode}\n\`\`\``
+    )
     const failures = [{ file: 'src/foo.test.mjs', errors: ['err'] }]
 
-    const result = await fixFailingTests(mockDir, { failures, callPi: mockCallPi })
+    await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
 
-    expect(mockCallPi).toHaveBeenCalledOnce()
-    expect(mockCallPi).toHaveBeenCalledWith(expect.stringContaining('src/foo.test.mjs'), expect.any(String), mockDir)
+    expect(mockCallTextFn).toHaveBeenCalledOnce()
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('foo.test.mjs'),
+      expect.stringContaining(fixedCode),
+      'utf8'
+    )
   })
 
-  it('returns correct fixed/remaining counts', async () => {
+  it('falls back to single unnamed code block when one file is being fixed', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true)
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ testResults: [] }))
+
+    const fixedCode = "it('ok', () => {})"
+    const mockCallTextFn = vi.fn().mockResolvedValue(`\`\`\`js\n${fixedCode}\n\`\`\``)
+    const failures = [{ file: 'src/foo.test.mjs', errors: ['err'] }]
+
+    await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
+
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('foo.test.mjs'),
+      expect.stringContaining(fixedCode),
+      'utf8'
+    )
+  })
+
+  it('returns correct fixed/remaining counts when all tests pass after fix', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ testResults: [] }))
 
@@ -160,15 +207,19 @@ describe('fixFailingTests', () => {
       { file: 'a.test.mjs', errors: ['err'] },
       { file: 'b.test.mjs', errors: ['err'] }
     ]
+    const mockCallTextFn = vi.fn().mockResolvedValue(
+      '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
+        '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
+    )
 
-    const result = await fixFailingTests(mockDir, { failures, callPi: vi.fn() })
+    const result = await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
 
     expect(result.count).toBe(2)
     expect(result.fixed).toBe(2)
     expect(result.remaining).toBe(0)
   })
 
-  it('reports remaining failures when agent cannot fix all', async () => {
+  it('reports remaining failures when pi cannot fix all', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({
@@ -177,7 +228,12 @@ describe('fixFailingTests', () => {
             name: '/proj/b.test.mjs',
             status: 'failed',
             assertionResults: [
-              { ancestorTitles: [], title: 'still failing', status: 'failed', failureMessages: ['err'] }
+              {
+                ancestorTitles: [],
+                title: 'still failing',
+                status: 'failed',
+                failureMessages: ['err']
+              }
             ]
           }
         ]
@@ -188,11 +244,25 @@ describe('fixFailingTests', () => {
       { file: 'a.test.mjs', errors: ['err'] },
       { file: 'b.test.mjs', errors: ['err'] }
     ]
+    const mockCallTextFn = vi.fn().mockResolvedValue(
+      '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
+        '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
+    )
 
-    const result = await fixFailingTests(mockDir, { failures, callPi: vi.fn() })
+    const result = await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
 
     expect(result.count).toBe(2)
     expect(result.fixed).toBe(1)
+    expect(result.remaining).toBe(1)
+  })
+
+  it('stops and reports error when callTextFn throws', async () => {
+    const mockCallTextFn = vi.fn().mockRejectedValue(new Error('pi timeout'))
+    const failures = [{ file: 'src/foo.test.mjs', errors: ['err'] }]
+
+    const result = await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
+
+    expect(fs.writeFileSync).not.toHaveBeenCalled()
     expect(result.remaining).toBe(1)
   })
 })

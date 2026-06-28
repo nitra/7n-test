@@ -84,7 +84,7 @@ describe('findTestRules', () => {
 describe('generateTests — single-file mode', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.N_TEST_LOCAL_MODEL
+    delete process.env.N_LOCAL_MIN_MODEL
     vi.mocked(extractExportsWithComplexity).mockReturnValue([])
   })
 
@@ -169,7 +169,7 @@ describe('generateTests — single-file mode', () => {
 describe('generateTests — per-export mode', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.N_TEST_LOCAL_MODEL
+    delete process.env.N_LOCAL_MIN_MODEL
     vi.mocked(existsSync).mockReturnValue(true)
     vi.mocked(readFileSync).mockReturnValue('export function foo() {}\nexport const BAR = 42')
   })
@@ -277,8 +277,8 @@ describe('generateTests — per-export mode', () => {
     expect(vi.mocked(callText).mock.calls[0][1]?.model).toBeUndefined()
   })
 
-  it('uses localModel from N_TEST_LOCAL_MODEL env when no opts.localModel', async () => {
-    process.env.N_TEST_LOCAL_MODEL = LOCAL_MODEL
+  it('uses localModel from N_LOCAL_MIN_MODEL env when no opts.localModel', async () => {
+    process.env.N_LOCAL_MIN_MODEL = LOCAL_MODEL
     vi.mocked(extractExportsWithComplexity).mockReturnValue([
       { name: 'foo', complexity: 'simple' }
     ])
@@ -289,11 +289,11 @@ describe('generateTests — per-export mode', () => {
     const localCall = vi.mocked(callText).mock.calls.find(([, opts]) => opts?.model === LOCAL_MODEL)
     expect(localCall).toBeDefined()
 
-    delete process.env.N_TEST_LOCAL_MODEL
+    delete process.env.N_LOCAL_MIN_MODEL
   })
 
   it('opts.localModel = null forces cloud-only even when env is set', async () => {
-    process.env.N_TEST_LOCAL_MODEL = LOCAL_MODEL
+    process.env.N_LOCAL_MIN_MODEL = LOCAL_MODEL
     vi.mocked(extractExportsWithComplexity).mockReturnValue([
       { name: 'foo', complexity: 'simple' }
     ])
@@ -304,6 +304,6 @@ describe('generateTests — per-export mode', () => {
     const allModels = vi.mocked(callText).mock.calls.map(([, o]) => o?.model)
     expect(allModels.every(m => !m)).toBe(true)
 
-    delete process.env.N_TEST_LOCAL_MODEL
+    delete process.env.N_LOCAL_MIN_MODEL
   })
 })

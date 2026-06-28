@@ -8,7 +8,7 @@
  *   4. Validate local-generated blocks; fall back to cloud on anti-patterns.
  *   5. Merge header + blocks → write test file.
  *
- * Local model is selected via opts.localModel or N_TEST_LOCAL_MODEL env var.
+ * Local model is selected via opts.localModel or N_LOCAL_MIN_MODEL env var.
  * All calls (local and cloud) go through the pi SDK — no direct HTTP to omlx.
  * Falls back to single-file cloud generation when no local model is configured
  * or when extractExportsWithComplexity() returns no exports.
@@ -365,7 +365,7 @@ function buildSingleFilePrompt(fileInfo, dir) {
     reason ? `Причина: ${reason}` : '',
     '',
     'Правила (СУВОРО):',
-    '- Перший рядок: `import { vi, describe, it, expect, beforeEach } from "vitest"`',
+    '- Перший рядок: `import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest"` — включай ЛИШЕ те що реально використовуєш',
     '- Мокуй залежності: `vi.mock("module", () => ({ fn: vi.fn() }))` + `vi.mocked(fn)`',
     '- НІКОЛИ `jest.*`, НІКОЛИ `require()`',
     `- ${exportsLine}`,
@@ -374,6 +374,8 @@ function buildSingleFilePrompt(fileInfo, dir) {
     '- `vi.spyOn(process, "env")` НЕ ПРАЦЮЄ — для env: `vi.stubEnv("KEY", "val")` + `afterEach(() => vi.unstubAllEnvs())`',
     '- `vi.spyOn(Date).mockReturnValue(...)` НЕ ПРАЦЮЄ з `new Date()` — для часу: `vi.useFakeTimers()` + `vi.setSystemTime(new Date(...))` + `afterEach(() => vi.useRealTimers())`',
     `- Шлях до source файлу відносно тест-файлу: \`${importPath}\` (НЕ \`${file}\`)`,
+    '- `describe()` callback НЕ може бути async — `await` тільки у top-level, `beforeAll(async()=>{})`, або `it(async()=>{})`',
+    '- Для regex/escape функцій: НЕ ВГАДУЙ складний expected рядок. Тестуй один символ за раз де результат очевидний: `expect(esc("*")).toBe("\\\\*")`, `expect(esc("!")).toBe("\\\\!")`',
     '- Поверни ЛИШЕ код тесту у блоці ```js ... ``` — без пояснень',
     ...sideEffectsSection,
     ...(testRules ? ['', '## Конвенції тестів цього проєкту (.cursor/rules/n-test.mdc):', testRules] : []),
@@ -427,8 +429,8 @@ export async function generateTests(files, dir, opts = {}) {
 
   const callTextFn = opts.callText ?? callText
 
-  // Local model: explicit opts.localModel OR env N_TEST_LOCAL_MODEL OR null (cloud-only)
-  const localModel = opts.localModel !== undefined ? opts.localModel : (process.env.N_TEST_LOCAL_MODEL ?? null)
+  // Local model: explicit opts.localModel OR env N_LOCAL_MIN_MODEL OR null (cloud-only)
+  const localModel = opts.localModel !== undefined ? opts.localModel : (process.env.N_LOCAL_MIN_MODEL ?? null)
 
   // Wrap pi callText with the local model id so callLocalFn has the same signature as callTextFn
   const localFn = localModel ? prompt => callTextFn(prompt, { model: localModel, cwd: dir }) : null
