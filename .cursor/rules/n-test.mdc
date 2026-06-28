@@ -20,6 +20,16 @@ alwaysApply: false
 ### Multi-workspace iteration
 
 У monorepo `n-cursor coverage` ітерує усі workspaces з власним `package.json` і агрегує метрики lcov + Stryker у єдиний `JS`-рядок `COVERAGE.md`. Workspace без тестів пропускається без помилки.
+- `package.json`:
+
+```json
+{
+  "scripts": {
+    "coverage": ["n-cursor coverage"],
+    "test": ["vitest"]
+  }
+}
+```
 
 ## Налаштування mutation-testing для Rust: `.cargo/mutants.toml`
 

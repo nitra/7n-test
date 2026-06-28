@@ -16,8 +16,12 @@ vi.mock('node:path', () => ({
   relative: vi.fn((base, full) => full.replace(base + '/', '')),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
+vi.mock('./gen-tests.mjs', () => ({
+  findTestRules: vi.fn().mockReturnValue(null)
+}))
 
 import * as fs from 'node:fs'
+import { findTestRules } from './gen-tests.mjs'
 
 const mockDir = '/proj'
 
@@ -97,10 +101,17 @@ describe('buildFixTestsPrompt', () => {
     expect(prompt).toContain('AssertionError')
   })
 
-  it('includes pi agent instructions', () => {
+  it('includes pi agent instructions with correct vitest binary', () => {
     const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }])
-    expect(prompt).toContain('bunx vitest run')
+    expect(prompt).toContain('vitest.mjs')
     expect(prompt).toContain('source-файли не чіпай')
+  })
+
+  it('includes TypeScript and env mocking rules', () => {
+    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }])
+    expect(prompt).toContain('as Type')
+    expect(prompt).toContain('vi.mocked(fn)')
+    expect(prompt).toContain('vi.stubEnv')
   })
 
   it('handles multiple failing files', () => {
@@ -110,6 +121,13 @@ describe('buildFixTestsPrompt', () => {
     ])
     expect(prompt).toContain('a.test.mjs')
     expect(prompt).toContain('b.test.mjs')
+  })
+
+  it('includes project test rules when findTestRules returns content', () => {
+    vi.mocked(findTestRules).mockReturnValueOnce('## Правила\n- тести у tests/ директорії')
+    const prompt = buildFixTestsPrompt([{ file: 'x.test.mjs', errors: ['err'] }], '/proj')
+    expect(prompt).toContain('Конвенції тестів цього проєкту')
+    expect(prompt).toContain('тести у tests/ директорії')
   })
 })
 

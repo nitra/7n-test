@@ -14,6 +14,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join, relative, dirname } from 'node:path'
 import { env } from 'node:process'
+import { findTestRules } from './gen-tests.mjs'
 
 const _require = createRequire(import.meta.url)
 const VITEST_BIN = join(dirname(_require.resolve('vitest/package.json')), 'vitest.mjs')
@@ -62,9 +63,12 @@ export async function getFailingTests(dir) {
             const msg = (a.failureMessages?.[0] ?? '').split('\n').slice(0, MAX_ERROR_LINES).join('\n')
             return `${name}:\n${msg}`
           })
-        const errors = assertionErrors.length > 0
-          ? assertionErrors
-          : [`Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`]
+        const errors =
+          assertionErrors.length > 0
+            ? assertionErrors
+            : [
+                `Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`
+              ]
         return { file: relative(dir, r.testFilePath ?? r.name), errors }
       })
       .filter(f => !f.file.startsWith('..'))
@@ -76,9 +80,12 @@ export async function getFailingTests(dir) {
 /**
  * Builds a prompt for pi agent to fix failing tests.
  * @param {Array<{file: string, errors: string[]}>} failures
+ * @param {string} [dir] project root (used to load n-test.mdc rules)
  * @returns {string}
  */
-export function buildFixTestsPrompt(failures) {
+export function buildFixTestsPrompt(failures, dir) {
+  const testRules = dir ? findTestRules(dir) : null
+
   const fileList = failures
     .map(({ file, errors }) => {
       const errBlock = errors.join('\n\n')
@@ -89,9 +96,9 @@ export function buildFixTestsPrompt(failures) {
   return [
     'Виправ падаючі unit-тести. Для кожного файлу:',
     '1. Прочитай тест-файл і source-файл що він тестує',
-    '2. Запусти: `bunx vitest run <testFile>` — переконайся в точній помилці',
+    `2. Запусти: \`node ${VITEST_BIN} run <testFile>\` — переконайся в точній помилці`,
     '3. Виправ ЛИШЕ тест-файл — source-файли не чіпай',
-    '4. Запусти тест ще раз — переконайся що зелений',
+    `4. Запусти тест ще раз: \`node ${VITEST_BIN} run <testFile>\` — переконайся що зелений`,
     '',
     '## Правила:',
     '- Міняй виключно тест-файли',
@@ -99,6 +106,11 @@ export function buildFixTestsPrompt(failures) {
     '- Якщо тест перевіряє неіснуючий API — адаптуй до реального',
     '- НЕ видаляй тести — лише виправляй',
     '- Якщо тест тестує видалений функціонал — закоментуй з поясненням чому',
+    '- Файл .mjs = чистий JavaScript, НЕ TypeScript. НІКОЛИ: `as Type`, generics',
+    '- Замість `fn as vi.Mock` → `vi.mocked(fn)`, замість `fn as jest.Mock` → `vi.mocked(fn)`',
+    '- `vi.spyOn(process, "env")` НЕ ПРАЦЮЄ — use `vi.stubEnv("KEY", "val")`',
+    '- `vi.spyOn(Date).mockReturnValue(...)` НЕ ПРАЦЮЄ з `new Date()` — use `vi.useFakeTimers()` + `vi.setSystemTime(new Date(...))` + `afterEach(() => vi.useRealTimers())`',
+    ...(testRules ? ['', '## Конвенції тестів цього проєкту (.cursor/rules/n-test.mdc):', testRules] : []),
     '',
     '## Падаючі файли та помилки:',
     '',
@@ -121,8 +133,10 @@ function callPi(prompt, model, cwd) {
   })
 }
 
+const MAX_FIX_ATTEMPTS = 3
+
 /**
- * Detects and fixes failing tests using a pi agent.
+ * Detects and fixes failing tests using a pi agent (up to MAX_FIX_ATTEMPTS retries).
  * Returns immediately with count=0 if all tests are already passing.
  *
  * @param {string} dir project root
@@ -144,14 +158,20 @@ export async function fixFailingTests(dir, opts = {}) {
   }
   console.log()
 
-  const prompt = buildFixTestsPrompt(failures)
-  callPiFn(prompt, MODEL, dir)
+  let remaining = failures
+  for (let attempt = 1; attempt <= MAX_FIX_ATTEMPTS && remaining.length > 0; attempt++) {
+    if (attempt > 1) {
+      console.log(`\n🔄 Спроба ${attempt}/${MAX_FIX_ATTEMPTS}: залишилось ${remaining.length} файлів...\n`)
+    }
+    const prompt = buildFixTestsPrompt(remaining, dir)
+    callPiFn(prompt, MODEL, dir)
+    remaining = await getFailingTests(dir)
+  }
 
-  const after = await getFailingTests(dir)
-  const fixed = failures.length - after.length
+  const fixed = failures.length - remaining.length
 
   if (fixed > 0) console.log(`✓ Виправлено: ${fixed}/${failures.length} файлів`)
-  if (after.length > 0) console.log(`⚠ Залишились падати: ${after.length} файлів`)
+  if (remaining.length > 0) console.log(`⚠ Залишились падати: ${remaining.length} файлів`)
 
-  return { count: failures.length, fixed, remaining: after.length }
+  return { count: failures.length, fixed, remaining: remaining.length }
 }

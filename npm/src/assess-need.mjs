@@ -48,7 +48,10 @@ function stripComments(src) {
  */
 export function quickClassify(content) {
   const stripped = stripComments(content)
-  const lines = stripped.split('\n').map(l => l.trim()).filter(Boolean)
+  const lines = stripped
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
 
   // All lines are imports/re-exports → no testable logic
   if (lines.length > 0 && lines.every(l => WIRING_RE.test(l))) {

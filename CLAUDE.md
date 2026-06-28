@@ -6,6 +6,7 @@
 
 - `.worktrees/`
 
+@.cursor/rules/main.mdc
 @.cursor/rules/n-adr.mdc
 @.cursor/rules/n-bun.mdc
 @.cursor/rules/n-changelog.mdc
@@ -18,6 +19,7 @@
 @.cursor/rules/n-js.mdc
 @.cursor/rules/n-npm-module.mdc
 @.cursor/rules/n-security.mdc
+@.cursor/rules/n-style.mdc
 @.cursor/rules/n-test.mdc
 @.cursor/rules/n-text.mdc
 @.cursor/rules/n-worktree.mdc
@@ -38,8 +40,6 @@
 
 - `.cursor/skills/n-adr-normalize/SKILL.md` — Ручний запуск ADR-нормалізації — обхід порогу й min-interval, прогон одного батчу чернеток через LLM, перегляд результату через git diff
   Команда: `/n-adr-normalize`
-- `.cursor/skills/n-coverage-fix/SKILL.md` — Автономна команда: запускає n-cursor coverage → читає вцілілих мутантів → ітеративно пише тести до конвергенції (max 3 ітерації)
-  Команда: `/n-coverage-fix`
 - `.cursor/skills/n-doc-files/SKILL.md` — Обовʼязковий крок задачі (як lint): для кожного зміненого/нового кодового файлу (js/mjs/ts/vue/py) JS-оркестрована генерація лаконічної поведінкової української md-документації у теку docs/ поряд із кодом, зі звіркою застарілості за CRC у frontmatter
   Команда: `/n-doc-files`
 - `.cursor/skills/n-lint/SKILL.md` — Запустити дельта-лінт (npx @nitra/cursor lint) по змінених файлах vs origin, виправити порушення й підтвердити чистий вихід
@@ -48,7 +48,5 @@
   Команда: `/n-llm-patch`
 - `.cursor/skills/n-publish-telegram/SKILL.md` — Підготовка матеріалу з поточного контексту для публікації в Telegram-каналі команди
   Команда: `/n-publish-telegram`
-- `.cursor/skills/n-start-check/SKILL.md` — Smoke-перевірка bun-монорепо: зайти в кожен воркспейс зі `start`-скриптом, прогнати `start` і зафіксувати, чи проєкт взагалі запускається без негайного краху
-  Команда: `/n-start-check`
 - `.cursor/skills/n-taze/SKILL.md` — Оновлення версій модулів проекту з аналізом major-змін і автоматичним рефакторингом несумісного коду
   Команда: `/n-taze`

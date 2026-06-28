@@ -62,7 +62,9 @@ export async function runAutoTest(dir, opts = {}) {
           try {
             const q = quickClassify(readFileSync(join(dir, f), 'utf8'))
             if (q?.needsTests === false) return null
-          } catch { /* include on read error */ }
+          } catch {
+            /* include on read error */
+          }
           return { file: f, pct: 0 }
         })
         .filter(Boolean)

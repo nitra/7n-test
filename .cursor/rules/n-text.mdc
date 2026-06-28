@@ -10,6 +10,171 @@ version: '1.30'
 
 Rego-пакети, що перевіряються через conftest (auto-discovered за `target.json` поряд із `.rego`):
 
+- `settings.json`:
+
+```json
+{
+  "editor.formatOnSave": true,
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[vue]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[html]": { "editor.defaultFormatter": "oxc.oxc-vscode" }
+}
+```
+- `.oxfmtrc.json`:
+
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "printWidth": 120,
+  "ignorePatterns": ["**/hasura/metadata/**", "**/schema.graphql", "**/auto-imports.d.ts"]
+}
+```
+- `.markdownlint-cli2.jsonc`:
+
+```
+{
+  "gitignore": true,
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD024": { "siblings_only": true },
+    "MD029": false,
+    "MD040": false,
+    "MD041": false
+  }
+}
+```
+- `.cspell.json`:
+
+```json
+{
+  "version": "0.2",
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/vscode-extension/**",
+    "**/.git/**",
+    ".vscode",
+    "report",
+    "*.svg",
+    "**/k8s/**/*.yaml",
+    "docs/adr/**"
+  ]
+}
+```
+- `.cspell.json`:
+
+```json
+{
+  "import-substrings": {
+    "@cspell/dict-": "використовуй лише @nitra/cspell-dict (text.mdc)"
+  }
+}
+```
+- `.cspell.json`:
+
+```json
+{
+  "import": ["@nitra/cspell-dict"]
+}
+```
+- `extensions.json`:
+
+```json
+{
+  "recommendations": ["DavidAnson.vscode-markdownlint", "oxc.oxc-vscode", "timonwong.shellcheck"]
+}
+```
+- `lint-text.yml`:
+
+```yaml
+name: Lint Text
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.vue'
+      - '**/*.html'
+      - '**/*.css'
+      - '**/*.scss'
+      - '**/*.less'
+      - '**/*.json'
+      - '**/*.jsonc'
+      - '**/*.yaml'
+      - '**/*.yml'
+      - '**/*.toml'
+      - '**/*.xml'
+      - '**/*.md'
+      - '**/*.mdc'
+      - '**/*.mdс'
+      - '**/*.txt'
+      - '**/*.go'
+      - '**/*.py'
+      - '**/*.php'
+      - '**/*.sh'
+
+  pull_request:
+    branches:
+      - dev
+      - main
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  text:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun-deps
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Install dotenv-linter
+        run: >-
+          curl -sSfL https://git.io/JLbXn
+          | sh -s -- -b /usr/local/bin
+
+      - name: Lint text
+        run: n-cursor lint text --read-only
+```
+- `package.json`:
+
+```json
+{
+  "top-level": {
+    "prettier": "Prettier заборонено — використовуй oxfmt (text.mdc)"
+  },
+  "dependencies": {
+    "prettier": "Prettier заборонено — використовуй oxfmt (text.mdc)",
+    "@nitra/prettier-config": "Prettier-конфіг заборонено — використовуй oxfmt (text.mdc)",
+    "markdownlint-cli2": "використовуй bunx у lint-text (text.mdc)"
+  },
+  "devDependencies": {
+    "prettier": "Prettier заборонено — використовуй oxfmt (text.mdc)",
+    "@nitra/prettier-config": "Prettier-конфіг заборонено — використовуй oxfmt (text.mdc)",
+    "markdownlint-cli2": "використовуй bunx у lint-text (text.mdc)"
+  }
+}
+```
+
 ## CI: workflow lint-text
 
 Додай workflow `.github/workflows/lint-text.yml`:
@@ -88,7 +253,7 @@ Rego-пакети, що перевіряються через conftest (auto-dis
 
 Підлаштуй **`language`** під проєкт. Порядок у **`import`** може впливати на пріоритет словників — тримай корпоративний **`@nitra/cspell-dict`** першим, якщо додаєш інші розширення (рідко).
 
-**Український апостроф:** у словах не використовуй прямий символ `'` (U+0027); потрібен типографський апостроф `’` (U+2019). Якщо після цього cspell досі підсвічує слово як невідоме — додай його до масиву `words` у `.cspell.json`.
+**Український апостроф:** у словах не використовуй прямий символ `'` (U+0027); потрібен типографський апостроф `'` (U+2019). Якщо після цього cspell досі підсвічує слово як невідоме — додай його до масиву `words` у `.cspell.json`.
 
 ### Локальні виключення (cspell `words`)
 
