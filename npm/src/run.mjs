@@ -1,10 +1,10 @@
 /**
- * Main auto-test loop: coverage → assess → gen-tests → loop until max → mutation + fix.
+ * Main auto-test loop: coverage → gen-tests → loop until max → mutation + fix.
  *
  * Phase 1 (loop, max 5 iterations):
  *   1. Measure per-file line coverage via vitest+lcov.
- *   2. pi CLI assesses which uncovered files actually need tests.
- *   3. pi agent generates tests for those files.
+ *   2. Generate tests for all files below threshold — coverage % is the signal.
+ *   3. Bootstrap: when no tests exist, scan sources and quickClassify locally.
  *   4. Repeat until coverage maxes out or no improvement.
  *
  * Phase 2:
@@ -12,11 +12,13 @@
  *   6. Auto-fix survived mutants via pi agent.
  */
 import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
-import { assessNeed } from './assess-need.mjs'
+import { quickClassify } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
 import { fixFailingTests } from './fix-tests.mjs'
 import { runCoverageSteps } from './coverage/coverage.mjs'
 import { withLock } from './scripts/utils/with-lock.mjs'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const MAX_ITERATIONS = 5
 const COVERAGE_THRESHOLD = 80
@@ -53,17 +55,26 @@ export async function runAutoTest(dir, opts = {}) {
         console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
         break
       }
-      console.log(`\n── Bootstrap: ${sourceFiles.length} файлів без тестів — оцінюю потребу ──\n`)
-      const bootstrapFiles = sourceFiles.map(f => ({ file: f, pct: 0 }))
-      const assessed = await assessNeed(bootstrapFiles, dir)
-      const needsTests = assessed.filter(f => f.needsTests)
-      if (needsTests.length === 0) {
-        console.log('✓ LLM вирішила: жоден файл не потребує unit-тестів.')
+      console.log(`\n── Bootstrap: ${sourceFiles.length} джерел — класифікую локально ──\n`)
+
+      const bootstrapFiles = sourceFiles
+        .map(f => {
+          try {
+            const q = quickClassify(readFileSync(join(dir, f), 'utf8'))
+            if (q?.needsTests === false) return null
+          } catch { /* include on read error */ }
+          return { file: f, pct: 0 }
+        })
+        .filter(Boolean)
+
+      if (bootstrapFiles.length === 0) {
+        console.log('✓ Жоден файл не потребує unit-тестів (реекспорти/типи).')
         break
       }
-      console.log(`\n→ Bootstrap-тести для (${needsTests.length}):`)
-      for (const f of needsTests) console.log(`  • ${f.file} — ${f.reason}`)
-      await generateTests(needsTests, dir)
+
+      console.log(`\n→ Bootstrap-тести для (${bootstrapFiles.length}):`)
+      for (const f of bootstrapFiles) console.log(`  • ${f.file}`)
+      await generateTests(bootstrapFiles, dir)
       continue
     }
 
@@ -84,21 +95,12 @@ export async function runAutoTest(dir, opts = {}) {
     }
     prevUncoveredCount = uncovered.length
 
-    console.log(`\n── Оцінюю ${uncovered.length} непокритих файлів (LLM) ──\n`)
-    const assessed = await assessNeed(uncovered, dir)
-    const needsTests = assessed.filter(f => f.needsTests)
-
-    if (needsTests.length === 0) {
-      console.log('✓ LLM вирішила: жоден непокритий файл не потребує unit-тестів.')
-      break
+    console.log(`\n→ Генерую тести для ${uncovered.length} файлів:`)
+    for (const f of uncovered) {
+      console.log(`  • ${f.file} (${f.pct.toFixed(1)}%)`)
     }
 
-    console.log(`\n→ Потребують тестів (${needsTests.length}):`)
-    for (const f of needsTests) {
-      console.log(`  • ${f.file} (${f.pct.toFixed(1)}%) — ${f.reason}`)
-    }
-
-    await generateTests(needsTests, dir)
+    await generateTests(uncovered, dir)
   }
 
   if (opts.noMutation) {
