@@ -22,7 +22,7 @@ import { env } from 'node:process'
 import { callText } from './lib/pi-client.mjs'
 import { findTestRules } from './gen-tests.mjs'
 import { parseFailingTests } from './coverage-per-file.mjs'
-import { VITEST_BIN, VITEST_SHIM_CONFIG, ensureVitestShim } from './lib/vitest-shim.mjs'
+import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
 const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? env.N_CLOUD_MAX_MODEL ?? undefined
 const MAX_SRC_BYTES = 4000
@@ -73,21 +73,11 @@ export async function getFailingTests(dir) {
   const tmpDir = await mkdtemp(join(tmpdir(), '7n-fix-'))
   const outputFile = join(tmpDir, 'results.json')
 
-  ensureVitestShim()
+  const { bin, configArgs } = resolveVitestRun(dir)
   try {
     spawnSync(
       process.execPath,
-      [
-        VITEST_BIN,
-        'run',
-        '--config',
-        VITEST_SHIM_CONFIG,
-        '--root',
-        dir,
-        '--reporter=json',
-        `--outputFile=${outputFile}`,
-        '--passWithNoTests'
-      ],
+      [bin, 'run', ...configArgs, '--root', dir, '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'],
       { cwd: dir, stdio: 'inherit', env }
     )
 

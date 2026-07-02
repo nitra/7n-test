@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
 import { callText } from './lib/pi-client.mjs'
-import { VITEST_BIN, VITEST_SHIM_CONFIG, ensureVitestShim } from './lib/vitest-shim.mjs'
+import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
 import { probeModule, probeFetchCalls, probeTimeVariants, probeHelpers } from './lib/runtime-probe.mjs'
@@ -565,14 +565,14 @@ function runBlock(header, block, dir, testDir) {
   const code = mergeBlocks(header, [block])
   if (!code) return { passed: false, errors: 'mergeBlocks failed' }
 
-  ensureVitestShim()
+  const { bin, configArgs } = resolveVitestRun(dir)
   mkdirSync(testDir, { recursive: true })
   const tmpFile = join(testDir, '.7n-validate.test.mjs')
   try {
     writeFileSync(tmpFile, code + '\n', 'utf8')
     const result = spawnSync(
       process.execPath,
-      [VITEST_BIN, 'run', '--config', VITEST_SHIM_CONFIG, '--root', dir, '--reporter=verbose', tmpFile],
+      [bin, 'run', ...configArgs, '--root', dir, '--reporter=verbose', tmpFile],
       { cwd: dir, encoding: 'utf8', timeout: 30_000, env: process.env }
     )
     if (result.status === 0) return { passed: true, errors: '' }

@@ -10,7 +10,7 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { env } from 'node:process'
-import { VITEST_BIN, VITEST_SHIM_CONFIG, ensureVitestShim } from './lib/vitest-shim.mjs'
+import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
 const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|(?:^|[/\\])tests?[/\\]/
 const VITEST_UNSUPPORTED_TEST_RE = /bun:test|Cannot find package 'bun/i
@@ -97,15 +97,14 @@ export async function measureCoveragePerFile(dir) {
   const lcovDir = await mkdtemp(join(tmpdir(), '7n-cov-'))
   const jsonResultsFile = join(lcovDir, 'test-results.json')
 
-  ensureVitestShim()
+  const { bin, configArgs } = resolveVitestRun(dir)
   try {
     spawnSync(
       process.execPath,
       [
-        VITEST_BIN,
+        bin,
         'run',
-        '--config',
-        VITEST_SHIM_CONFIG,
+        ...configArgs,
         '--root',
         dir,
         '--passWithNoTests',
