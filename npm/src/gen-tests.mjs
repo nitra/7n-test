@@ -21,7 +21,7 @@ import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
 import { probeModule, probeFetchCalls, probeTimeVariants, probeHelpers } from './lib/runtime-probe.mjs'
-import { checkEnv } from '@nitra/check-env'
+import { env } from 'node:process'
 
 const MAX_SRC_BYTES = 6000
 
@@ -1142,7 +1142,7 @@ async function generateOneTest(fileInfo, dir, callTextFn) {
  */
 function resolveLocalModel(opts) {
   if (opts.localModel !== undefined) return opts.localModel
-  return checkEnv(['N_LOCAL_MIN_MODEL']) ?? null
+  return env.N_LOCAL_MIN_MODEL ?? null
 }
 
 /**
