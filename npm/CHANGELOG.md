@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.2] - 2026-07-02
+
+### Fixed
+
+- resolveLocalModel (gen-tests.mjs) помилково трактував checkEnv() з @nitra/check-env як гетер значення змінної середовища — насправді це лише валідатор наявності, що завжди повертає undefined на успіху. Через це N_LOCAL_MIN_MODEL ігнорувався і двоярусна генерація (local+cloud) ніколи не вмикалась, навіть за коректно заданої змінної — завжди йшов fallback у single-file (cloud) режим. Замінено на пряме читання process.env.N_LOCAL_MIN_MODEL.
+
 ## [0.10.1] - 2026-07-02
 
 ### Fixed
