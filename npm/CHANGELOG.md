@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.0] - 2026-07-02
+
+### Changed
+
+- Оновлено залежність @nitra/check-env до ^4.0.0
+
+### Fixed
+
+- Coverage/gen-tests/fix-tests тепер віддають перевагу локально встановленому vitest цільового проєкту замість підміненого шим-конфіга: власний vitest.config.js (setupFiles, environment, plugins) і провайдери оточення (happy-dom тощо) з node_modules цільового проєкту більше не ігноруються.
+
 ## [0.9.1] - 2026-07-02
 
 ### Changed
