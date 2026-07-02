@@ -1,4 +1,4 @@
-name: Lint GA
+name: StyleLint
 
 on:
   push:
@@ -6,19 +6,25 @@ on:
       - dev
       - main
     paths:
-      - '.github/actions/**'
-      - '.github/workflows/**'
+      - '**/*.css'
+      - '**/*.scss'
+      - '**/*.vue'
+
   pull_request:
     branches:
       - dev
       - main
+    paths:
+      - '**/*.css'
+      - '**/*.scss'
+      - '**/*.vue'
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
-  lint-ga:
+  stylelint:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,14 +35,6 @@ jobs:
 
       - uses: ./.github/actions/setup-bun-deps
 
-      - uses: astral-sh/setup-uv@v8.0.0
-
-      - name: Install conftest
+      - name: StyleLint
         run: >-
-          curl -fsSL
-          https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz
-          | sudo tar -xz -C /usr/local/bin conftest
-
-      - name: Lint GA
-        run: >-
-          bunx n-cursor lint ga --read-only
+          bunx n-cursor lint style --read-only

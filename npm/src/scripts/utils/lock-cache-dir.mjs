@@ -9,7 +9,7 @@
  *
  * `git rev-parse --git-common-dir` повертає той самий `.git` головного репо з
  * будь-якого worktree, тож стан кладемо під `<git-common-dir>/n-cursor/<key>`
- * (всередині `.git` — спільне, ніколи не трекається, переживає `bun i`).
+ * (всередині `.git` — спільне, ніколи не відстежується, переживає `bun i`).
  * Поза git-репо (git недоступний / каталог не репо) — fallback на per-checkout
  * `node_modules/.cache/n-cursor/<key>`, як було історично.
  */

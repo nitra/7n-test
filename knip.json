@@ -1,8 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "project": ["**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}"],
-  "ignore": ["**/__fixtures__/**"],
-  "ignoreDependencies": ["@nitra/cspell-dict", "/@cspell\\/dict-.+/", "globals", "graphql"],
+  "ignore": ["**/__fixtures__/**", "coverage/**"],
+  "ignoreDependencies": ["@nitra/cspell-dict", "/@cspell\\/dict-.+/", "globals", "graphql", "@nitra/stylelint-config", "@stryker-mutator/vitest-runner", "@vitest/coverage-v8", "rollup"],
   "ignoreBinaries": [
     "actionlint",
     "cspell",
@@ -28,11 +28,12 @@
         "markdownlint-cli2.config.{js,mjs,cjs,jsonc}",
         ".markdownlint-cli2.{jsonc,cjs,mjs}",
         "commitlint.config.{js,cjs,mjs}",
-        ".pi/extensions/**/index.ts"
+        ".pi/extensions/**/index.ts",
+        "js/*.mjs"
       ]
     },
     "npm": {
-      "entry": ["bin/7.js", "index.js", "stryker.config.mjs", "**/*.test.{js,mjs}"],
+      "entry": ["bin/7.js", "index.js", "stryker.config.mjs", "src/coverage-fix-extract.mjs", "src/coverage-classify/apply.mjs", "src/coverage-classify/verdict-schema.mjs", "**/*.test.{js,mjs}"],
       "project": ["**/*.{js,mjs}"]
     }
   }

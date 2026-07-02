@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.1] - 2026-07-02
+
+### Changed
+
+- docs
+
+### Fixed
+
+- Виніс спільний парсинг vitest failure у `coverage-per-file.mjs` і перевів `fix-tests.mjs` на його повторне використання, щоб прибрати jscpd-дубль.
+- - Зменшено cognitive complexity генерації тестів через винесення підготовки контексту та tiered block generation у менші helper-и.
+- - Виправлено JSDoc-описи та спрощено цикл генерації тестових блоків, щоб пройти JS lint для `gen-tests.mjs`.
+
 ## [0.9.0] - 2026-06-28
 
 ### Changed

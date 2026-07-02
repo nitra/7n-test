@@ -213,48 +213,10 @@ version: '1.0'
 - Не виконує сам "патч" — лише готує промпт для іншого агента.
 - Не оптимізує під Gemini / GPT — лише Claude / Cursor agent.
 
-## Приклад виклику й результату
+## Приклад
 
-Виклик:
+Виклик: `/n-llm-patch у @nitra/eslint-config підняти engines.node до >=25`
 
-```
-/n-llm-patch у @nitra/eslint-config підняти engines.node до >=25
-```
+Очікуваний результат: один ` ```markdown ` блок із коротким інтентом, 1-3 точками правки, стислими вимогами та перевіркою; без повних цитат існуючих файлів і без ручного `CHANGELOG.md` / `version` bump.
 
-Очікуваний вивід:
-
-````markdown
-```markdown
-# Завдання
-
-Підняти `engines.node` у `@nitra/eslint-config` з `>=22` до `>=25`,
-переконатися що peer `eslint ^9` сумісний з Node 25.
-
-# Точки правки
-
-- `package.json:18` — `engines.node`
-
-# Що треба зробити
-
-- Підняти `engines.node` до `>=25`; якщо peer `eslint ^9` несумісний —
-  підняти range.
-- Зафіксувати зміну change-файлом (НЕ редагувати `CHANGELOG.md` чи `version`
-  вручну): `npx @7n/n ch --bump minor --section Changed --message "engines.node >=25"`.
-
-# Обмеження
-
-- Дотриматись `.cursor/rules/n-js.mdc` і `.cursor/rules/n-changelog.mdc`
-  (зміни у workspace = change-файл, не ручний CHANGELOG/version bump).
-- Якщо `eslint ^9` офіційно не підтримує Node 25 — підняти peer range.
-
-# Як перевірити
-
-- `bun test` — зелений
-- `node -p "require('./package.json').engines.node"` → `>=25`
-- `npx @nitra/cursor fix changelog` → exit `0`
-```
-````
-
-```
 готово до копіювання — встав у чат з агентом у цільовому проєкті
-```

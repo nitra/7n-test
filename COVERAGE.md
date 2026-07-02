@@ -2778,10 +2778,10 @@ needsTests: true when:
 | 42 |`${SYSTEM_PROMPT}\n\n` ` | ````| StringLiteral |
 | 48 |`\{[\s\S]*?"needsTests"[\s\S]_?\}/)`|`/\{[\S\S]_?"needsTests"[\s\S]_?\}/`| Regex |
 | 48 |`\{[\s\S]_?"needsTests"[\s\S]_?\}/)`|`/\{[\s\s]_?"needsTests"[\s\S]\_?\}/`| Regex |
-| 49 |`atch?.[0] `|`match[0]`| OptionalChaining |
+| 49 |`atch?.[0]`|`match[0]`| OptionalChaining |
 | 49 |`{}')`|`""`| StringLiteral |
 | 54 |`'`|`"Stryker was here!"`| StringLiteral |
-| 57 |`оцінка не вдалась — вважаємо що потрібні тести' `|`""` | StringLiteral |
+| 57 |`оцінка не вдалась — вважаємо що потрібні тести'`|`""` | StringLiteral |
 
 **Приклад тесту** (`npm/src/assess-need.test.mjs`):
 
@@ -2803,23 +2803,23 @@ it('returns needsTests:false when file not found', async () => {
 | 33    | `cursor',`                     | `""`                           | StringLiteral         |
 | 33    | `rules')`                      | `""`                           | StringLiteral         |
 | 97    | `',`                           | `"Stryker was here!"`          | StringLiteral         |
-| 99    | `                              | ---                            | ---                   | ---    | --- | --- | '`   | `""`          | StringLiteral |
+| 99    | `| ---                            | ---                   | ---    | --- | --- | '`   | `""`          | StringLiteral |
 | 110   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
 | 110   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
 | 110   | ````json',`                    | `""`                           | StringLiteral         |
-| 110   | ````')`                        | `""`                           | StringLiteral         |
-| 113   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
-| 113   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
+| 110   |````')` | `""` | StringLiteral         |
+| 113   | `',` | `"Stryker was here!"` | StringLiteral         |
+| 113   | `',` | `"Stryker was here!"` | StringLiteral         |
 | 113   | `                              | Рядок                          | Оригінал              | Заміна | Тип | ',` | `""` | StringLiteral |
 | 113   | `                              | ---                            | ---                   | ---    | --- | ')` | `""` | StringLiteral |
-| 117   | `roup.exampleTest)`            | `true`                         | ConditionalExpression |
-| 119   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
-| 121   | `',`                           | `"Stryker was here!"`          | StringLiteral         |
+| 117   | `roup.exampleTest)` | `true` | ConditionalExpression |
+| 119   | `',` | `"Stryker was here!"` | StringLiteral         |
+| 121   | `',` | `"Stryker was here!"`| StringLiteral         |
 | 122   | ````js',`                      | `""`                           | StringLiteral         |
 | 123   | `roup.exampleTest.code ?? '',` | `group.exampleTest.code && ''` | LogicalOperator       |
-| 124   | ````'`                         | `""`                           | StringLiteral         |
-| 127   | `roup.recommendationText)`     | `true`                         | ConditionalExpression |
-| 127   | `roup.recommendationText)`     | `false`                        | ConditionalExpression |
+| 124   | ````'` | `""` | StringLiteral         |
+| 127   | `roup.recommendationText)` | `true` | ConditionalExpression |
+| 127   | `roup.recommendationText)` | `false` | ConditionalExpression |
 | 127   | `                              |
 
         lines.push('', '**Що треба протестувати:**', '', group.recommendationText)
@@ -2856,7 +2856,7 @@ it('should correctly sum coverage totals', () => {
 | 10    | `glue',`                                | `""`                             | StringLiteral    |
 | 10    | `wrapper']`                             | `""`                             | StringLiteral    |
 | 19    | `erdict.confidence >= threshold`        | `verdict.confidence > threshold` | EqualityOperator |
-| 48    | ` file: group.file, mutant, verdict })` | `{}`                             | ObjectLiteral    |
+| 48    | `file: group.file, mutant, verdict })` | `{}`                             | ObjectLiteral    |
 
 **Приклад тесту** (`npm/src/coverage-classify/apply.test.mjs`):
 
@@ -2876,17 +2876,17 @@ it('should mark equivalent mutants as allowed gaps if confidence >= threshold', 
 | 29    | `git',`                            | `""`           | StringLiteral                      |
 | 29    | `'hash-object', filePath],`        | `[]`           | ArrayDeclaration                   |
 | 29    | `hash-object',`                    | `""`           | StringLiteral                      |
-| 29    | ` encoding: 'utf8' })`             | `{}`           | ObjectLiteral                      |
-| 29    | `utf8' `                           | `""`           | StringLiteral                      |
+| 29    | `encoding: 'utf8' })`             | `{}`           | ObjectLiteral                      |
+| 29    | `utf8'`                           | `""`           | StringLiteral                      |
 | 44    | `blobHash)`                        | `true`         | ConditionalExpression              |
 | 57    | `existsSync(cachePath))`           | `false`        | ConditionalExpression              |
 | 59    | `utf8')`                           | `""`           | StringLiteral                      |
-| 60    | `ata?.version `                    | `data.version` | OptionalChaining                   |
+| 60    | `ata?.version`                    | `data.version` | OptionalChaining                   |
 | 61    | `data.entries                      |                | typeof data.entries !== 'object'   |                                                     | Array.isArray(data.entries))` | `false`         | ConditionalExpression |
 | 61    | `data.entries                      |                | typeof data.entries !== 'object'   |                                                     | Array.isArray(data.entries))` | `(!data.entries |                       | typeof data.entries !== 'object') && Array.isArray(data.entries)` | LogicalOperator |
-| 61    | `data.entries                      |                | typeof data.entries !== 'object' ` | `false`                                             | ConditionalExpression         |
-| 61    | `data.entries                      |                | typeof data.entries !== 'object' ` | `!data.entries && typeof data.entries !== 'object'` | LogicalOperator               |
-| 61    | `ypeof data.entries !== 'object' ` | `false`        | ConditionalExpression              |
+| 61    | `data.entries                      |                | typeof data.entries !== 'object'` | `false`                                             | ConditionalExpression         |
+| 61    | `data.entries                      |                | typeof data.entries !== 'object'` | `!data.entries && typeof data.entries !== 'object'` | LogicalOperator               |
+| 61    | `ypeof data.entries !== 'object'` | `false`        | ConditionalExpression              |
 
 **Приклад тесту** (`npm/src/coverage-classify/cache.test.mjs`):
 
@@ -3132,7 +3132,7 @@ suggestedTest: z.string().max(300).optional()
 | 16    | `nv.N_CURSOR_COVERAGE_FIX_MODEL ?? resolveModel('max')`                             | `env.N_CURSOR_COVERAGE_FIX_MODEL && resolveModel('max')` | LogicalOperator    |
 | 16    | `max')`                                                                             | `""`                                                     | StringLiteral      |
 | 31    | `s, g) => s + g.mutants.length,`                                                    | `() => undefined`                                        | ArrowFunction      |
-| 31    | ` + g.mutants.length,`                                                              | `s - g.mutants.length`                                   | ArithmeticOperator |
+| 31    | `+ g.mutants.length,`                                                              | `s - g.mutants.length`                                   | ArithmeticOperator |
 | 38    | `\n🤖 coverage --fix: запускаю агента для ${totalMutants} вцілілих мутантів...\n`)` | ````                                                     | StringLiteral      |
 | 51    | `]`                                                                                 | `["Stryker was here"]`                                   | ArrayDeclaration   |
 | 67    | `]`                                                                                 | `["Stryker was here"]`                                   | ArrayDeclaration   |
@@ -3151,19 +3151,19 @@ suggestedTest: z.string().max(300).optional()
 | 81 | `.line + 3)` | `m.line - 3` | ArithmeticOperator |
 | 82 | `rcLines
           .slice(ctxStart, ctxEnd)` | `srcLines` | MethodExpression |
-| 84 | `l, i) => `${ctxStart + i + 1}: ${l}`)` | `() => undefined` | ArrowFunction |
+| 84 | `l, i) =>`${ctxStart + i + 1}: ${l}`)` | `() => undefined` | ArrowFunction |
 | 84 | `${ctxStart + i + 1}: ${l}`)` | ```` | StringLiteral |
 | 84 | `txStart + i + 1}` | `ctxStart + i - 1` | ArithmeticOperator |
 | 84 | `txStart + i ` | `ctxStart - i` | ArithmeticOperator |
 | 85 | `\n')` | `""` | StringLiteral |
 | 86 | `
-          `  - Рядок ${m.line}, колонка ${m.col}, тип мутації \`${m.mutantType}\``,
+          `- Рядок ${m.line}, колонка ${m.col}, тип мутації \`${m.mutantType}\``,
           ` Оригінал: \`${m.original}\``,
           `    Вижив варіант: \`${m.replacement}\``,
-          context ? ` Контекст:\n\`\`\`\n${context}\n\`\`\`` : ''
+          context ? ` Контекст:\n\`\`\`\n${context}\n\`\`\``: ''
         ]
-          .filter(Boolean)` | `[`  - Рядок ${m.line}, колонка ${m.col}, тип мутації \`${m.mutantType}\``, ` Оригінал: \`${m.original}\``, `    Вижив варіант: \`${m.replacement}\``, context ? ` Контекст:\n\`\`\`\n${context}\n\`\`\`` : '']` | MethodExpression |
-| 90 | `    Контекст:\n\`\`\`\n${context}\n\`\`\`` ` | ````| StringLiteral |
+          .filter(Boolean)` | `[`  - Рядок ${m.line}, колонка ${m.col}, тип мутації \`${m.mutantType}\``, ` Оригінал: \`${m.original}\``,`    Вижив варіант: \`${m.replacement}\``, context ? ` Контекст:\n\`\`\`\n${context}\n\`\`\``: '']` | MethodExpression |
+| 90 | `Контекст:\n\`\`\`\n${context}\n\`\`\`` ` | ````| StringLiteral |
 | 90 |`'`|`"Stryker was here!"`| StringLiteral |
 | 93 |`\n')`|`""`| StringLiteral |
 | 95 |`\n')`|`""`| StringLiteral |
@@ -3178,7 +3178,7 @@ suggestedTest: z.string().max(300).optional()
 | 113 |`## Правила',`|`""`| StringLiteral |
 | 114 |`- Не змінюй source-файли — лише test-файли.',`|`""`| StringLiteral |
 | 115 |`- Використовуй той самий test-фреймворк, що вже в проєкті.',`|`""`| StringLiteral |
-| 116 |`- Запусти `bun test` (або відповідну команду) після кожного файлу — переконайся, що 0 fail.',`|`""`| StringLiteral |
+| 116 |`- Запусти`bun test`(або відповідну команду) після кожного файлу — переконайся, що 0 fail.',`|`""`| StringLiteral |
 | 117 |`- Якщо мутант охоплений іншим новим тестом — не дублюй.'`|`""`| StringLiteral |
 | 118 |`\n')`|`""` | StringLiteral |
 
@@ -3207,15 +3207,15 @@ it('logs and returns early when survived is empty', async () => {
 | 26    | `ine.slice(3).trim()`                     | `line.slice(3)`            | MethodExpression      |
 | 26    | `ine.slice(3).`                           | `line`                     | MethodExpression      |
 | 33    | `ine === 'end_of_record' && currentFile)` | `line === 'end_of_record'  |                       | currentFile` | LogicalOperator |
-| 33    | `ine === 'end_of_record' `                | `true`                     | ConditionalExpression |
-| 33    | `ine === 'end_of_record' `                | `line !== 'end_of_record'` | EqualityOperator      |
-| 36    | `f === 0 `                                | `false`                    | ConditionalExpression |
+| 33    | `ine === 'end_of_record'`                | `true`                     | ConditionalExpression |
+| 33    | `ine === 'end_of_record'`                | `line !== 'end_of_record'` | EqualityOperator      |
+| 36    | `f === 0`                                | `false`                    | ConditionalExpression |
 | 52    | `7n-cov-')`                               | `""`                       | StringLiteral         |
 | 59    | `--passWithNoTests',`                     | `""`                       | StringLiteral         |
 | 62    | `--coverage.reportsDirectory=${lcovDir}`` | ````                       | StringLiteral         |
-| 64    | `inherit',`                               | `""`                       | StringLiteral         |
-| 66    | `lcov.info')`                             | `""`                       | StringLiteral         |
-| 68    | `utf8')`                                  | `""`                       | StringLiteral         |
+| 64    |`inherit',` | `""` | StringLiteral         |
+| 66    | `lcov.info')` | `""` | StringLiteral         |
+| 68    | `utf8')` | `""` | StringLiteral         |
 | 69    | `llFiles                                  |
 
       .map(f => ({ ...f, file: relative(dir, f.file) }))
@@ -3265,16 +3265,16 @@ it('returns per-file data from lcov.info', async () => {
 | 16    | `\.[^.]+$/,`                                                               | `/\.[.]+$/`                       | Regex                 |
 | 16    | `')`                                                                       | `"Stryker was here!"`             | StringLiteral         |
 | 17    | `/')`                                                                      | `""`                              | StringLiteral         |
-| 18    | `astSlash === -1 `                                                         | `true`                            | ConditionalExpression |
-| 18    | `astSlash === -1 `                                                         | `false`                           | ConditionalExpression |
-| 18    | `astSlash === -1 `                                                         | `lastSlash !== -1`                | EqualityOperator      |
-| 18    | `1 `                                                                       | `+1`                              | UnaryOperator         |
+| 18    | `astSlash === -1`                                                         | `true`                            | ConditionalExpression |
+| 18    | `astSlash === -1`                                                         | `false`                           | ConditionalExpression |
+| 18    | `astSlash === -1`                                                         | `lastSlash !== -1`                | EqualityOperator      |
+| 18    | `1`                                                                       | `+1`                              | UnaryOperator         |
 | 18    | `ase.slice(lastSlash + 1)`                                                 | `base`                            | MethodExpression      |
 | 18    | `astSlash + 1)`                                                            | `lastSlash - 1`                   | ArithmeticOperator    |
-| 19    | `astSlash === -1 `                                                         | `true`                            | ConditionalExpression |
-| 19    | `astSlash === -1 `                                                         | `false`                           | ConditionalExpression |
-| 19    | `astSlash === -1 `                                                         | `lastSlash !== -1`                | EqualityOperator      |
-| 19    | `1 `                                                                       | `+1`                              | UnaryOperator         |
+| 19    | `astSlash === -1`                                                         | `true`                            | ConditionalExpression |
+| 19    | `astSlash === -1`                                                         | `false`                           | ConditionalExpression |
+| 19    | `astSlash === -1`                                                         | `lastSlash !== -1`                | EqualityOperator      |
+| 19    | `1`                                                                       | `+1`                              | UnaryOperator         |
 | 19    | `ase.slice(0, lastSlash)`                                                  | `base`                            | MethodExpression      |
 | 21    | `${base}.test.mjs`,`                                                       | ````                              | StringLiteral         |
 | 22    | `${base}.test.js`,`                                                        | ````                              | StringLiteral         |
@@ -3282,7 +3282,7 @@ it('returns per-file data from lcov.info', async () => {
 | 48    | `utf8')`                                                                   | `""`                              | StringLiteral         |
 | 49    | `ontent.length > MAX_SRC_BYTES)`                                           | `true`                            | ConditionalExpression |
 | 49    | `ontent.length > MAX_SRC_BYTES)`                                           | `content.length >= MAX_SRC_BYTES` | EqualityOperator      |
-| 49    | `ontent.slice(0, MAX_SRC_BYTES) `                                          | `content`                         | MethodExpression      |
+| 49    | `ontent.slice(0, MAX_SRC_BYTES)`                                          | `content`                         | MethodExpression      |
 | 53    | `')`                                                                       | `"Stryker was here!"`             | StringLiteral         |
 | 56    | `\n\n')`                                                                   | `""`                              | StringLiteral         |
 | 69    | `'`                                                                        | `"Stryker was here!"`             | StringLiteral         |
@@ -3291,7 +3291,7 @@ it('returns per-file data from lcov.info', async () => {
 | 132   | `iles.length === 0)`                                                       | `false`                           | ConditionalExpression |
 | 134   | `pts.callText ?? callText`                                                 | `opts.callText && callText`       | LogicalOperator       |
 | 137   | `\n🤖 Генерую тести для ${files.length} файлів (pi SDK, по одному)...\n`)` | ````                              | StringLiteral         |
-| 140   | `  → ${fileInfo.file} (${fileInfo.pct.toFixed(1)}%)`)`                     | ````                              | StringLiteral         |
+| 140   | `→ ${fileInfo.file} (${fileInfo.pct.toFixed(1)}%)`)`                     | ````                              | StringLiteral         |
 
 **Приклад тесту** (`npm/src/gen-tests.test.mjs`):
 
@@ -3309,9 +3309,9 @@ it('should build a summary prompt correctly for multiple files', () => {
 
 | Рядок | Оригінал                                                                       | Заміна            | Тип              |
 | ----- | ------------------------------------------------------------------------------ | ----------------- | ---------------- |
-| 42    | ` => m.content)`                                                               | `() => undefined` | ArrowFunction    |
+| 42    | `=> m.content)`                                                               | `() => undefined` | ArrowFunction    |
 | 42    | `\n\n')`                                                                       | `""`              | StringLiteral    |
-| 43    | `'--model', model] `                                                           | `[]`              | ArrayDeclaration |
+| 43    | `'--model', model]`                                                           | `[]`              | ArrayDeclaration |
 | 43    | `--model',`                                                                    | `""`              | StringLiteral    |
 | 44    | `pi',`                                                                         | `""`              | StringLiteral    |
 | 44    | `'-p', prompt, ...modelArgs, '--no-session', '--mode', 'text', '--no-tools'],` | `[]`              | ArrayDeclaration |
@@ -3428,7 +3428,7 @@ throw new TypeError(`resolveModel: unknown tier "${tier}". Use 'min', 'avg', or 
 | Рядок | Оригінал                         | Заміна                            | Тип                   |
 | ----- | -------------------------------- | --------------------------------- | --------------------- |
 | 25    | `0 * 1024 * 1024`                | `50 * 1024 / 1024`                | ArithmeticOperator    |
-| 25    | `0 * 1024 `                      | `50 / 1024`                       | ArithmeticOperator    |
+| 25    | `0 * 1024`                      | `50 / 1024`                       | ArithmeticOperator    |
 | 28    | `'0', 'false', 'off', 'no'])`    | `[]`                              | ArrayDeclaration      |
 | 28    | `0',`                            | `""`                              | StringLiteral         |
 | 28    | `false',`                        | `""`                              | StringLiteral         |
@@ -3436,7 +3436,7 @@ throw new TypeError(`resolveModel: unknown tier "${tier}". Use 'min', 'avg', or 
 | 28    | `no']`                           | `""`                              | StringLiteral         |
 | 38    | `verride !== undefined)`         | `true`                            | ConditionalExpression |
 | 40    | `verride)`                       | `true`                            | ConditionalExpression |
-| 55    | `?.content `                     | `m.content`                       | OptionalChaining      |
+| 55    | `?.content`                     | `m.content`                       | OptionalChaining      |
 | 56    | `ontent.length > MAX_MSG_CHARS)` | `content.length >= MAX_MSG_CHARS` | EqualityOperator      |
 | 60    | `?.role,`                        | `m.role`                          | OptionalChaining      |
 | 62    | `sha256')`                       | `""`                              | StringLiteral         |
@@ -3462,7 +3462,7 @@ it('should return null when N_CURSOR_LLM_TRACE is set to a kill value', () => {
 | 41    | `.omlx',`                                    | `""`                            | StringLiteral    |
 | 41    | `settings.json')`                            | `""`                            | StringLiteral    |
 | 41    | `utf8')`                                     | `""`                            | StringLiteral    |
-| 42    | `ettings?.auth?.api_key `                    | `settings?.auth.api_key`        | OptionalChaining |
+| 42    | `ettings?.auth?.api_key`                    | `settings?.auth.api_key`        | OptionalChaining |
 | 42    | `ettings?.auth?`                             | `settings.auth`                 | OptionalChaining |
 | 48    | `omlx/'`                                     | `""`                            | StringLiteral    |
 | 51    | `2000, 8000]`                                | `[]`                            | ArrayDeclaration |
@@ -3472,7 +3472,7 @@ it('should return null when N_CURSOR_LLM_TRACE is set to a kill value', () => {
 | 81    | `<think>([\s\S]*?)<\/think>/`                | `/<think>([\s\s]*?)<\/think>/`  | Regex            |
 | 95    | `essage?.reasoning_content`                  | `message.reasoning_content`     | OptionalChaining |
 | 96    | `ield.trim())`                               | `field`                         | MethodExpression |
-| 97    | `essage?.content `                           | `message.content`               | OptionalChaining |
+| 97    | `essage?.content`                           | `message.content`               | OptionalChaining |
 | 99    | `[1].trim(),`                                | `m[1]`                          | MethodExpression |
 | 100   | `ontent.trim())`                             | `content`                       | MethodExpression |
 
@@ -3532,7 +3532,7 @@ it('should call createAgentSession with correct parameters and return assistant 
 | Рядок | Оригінал                                                                | Заміна                               | Тип                |
 | ----- | ----------------------------------------------------------------------- | ------------------------------------ | ------------------ |
 | 28    | `\n📁 ${dir}\n`)`                                                       | ````                                 | StringLiteral      |
-| 32    | ` <= MAX_ITERATIONS;`                                                   | `i < MAX_ITERATIONS`                 | EqualityOperator   |
+| 32    | `<= MAX_ITERATIONS;`                                                   | `i < MAX_ITERATIONS`                 | EqualityOperator   |
 | 32    | `++)`                                                                   | `i--`                                | UpdateOperator     |
 | 33    | `\n── Ітерація ${i}/${MAX_ITERATIONS}: coverage ──\n`)`                 | ````                                 | StringLiteral      |
 | 37    | `⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')` | `""`                                 | StringLiteral      |
@@ -3550,7 +3550,7 @@ it('should call createAgentSession with correct parameters and return assistant 
       console.log(`  • ${f.file} (${f.pct.toFixed(1)}%) — ${f.reason}`)
     }` | `{}` | BlockStatement |
 
-| 69 | `  • ${f.file} (${f.pct.toFixed(1)}%) — ${f.reason}`)`| ```` | StringLiteral |
+| 69 | `• ${f.file} (${f.pct.toFixed(1)}%) — ${f.reason}`)`| ```` | StringLiteral |
 | 75 |`\n── Мутаційне тестування + автофікс ──\n')`|`""`| StringLiteral |
 | 76 |`coverage',`|`""`| StringLiteral |
 | 78 |`\n♻️ Повторний coverage після агента...\n')`|`""`| StringLiteral |
@@ -3607,11 +3607,11 @@ it('should return default configuration when config file does not exist', async 
 | 28    | `'rev-parse', '--git-common-dir'],` | `[]`            | ArrayDeclaration      |
 | 28    | `rev-parse',`                       | `""`            | StringLiteral         |
 | 28    | `--git-common-dir']`                | `""`            | StringLiteral         |
-| 28    | ` cwd, encoding: 'utf8' })`         | `{}`            | ObjectLiteral         |
-| 28    | `utf8' `                            | `""`            | StringLiteral         |
-| 29    | `.status === 0 && !r.error `        | `true`          | ConditionalExpression |
-| 29    | `.status === 0 && !r.error `        | `r.status === 0 |                       | !r.error` | LogicalOperator |
-| 29    | `.status === 0 `                    | `true`          | ConditionalExpression |
+| 28    | `cwd, encoding: 'utf8' })`         | `{}`            | ObjectLiteral         |
+| 28    | `utf8'`                            | `""`            | StringLiteral         |
+| 29    | `.status === 0 && !r.error`        | `true`          | ConditionalExpression |
+| 29    | `.status === 0 && !r.error`        | `r.status === 0 |                       | !r.error` | LogicalOperator |
+| 29    | `.status === 0`                    | `true`          | ConditionalExpression |
 
 **Приклад тесту** (`npm/src/scripts/utils/lock-cache-dir.test.mjs`):
 
@@ -3653,26 +3653,26 @@ it('should return false if exitCode is not 0', () => {
 | Рядок | Оригінал                                               | Заміна                       | Тип                   |
 | ----- | ------------------------------------------------------ | ---------------------------- | --------------------- | --------------------------- | --------------- |
 | 15    | `git',`                                                | `""`                         | StringLiteral         |
-| 15    | ` encoding: 'utf8' })`                                 | `{}`                         | ObjectLiteral         |
-| 15    | `utf8' `                                               | `""`                         | StringLiteral         |
+| 15    | `encoding: 'utf8' })`                                 | `{}`                         | ObjectLiteral         |
+| 15    | `utf8'`                                               | `""`                         | StringLiteral         |
 | 16    | `.status !== 0                                         |                              | r.error)`             | `r.status !== 0 && r.error` | LogicalOperator |
-| 16    | `.status !== 0 `                                       | `false`                      | ConditionalExpression |
-| 16    | `git ${args[0]} failed`)`                              | ````                         | StringLiteral         |
-| 21    | `it(['rev-parse', 'HEAD']).trim()`                     | `git(['rev-parse', 'HEAD'])` | MethodExpression      |
-| 21    | `'rev-parse', 'HEAD'])`                                | `[]`                         | ArrayDeclaration      |
-| 21    | `rev-parse',`                                          | `""`                         | StringLiteral         |
-| 21    | `HEAD']`                                               | `""`                         | StringLiteral         |
-| 22    | `'diff', 'HEAD'])`                                     | `[]`                         | ArrayDeclaration      |
-| 22    | `diff',`                                               | `""`                         | StringLiteral         |
-| 22    | `HEAD']`                                               | `""`                         | StringLiteral         |
-| 25    | `'ls-files', '-z', '--others', '--exclude-standard'])` | `[]`                         | ArrayDeclaration      |
-| 25    | `ls-files',`                                           | `""`                         | StringLiteral         |
-| 25    | `-z',`                                                 | `""`                         | StringLiteral         |
-| 25    | `--others',`                                           | `""`                         | StringLiteral         |
-| 25    | `--exclude-standard']`                                 | `""`                         | StringLiteral         |
-| 26    | `ntrackedRaw.split('\0').filter(Boolean)`              | `untrackedRaw.split('\0')`   | MethodExpression      |
-| 26    | `\0')`                                                 | `""`                         | StringLiteral         |
-| 27    | `=>`${f}:${git(['hash-object', f]).trim()}`)`          | `() => undefined`            | ArrowFunction         |
+| 16    | `.status !== 0`                                       | `false`                      | ConditionalExpression |
+| 16    | `git ${args[0]} failed`)` | ````                         | StringLiteral         |
+| 21    | `it(['rev-parse', 'HEAD']).trim()` | `git(['rev-parse', 'HEAD'])` | MethodExpression      |
+| 21    | `'rev-parse', 'HEAD'])` | `[]` | ArrayDeclaration      |
+| 21    | `rev-parse',` | `""` | StringLiteral         |
+| 21    | `HEAD']` | `""` | StringLiteral         |
+| 22    | `'diff', 'HEAD'])` | `[]` | ArrayDeclaration      |
+| 22    | `diff',` | `""` | StringLiteral         |
+| 22    | `HEAD']` | `""` | StringLiteral         |
+| 25    | `'ls-files', '-z', '--others', '--exclude-standard'])` | `[]` | ArrayDeclaration      |
+| 25    | `ls-files',` | `""` | StringLiteral         |
+| 25    | `-z',` | `""` | StringLiteral         |
+| 25    | `--others',` | `""` | StringLiteral         |
+| 25    | `--exclude-standard']` | `""` | StringLiteral         |
+| 26    | `ntrackedRaw.split('\0').filter(Boolean)` | `untrackedRaw.split('\0')` | MethodExpression      |
+| 26    | `\0')` | `""` | StringLiteral         |
+| 27    | `=>`${f}:${git(['hash-object', f]).trim()}`)` | `() => undefined` | ArrowFunction         |
 | 27    | `${f}:${git(['hash-object', f]).trim()}`)`             | ````                         | StringLiteral         |
 | 27    | `it(['hash-object', f]).trim()}`                       | `git(['hash-object', f])`    | MethodExpression      |
 | 27    | `'hash-object', f])`                                   | `[]`                         | ArrayDeclaration      |

@@ -3,7 +3,7 @@ type: JS Module
 title: lock-cache-dir.mjs
 resource: npm/src/scripts/utils/lock-cache-dir.mjs
 docgen:
-  crc: 3b63d4b1
+  crc: 76c84505
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.97

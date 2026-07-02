@@ -1,7 +1,7 @@
 /**
  * Збір змінених файлів для quick-режиму lint-оркестратора.
  *
- * Quick лінтить лише те, що змінено в робочому дереві: tracked-modified + staged
+ * Quick перевіряє лише те, що змінено в робочому дереві: tracked-modified + staged
  * (`git diff HEAD`) і нові untracked (`git ls-files --others --exclude-standard`).
  * Видалені файли не повертаються. Поза git-репо або при помилці git — порожній список.
  */
@@ -49,12 +49,12 @@ export function resolveChangedBase(cwd = process.cwd()) {
 }
 
 /**
- * Список змінених + untracked файлів **відносно базового комміту**.
+ * Список змінених + untracked файлів **відносно базового коміту**.
  *
  * `git diff <base>` (без `..`/`...`, без `HEAD`) порівнює base-комміт із поточним
- * **робочим деревом** — тобто однаково ловить і закомічене від base, і staged, і
+ * **робочим деревом** — тобто однаково ловить і зафіксоване від base, і staged, і
  * незакомічені модифікації. Це гарантує однакову поведінку незалежно від того, чи
- * зміни вже закомічені у worktree. Без `base` — fallback на `collectChangedFiles`
+ * зміни вже зафіксовані у worktree. Без `base` — fallback на `collectChangedFiles`
  * (робоче дерево vs HEAD).
  * @param {string|null} [base] базовий комміт
  * @param {string} [cwd] корінь репо
@@ -64,7 +64,7 @@ export function collectChangedFilesSince(base, cwd = process.cwd()) {
   if (!base) return collectChangedFiles(cwd)
   // Fail-closed: недосяжний base (rebase/force-update/shallow prune) інакше дав би `git diff`
   // exit 128 → порожній список → gate мовчки пройшов би без перевірки. Краще явна помилка.
-  const verify = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${base}^{commit}`], { cwd, encoding: 'utf8' })
+  const verify = spawnSync('git', ['rev-parse', '--verify', '--quiet', base + '^{commit}'], { cwd, encoding: 'utf8' })
   if (verify.status !== 0 || verify.error) {
     throw new Error(
       `collectChangedFilesSince: base-комміт «${base}» недосяжний у ${cwd} ` +

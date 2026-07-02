@@ -3,7 +3,7 @@ type: JS Module
 title: with-lock.mjs
 resource: npm/src/scripts/utils/with-lock.mjs
 docgen:
-  crc: 21848085
+  crc: f6c6a780
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.99

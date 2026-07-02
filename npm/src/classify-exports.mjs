@@ -4,6 +4,8 @@
  */
 
 const EXPORT_RE = /^export\s+(?:async\s+)?(?:const|function|class|let)\s+(\w+)/gm
+const PRIMITIVE_LITERAL_RE = /^(?:\d[\d_]*(?:\.\d+)?|'[^']*'|"[^"]*"|true|false|null)\s*$/
+const NEXT_EXPORT_RE = /\nexport\s/m
 
 /**
  * Patterns that flag an export as too complex for local model.
@@ -13,6 +15,7 @@ const COMPLEX_SIGNALS = [
   /\bfetch\b/,
   /\bnew\s+Date\b/,
   /\bprocess\.env\b/,
+  /\benv\.[A-Z_]{2,}/,
   /\bFormData\b/,
   /\bcheckEnv\b/,
   /\bXMLHttpRequest\b/,
@@ -28,26 +31,21 @@ const COMPLEX_SIGNALS = [
 /**
  * Extracts all named exports and classifies each by test complexity.
  * @param {string} content source file text
- * @returns {ExportInfo[]}
+ * @returns {ExportInfo[]} named exports with complexity labels
  */
 export function extractExportsWithComplexity(content) {
-  const names = [...content.matchAll(EXPORT_RE)].map(m => m[1])
+  const names = Array.from(content.matchAll(EXPORT_RE), m => m[1])
   return names.map(name => ({ name, complexity: classifyExport(name, content) }))
 }
 
 /**
  * Classifies one export by inspecting the code region that defines it.
- * @param {string} name
- * @param {string} content
- * @returns {ExportComplexity}
+ * @param {string} name export name
+ * @param {string} content source file text
+ * @returns {ExportComplexity} complexity label
  */
 function classifyExport(name, content) {
-  // Primitive constant: `export const NAME = <literal>`
-  const trivialRe = new RegExp(
-    `^export\\s+const\\s+${name}\\s*=\\s*` + `(?:\\d[\\d_]*(?:\\.\\d+)?|'[^']*'|"[^"]*"|true|false|null)\\s*$`,
-    'm'
-  )
-  if (trivialRe.test(content)) return 'trivial'
+  if (isPrimitiveConstExport(name, content)) return 'trivial'
 
   const body = extractBody(name, content)
   if (!body) return 'simple'
@@ -56,19 +54,55 @@ function classifyExport(name, content) {
 }
 
 /**
- * Extracts the code region from the export declaration to the next export
- * (or end of file). Used for complexity signal matching only — not exact AST.
- * @param {string} name
- * @param {string} content
- * @returns {string|null}
+ * Checks whether the export is a primitive `export const NAME = <literal>`.
+ * @param {string} name export name
+ * @param {string} content source file text
+ * @returns {boolean} true when the export is a primitive constant
+ */
+function isPrimitiveConstExport(name, content) {
+  const prefix = `export const ${name} =`
+  for (const line of content.split('\n')) {
+    if (!line.startsWith(prefix)) continue
+    return PRIMITIVE_LITERAL_RE.test(line.slice(prefix.length).trim())
+  }
+  return false
+}
+
+/**
+ * Finds the declaration start for a named export.
+ * @param {string} name export name
+ * @param {string} content source file text
+ * @returns {number} start index or `-1`
+ */
+function findExportStart(name, content) {
+  const prefixes = [
+    `export async function ${name}`,
+    `export function ${name}`,
+    `export const ${name}`,
+    `export class ${name}`,
+    `export let ${name}`
+  ]
+  let start = -1
+  for (const prefix of prefixes) {
+    const idx = content.indexOf(prefix)
+    if (idx !== -1 && (start === -1 || idx < start)) start = idx
+  }
+  return start
+}
+
+/**
+ * Extracts the code region from the export declaration to the next export.
+ * Used for complexity signal matching only — not exact AST.
+ * @param {string} name export name
+ * @param {string} content source file text
+ * @returns {string|null} declaration snippet or `null`
  */
 function extractBody(name, content) {
-  const startRe = new RegExp(`export\\s+(?:async\\s+)?(?:const|function)\\s+${name}\\b`)
-  const startMatch = startRe.exec(content)
-  if (!startMatch) return null
+  const start = findExportStart(name, content)
+  if (start === -1) return null
 
-  const after = content.slice(startMatch.index + startMatch[0].length)
-  const nextExport = /^export\s/m.exec(after)
-  const end = nextExport ? nextExport.index : Math.min(after.length, 3000)
-  return startMatch[0] + after.slice(0, end)
+  const after = content.slice(start)
+  const nextExport = after.search(NEXT_EXPORT_RE)
+  const end = nextExport === -1 ? Math.min(after.length, 3000) : nextExport
+  return after.slice(0, end)
 }

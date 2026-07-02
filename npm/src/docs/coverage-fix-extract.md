@@ -3,7 +3,7 @@ type: JS Module
 title: coverage-fix-extract.mjs
 resource: npm/src/coverage-fix-extract.mjs
 docgen:
-  crc: a7f39f0e
+  crc: 1cfadb02
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98

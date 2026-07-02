@@ -7,7 +7,7 @@
  *   2. fixFailingTests(dir, opts) — для кожного падаючого файлу:
  *        a. Читає поточний вміст тест-файлу та source-файлу
  *        b. callText → отримує виправлений код у ```js блоці
- *        c. writeFileSync → записує файл напряму (без Edit тулів агента)
+ *        c. writeFileSync → записує файл напряму (без Edit інструментів агента)
  *        d. Повторює до MAX_FIX_ATTEMPTS якщо ще залишились падіння
  *
  * Перехід з callAgent (Edit-інструменти) на callText+write усуває проблему
@@ -16,84 +16,114 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join, relative, dirname } from 'node:path'
+import { join, relative } from 'node:path'
 import { env } from 'node:process'
 import { callText } from './lib/pi-client.mjs'
 import { findTestRules } from './gen-tests.mjs'
-
-const _require = createRequire(import.meta.url)
-const VITEST_BIN = join(dirname(_require.resolve('vitest/package.json')), 'vitest.mjs')
+import { parseFailingTests } from './coverage-per-file.mjs'
+import { VITEST_BIN, VITEST_SHIM_CONFIG, ensureVitestShim } from './lib/vitest-shim.mjs'
 
 const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? env.N_CLOUD_MAX_MODEL ?? undefined
-const MAX_ERRORS_PER_FILE = 5
-const MAX_ERROR_LINES = 10
 const MAX_SRC_BYTES = 4000
+const TEST_DIR_MARKERS = ['/tests/', '\\tests\\']
+const TEST_FILE_SUFFIX = '.test.mjs'
+const SOURCE_FILE_SUFFIX = '.js'
+const FILE_MARKER_PREFIX = '<!--'
+const FILE_MARKER_SUFFIX = '-->'
+const FILE_MARKER_LABEL = 'file:'
+const CODE_FENCE_START_RE = /^```(?:js|javascript|mjs|ts)?$/
+const CODE_FENCE_END = '```'
+
+/**
+ * Infers a source file path from a conventional `tests/<name>.test.mjs` path.
+ * @param {string} absPath absolute test file path
+ * @returns {string|null} inferred source path or null when convention does not match
+ */
+function inferSourcePath(absPath) {
+  const marker = TEST_DIR_MARKERS.find(item => absPath.includes(item))
+  if (!marker || !absPath.endsWith(TEST_FILE_SUFFIX)) return null
+  const markerAt = absPath.lastIndexOf(marker)
+  const dir = absPath.slice(0, markerAt)
+  const stem = absPath.slice(markerAt + marker.length, -TEST_FILE_SUFFIX.length)
+  if (!stem || stem.includes('/') || stem.includes('\\')) return null
+  return `${dir}${marker[0]}${stem}${SOURCE_FILE_SUFFIX}`
+}
+
+/**
+ * Parses an HTML file marker from a single LLM response line.
+ * @param {string} line response line
+ * @returns {string|null} file path from marker or null
+ */
+function parseFileMarker(line) {
+  const trimmed = line.trim()
+  if (!trimmed.startsWith(FILE_MARKER_PREFIX) || !trimmed.endsWith(FILE_MARKER_SUFFIX)) return null
+  const inner = trimmed.slice(FILE_MARKER_PREFIX.length, -FILE_MARKER_SUFFIX.length).trim()
+  if (!inner.startsWith(FILE_MARKER_LABEL)) return null
+  const file = inner.slice(FILE_MARKER_LABEL.length).trim()
+  return file || null
+}
 
 /**
  * Runs vitest in JSON mode and returns failing test files with error messages.
  * @param {string} dir project root
- * @returns {Promise<Array<{file: string, errors: string[]}>>}
+ * @returns {Promise<Array<{file: string, errors: string[]}>>} failing test files with error messages
  */
 export async function getFailingTests(dir) {
   const tmpDir = await mkdtemp(join(tmpdir(), '7n-fix-'))
   const outputFile = join(tmpDir, 'results.json')
 
+  ensureVitestShim()
   try {
     spawnSync(
       process.execPath,
-      [VITEST_BIN, 'run', '--reporter=json', `--outputFile=${outputFile}`, '--passWithNoTests'],
-      {
-        cwd: dir,
-        stdio: 'inherit',
-        env
-      }
+      [
+        VITEST_BIN,
+        'run',
+        '--config',
+        VITEST_SHIM_CONFIG,
+        '--root',
+        dir,
+        '--reporter=json',
+        `--outputFile=${outputFile}`,
+        '--passWithNoTests'
+      ],
+      { cwd: dir, stdio: 'inherit', env }
     )
 
     if (!existsSync(outputFile)) return []
 
-    let data
-    try {
-      data = JSON.parse(readFileSync(outputFile, 'utf8'))
-    } catch {
-      return []
-    }
-
-    return (data.testResults ?? [])
-      .filter(r => r.status === 'failed')
-      .map(r => {
-        const assertionErrors = (r.assertionResults ?? [])
-          .filter(a => a.status === 'failed')
-          .slice(0, MAX_ERRORS_PER_FILE)
-          .map(a => {
-            const name = [...(a.ancestorTitles ?? []), a.title].join(' > ')
-            const msg = (a.failureMessages?.[0] ?? '').split('\n').slice(0, MAX_ERROR_LINES).join('\n')
-            return `${name}:\n${msg}`
-          })
-        const errors =
-          assertionErrors.length > 0
-            ? assertionErrors
-            : [
-                `Suite error: ${(r.message ?? r.failureMessage ?? 'module-level failure').split('\n').slice(0, MAX_ERROR_LINES).join('\n')}`
-              ]
-        return { file: relative(dir, r.testFilePath ?? r.name), errors }
-      })
-      .filter(f => !f.file.startsWith('..'))
+    return parseFailingTests(outputFile, dir)
   } finally {
-    await rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+    try {
+      await rm(tmpDir, { recursive: true, force: true })
+    } catch {
+      /* ignore cleanup errors */
+    }
   }
 }
 
-/** Extracts the first ```js…``` block from LLM text output. */
+/**
+ * Extracts the first fenced JavaScript block from LLM text output.
+ * @param {string} text LLM response text.
+ * @returns {string} Extracted code or an empty string.
+ */
 function extractCode(text) {
-  const match = text.match(/```(?:js|javascript|mjs|ts)?\n([\s\S]*?)```/)
-  return match ? match[1].trim() : ''
+  const start = text.indexOf('```')
+  if (start === -1) return ''
+  const bodyStart = text.indexOf('\n', start)
+  if (bodyStart === -1) return ''
+  const end = text.indexOf('\n```', bodyStart + 1)
+  if (end === -1) return ''
+  return text.slice(bodyStart + 1, end).trim()
 }
 
 /**
  * Builds a prompt to fix one failing test file.
  * Includes current file content so the LLM doesn't need file-read tools.
+ * @param {Array<{file: string, errors: string[]}>} failures failing test files
+ * @param {string} [dir] project root
+ * @returns {string} prompt text for the LLM
  */
 export function buildFixTestsPrompt(failures, dir) {
   const testRules = dir ? findTestRules(dir) : null
@@ -103,9 +133,9 @@ export function buildFixTestsPrompt(failures, dir) {
     const testCode = existsSync(absPath) ? readFileSync(absPath, 'utf8').slice(0, 6000) : '(файл не знайдено)'
 
     // Heuristically find source file: strip tests/ prefix from path
-    const sourcePath = absPath.replace(/[/\\]tests[/\\]([^/\\]+)\.test\.mjs$/, '/$1.js')
+    const sourcePath = inferSourcePath(absPath)
     const sourceCode =
-      sourcePath !== absPath && existsSync(sourcePath) ? readFileSync(sourcePath, 'utf8').slice(0, MAX_SRC_BYTES) : null
+      sourcePath && existsSync(sourcePath) ? readFileSync(sourcePath, 'utf8').slice(0, MAX_SRC_BYTES) : null
 
     const errBlock = errors.join('\n\n')
 
@@ -139,6 +169,7 @@ export function buildFixTestsPrompt(failures, dir) {
     '- `vi.spyOn(Date).mockReturnValue(...)` НЕ ПРАЦЮЄ з `new Date()` — use `vi.useFakeTimers()` + `vi.setSystemTime(new Date(...))` + `afterEach(() => vi.useRealTimers())`',
     "- `sendMessage` викликає fetch з одним аргументом (URL-рядком) — перевіряй через `expect.stringContaining(...)`, НЕ через об'єктний matcher",
     '- `describe()` callback НЕ може бути async. `await` тільки у: top-level async IIFE, `beforeAll(async () => {})`, або `it(async () => {})`',
+    "- `vi.mock` hoisting: фабрика виконується до будь-якого `const`/`let` у модулі. Якщо потрібен спільний mock-об'єкт — оголошуй його через `vi.hoisted()`: `const { mockFn } = vi.hoisted(() => ({ mockFn: vi.fn() }))`; потім використовуй в factory та тестах",
     '- Якщо AssertionError показує `Expected: "A" Received: "B"` — функція реально повертає B. ВИПРАВ expected на точне значення з рядка "Received:", не переосмислюй логіку функції',
     '- Для regex/escape функцій: тестуй по одному символу (`expect(esc("*")).toBe("\\\\*")`), НЕ комбінований рядок — легко помилитись в подвійному екрануванні',
     ...(testRules ? ['', '## Конвенції тестів цього проєкту (.cursor/rules/n-test.mdc):', testRules] : []),
@@ -156,19 +187,36 @@ export function buildFixTestsPrompt(failures, dir) {
 }
 
 /**
- * Parses multiple ```js blocks with <!-- file: path --> markers from LLM response.
- * @param {string} text
- * @returns {Array<{file: string, code: string}>}
+ * Parses fenced JavaScript blocks with file markers from LLM response.
+ * @param {string} text LLM response text.
+ * @returns {Array<{file: string|null, code: string}>} Parsed file/code pairs.
  */
 function parseFixedFiles(text) {
   const results = []
-  const blockRe = /<!--\s*file:\s*([^\n>]+?)\s*-->\s*```(?:js|javascript|mjs|ts)?\n([\s\S]*?)```/g
-  let match
-  while ((match = blockRe.exec(text)) !== null) {
-    const file = match[1].trim()
-    const code = match[2].trim()
-    if (file && code) results.push({ file, code })
+  const lines = text.split('\n')
+
+  let lineIndex = 0
+  while (lineIndex < lines.length) {
+    const file = parseFileMarker(lines[lineIndex])
+    if (!file) {
+      lineIndex++
+      continue
+    }
+
+    const fenceStart = lines.findIndex((line, index) => index > lineIndex && CODE_FENCE_START_RE.test(line.trim()))
+    if (fenceStart === -1) break
+
+    const fenceEnd = lines.findIndex((line, index) => index > fenceStart && line.trim() === CODE_FENCE_END)
+    if (fenceEnd === -1) break
+
+    const code = lines
+      .slice(fenceStart + 1, fenceEnd)
+      .join('\n')
+      .trim()
+    if (code) results.push({ file, code })
+    lineIndex = fenceEnd + 1
   }
+
   // Fallback: single unnamed block when only one file is being fixed
   if (results.length === 0) {
     const code = extractCode(text)
@@ -180,15 +228,42 @@ function parseFixedFiles(text) {
 const MAX_FIX_ATTEMPTS = 3
 
 /**
+ * Writes generated fixes to existing test files.
+ * @param {Array<{file: string|null, code: string}>} fixed Parsed fixes.
+ * @param {Array<{file: string, errors: string[]}>} remaining Current failing files.
+ * @param {string} dir Project root.
+ * @returns {void}
+ */
+function writeFixedFiles(fixed, remaining, dir) {
+  for (const { file, code } of fixed) {
+    let absPath = null
+    if (file) {
+      absPath = join(dir, file)
+    } else if (remaining.length === 1) {
+      absPath = join(dir, remaining[0].file)
+    }
+    if (!absPath) {
+      console.error('  ✗ не вдалось визначити файл для запису (немає маркера <!-- file: ... -->)')
+      continue
+    }
+    if (!existsSync(absPath)) {
+      console.error(`  ✗ файл не існує: ${relative(dir, absPath)}`)
+      continue
+    }
+    writeFileSync(absPath, code + '\n', 'utf8')
+    console.log(`  ✓ Записано: ${relative(dir, absPath)}`)
+  }
+}
+
+/**
  * Detects and fixes failing tests using pi SDK text mode + direct writeFileSync.
  * Returns immediately with count=0 if all tests are already passing.
- *
  * @param {string} dir project root
  * @param {{
  *   failures?: Array<{file: string, errors: string[]}>,
  *   callTextFn?: (prompt: string, opts?: object) => Promise<string>
- * }} [opts]
- * @returns {Promise<{count: number, fixed: number, remaining: number}>}
+ * }} [opts] overrides for callText and pre-fetched failures
+ * @returns {Promise<{count: number, fixed: number, remaining: number}>} fix result summary
  */
 export async function fixFailingTests(dir, opts = {}) {
   const callTextFn = opts.callTextFn ?? (prompt => callText(prompt, { model: MODEL, cwd: dir }))
@@ -209,11 +284,11 @@ export async function fixFailingTests(dir, opts = {}) {
     }
 
     const prompt = buildFixTestsPrompt(remaining, dir)
-    let response = ''
+    let response
     try {
       response = await callTextFn(prompt)
-    } catch (err) {
-      console.error(`  ✗ pi помилка: ${err.message}`)
+    } catch (error) {
+      console.error(`  ✗ pi помилка: ${error.message}`)
       break
     }
 
@@ -224,24 +299,7 @@ export async function fixFailingTests(dir, opts = {}) {
       break
     }
 
-    for (const { file, code } of fixed) {
-      // Resolve which file to write
-      let absPath
-      if (file) {
-        absPath = join(dir, file)
-      } else if (remaining.length === 1) {
-        absPath = join(dir, remaining[0].file)
-      } else {
-        console.error('  ✗ не вдалось визначити файл для запису (немає маркера <!-- file: ... -->)')
-        continue
-      }
-      if (!existsSync(absPath)) {
-        console.error(`  ✗ файл не існує: ${relative(dir, absPath)}`)
-        continue
-      }
-      writeFileSync(absPath, code + '\n', 'utf8')
-      console.log(`  ✓ Записано: ${relative(dir, absPath)}`)
-    }
+    writeFixedFiles(fixed, remaining, dir)
 
     remaining = await getFailingTests(dir)
   }

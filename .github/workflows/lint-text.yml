@@ -59,4 +59,4 @@ jobs:
 
       - name: Lint text
         run: >-
-          n-cursor lint text --read-only
+          bunx n-cursor lint text --read-only

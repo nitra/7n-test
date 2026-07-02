@@ -50,8 +50,7 @@ function makeRelease(lockDir) {
 export function shouldDedup(result, fingerprint, ttl) {
   if (result.exitCode !== 0) return false
   if (fingerprint === null || result.fingerprint !== fingerprint) return false
-  if (Date.now() - result.finishedAt >= ttl) return false
-  return true
+  return Date.now() - result.finishedAt < ttl
 }
 
 /**
@@ -126,7 +125,7 @@ export async function withLock(key, runFn, opts = {}) {
     /* result.json не існує або пошкоджений */
   }
 
-  // Після release лок ре-рейзиться той самий сигнал: `once` вже зняв обробник,
+  // Після release блокування повторно надсилає той самий сигнал: `once` вже зняв обробник,
   // тож процес завершується дефолтною дією з коректним кодом (130/143)
   const onSignal = signal => {
     release()

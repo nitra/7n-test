@@ -20,6 +20,7 @@ alwaysApply: false
 ### Multi-workspace iteration
 
 У monorepo `n-cursor coverage` ітерує усі workspaces з власним `package.json` і агрегує метрики lcov + Stryker у єдиний `JS`-рядок `COVERAGE.md`. Workspace без тестів пропускається без помилки.
+
 - `package.json`:
 
 ```json
@@ -156,7 +157,7 @@ Recursive globs ловлять файли всередині `tests/` так с�
 
 ## Sandbox-aware тести (Stryker)
 
-Stryker за замовчуванням копіює репо у sandbox-каталог (`reports/stryker/.tmp/sandbox-XXX/`), щоб AST-патчити мутантів без зачеплення робочого дерева. У sandbox **немає `.git/`**, і будь-який тест, що звертається до **реального** git-дерева через `import.meta.url + N≥3 рівнів вгору** (типу `const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..')`) фактично адресує sandbox-корінь, а не справжній репо. Це ламає `git rev-parse`/`git ls-files`/перевірки `.n-cursor.json`/CHANGELOG-співставлення — Stryker dry-run падає, мутаційний прогон не стартує, `mutation.json` лишається stale.
+Stryker за замовчуванням копіює репо у sandbox-каталог (`reports/stryker/.tmp/sandbox-XXX/`), щоб AST-патчити мутантів без зачеплення робочого дерева. У sandbox **немає `.git/`**, і будь-який тест, що звертається до **реального** git-дерева через `import.meta.url + N≥3 рівнів вгору** (типу`const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..')`) фактично адресує sandbox-корінь, а не справжній репо. Це ламає`git rev-parse`/`git ls-files`/перевірки`.n-cursor.json`/CHANGELOG-співставлення — Stryker dry-run падає, мутаційний прогон не стартує,`mutation.json` лишається stale.
 
 **Канон**: тест не повинен залежати від реального git-дерева через `import.meta.url + N≥3 рівнів вгору`. Якщо тест перевіряє git-логіку — ізолюй **повністю**:
 
@@ -219,6 +220,7 @@ JS-root без `.vue` отримує дефолтний baseline без `plugins
 Якщо `vitest.config.mjs` / `vitest.config.js` відсутній — перевірка пропускається (pass без помилки).
 
 **Canonical `vitest.config.mjs`** (для довідки — `pool: 'forks'` + `include` + `coverage`) — у `rules/test/js/data/vitest_config/vitest.config.baseline.js`:
+
 - `environment: 'node'`
 - `coverage.provider: 'v8'` з lcov+text-summary репортами
 - `include: ['**/*.test.{js,mjs}', 'tests/**/*.test.{js,mjs}']` — підхоплює тести у `tests/`-піддиректоріях і top-level integration suites у `<root>/tests/`

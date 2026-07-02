@@ -7,7 +7,7 @@
  * спалює сотні тисяч токенів лише на парсинг. Натомість важкий парсинг несе цей
  * скрипт (для JS — мілісекунди, 0 токенів), а агенту віддається рівно потрібна
  * порція:
- *   - `index` — крихітний `[{file, mutants}]` для рішення про фан-аут;
+ *   - `index` — крихітний масив записів `file`/`mutants` для рішення про фан-аут;
  *   - `slice --file <path>` — промпт лише для одного файлу (контекст ±3 рядки),
  *     рівно під когнітивне навантаження одного субагента.
  *
@@ -23,7 +23,7 @@ import { buildFixPrompt } from './coverage-fix.mjs'
 const SURVIVED_SECTION = '## Вцілілі мутанти'
 
 /**
- * Огорожа json-блоку: ≥3 бектики, далі `json` і решта рядка до `\n`. Довжина
+ * Огорожа json-блоку: ≥3 зворотних апострофи, далі `json` і решта рядка до `\n`. Довжина
  * захоплюється в групу 1 — renderMarkdown пише 3, але oxfmt підвищує до 4+, коли
  * сам JSON-вміст містить ``` (типово для original/replacement мутантів).
  */
@@ -31,9 +31,9 @@ const FENCE_OPEN_RE = /(`{3,8})json[^\n]{0,200}\n/
 
 /**
  * Витягує JSON-масив вцілілих мутантів із тексту COVERAGE.md: знаходить секцію
- * `## Вцілілі мутанти`, перший огороджений ` ```json ` блок під нею і парсить.
+ * `## Вцілілі мутанти`, перший огороджений JSON-блок під нею і парсить.
  * @param {string} md повний текст COVERAGE.md
- * @returns {import('./coverage-fix.mjs').SurvivedFileGroup[]} групи вцілілих по файлах (порожньо, якщо секції/блоку немає або JSON невалідний)
+ * @returns {object[]} групи вцілілих по файлах (порожньо, якщо секції/блоку немає або JSON невалідний)
  */
 export function parseSurvivedBlock(md) {
   const sectionAt = md.indexOf(SURVIVED_SECTION)
@@ -44,9 +44,9 @@ export function parseSurvivedBlock(md) {
   const fence = open[1]
   const bodyStart = open.index + open[0].length
   const rest = after.slice(bodyStart)
-  // Закриття — рядок із тих самих бектиків. Усередині JSON реальних переводів
+  // Закриття — рядок із тих самих зворотних апострофів. Усередині JSON реальних переводів
   // рядка немає (JSON.stringify екранує їх як `\n`), тож `\n<fence>` унікально
-  // позначає кінець блоку навіть якщо значення містять бектики.
+  // позначає кінець блоку навіть якщо значення містять зворотні апострофи.
   const closeAt = rest.indexOf(`\n${fence}`)
   const json = closeAt === -1 ? rest : rest.slice(0, closeAt)
   try {
@@ -60,7 +60,7 @@ export function parseSurvivedBlock(md) {
 /**
  * Читає `COVERAGE.md` із кореня проєкту і повертає структуровані групи вцілілих.
  * @param {string} cwd корінь проєкту
- * @returns {Promise<import('./coverage-fix.mjs').SurvivedFileGroup[]>} групи вцілілих по файлах
+ * @returns {Promise<object[]>} групи вцілілих по файлах
  */
 export async function readSurvived(cwd) {
   let md
@@ -73,9 +73,9 @@ export async function readSurvived(cwd) {
 }
 
 /**
- * Згортає групи вцілілих у компактний index `[{file, mutants}]`.
- * @param {import('./coverage-fix.mjs').SurvivedFileGroup[]} survived групи вцілілих
- * @returns {Array<{file:string, mutants:number}>} файл → кількість вцілілих мутантів
+ * Згортає групи вцілілих у компактний index із полями `file` і `mutants`.
+ * @param {object[]} survived групи вцілілих
+ * @returns {object[]} файл → кількість вцілілих мутантів
  */
 export function buildIndex(survived) {
   return survived
