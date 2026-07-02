@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@nitra/cspell-dict": "^2.0.0",
+    "@nitra/cspell-dict": "^2.2.2",
     "@nitra/cursor": "^13.2.6",
     "@nitra/eslint-config": "^3.10.3",
     "@nitra/stylelint-config": "^1.4.1",
