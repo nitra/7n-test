@@ -5,20 +5,54 @@
  * Two modes:
  *   callText(prompt, model?)  — text-only, no tools, returns string
  *   callAgent(prompt, cwd)    — coding tools enabled, writes files directly
+ *
+ * Both retry transient connection failures (e.g. a shared local model server
+ * that's momentarily busy under concurrent load) with exponential backoff
+ * instead of failing the caller's file on the first hiccup.
  */
 import { createAgentSession, SessionManager, ModelRegistry, AuthStorage } from '@earendil-works/pi-coding-agent'
+import { env } from 'node:process'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 let _registry = null
+/**
+ *
+ */
 async function getRegistry() {
   if (_registry) return _registry
   _registry = ModelRegistry.create(AuthStorage.create())
   return _registry
 }
 
+const RETRYABLE_ERROR_RE = /connection error|ECONNREFUSED|ETIMEDOUT|fetch failed|network/i
+const MAX_ATTEMPTS = Number(env.N_PI_RETRY_ATTEMPTS) || 4
+const BASE_DELAY_MS = Number(env.N_PI_RETRY_DELAY_MS) || 1500
+const MAX_DELAY_MS = 15_000
+
+/**
+ * Retries `fn` with exponential backoff + jitter when it throws a transient
+ * connection-ish error (shared local model server busy/restarting); other
+ * errors (auth, malformed request) are re-thrown immediately.
+ * @template T
+ * @param {() => Promise<T>} fn operation to retry
+ * @returns {Promise<T>} result of the first successful attempt
+ */
+async function withRetry(fn) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (attempt >= MAX_ATTEMPTS || !RETRYABLE_ERROR_RE.test(error.message ?? '')) throw error
+      const delay = Math.min(BASE_DELAY_MS * 2 ** (attempt - 1), MAX_DELAY_MS)
+      const jitter = delay * (0.5 + Math.random() * 0.5)
+      await sleep(jitter)
+    }
+  }
+}
+
 /**
  * Sends a single prompt to pi in text mode (no tools) and returns the response.
  * Reads auth/model config from ~/.pi/ same as the CLI.
- *
  * @param {string} prompt
  * @param {object} [opts]
  * @param {string} [opts.cwd]
@@ -26,51 +60,54 @@ async function getRegistry() {
  * @returns {Promise<string>}
  */
 export async function callText(prompt, opts = {}) {
-  const cwd = opts.cwd ?? process.cwd()
-  const sessionOpts = {
-    tools: [],
-    sessionManager: SessionManager.inMemory(cwd),
-    cwd
-  }
-  if (opts.model) {
-    const registry = await getRegistry()
-    const slashIdx = opts.model.indexOf('/')
-    const provider = slashIdx >= 0 ? opts.model.slice(0, slashIdx) : null
-    const modelId = slashIdx >= 0 ? opts.model.slice(slashIdx + 1) : opts.model
-    const resolved = provider ? registry.find(provider, modelId) : null
-    sessionOpts.modelRegistry = registry
-    sessionOpts.model = resolved ?? opts.model
-  }
-  const { session } = await createAgentSession(sessionOpts)
+  return withRetry(async () => {
+    const cwd = opts.cwd ?? process.cwd()
+    const sessionOpts = {
+      tools: [],
+      sessionManager: SessionManager.inMemory(cwd),
+      cwd
+    }
+    if (opts.model) {
+      const registry = await getRegistry()
+      const slashIdx = opts.model.indexOf('/')
+      const provider = slashIdx === -1 ? null : opts.model.slice(0, slashIdx)
+      const modelId = slashIdx === -1 ? opts.model : opts.model.slice(slashIdx + 1)
+      const resolved = provider ? registry.find(provider, modelId) : null
+      sessionOpts.modelRegistry = registry
+      sessionOpts.model = resolved ?? opts.model
+    }
+    const { session } = await createAgentSession(sessionOpts)
 
-  await session.prompt(prompt)
+    await session.prompt(prompt)
 
-  const state = session.state
-  const last = state.messages[state.messages.length - 1]
-  if (!last || last.role !== 'assistant') return ''
-  if (last.stopReason === 'error' || last.stopReason === 'aborted') {
-    throw new Error(`pi error: ${last.errorMessage ?? last.stopReason}`)
-  }
-  return last.content
-    .filter(c => c.type === 'text')
-    .map(c => c.text)
-    .join('')
+    const state = session.state
+    const last = state.messages.at(-1)
+    if (!last || last.role !== 'assistant') return ''
+    if (last.stopReason === 'error' || last.stopReason === 'aborted') {
+      throw new Error(`pi error: ${last.errorMessage ?? last.stopReason}`)
+    }
+    return last.content
+      .filter(c => c.type === 'text')
+      .map(c => c.text)
+      .join('')
+  })
 }
 
 /**
  * Sends a prompt to pi in agent mode with full coding tools (read/write/bash/edit).
  * The agent writes test files directly — no need to parse output.
- *
  * @param {string} prompt
  * @param {string} cwd project root where files should be written
  * @returns {Promise<void>}
  */
 export async function callAgent(prompt, cwd) {
-  const { session } = await createAgentSession({
-    tools: ['read', 'write', 'edit', 'bash', 'grep', 'find', 'ls'],
-    sessionManager: SessionManager.inMemory(cwd),
-    cwd
-  })
+  return withRetry(async () => {
+    const { session } = await createAgentSession({
+      tools: ['read', 'write', 'edit', 'bash', 'grep', 'find', 'ls'],
+      sessionManager: SessionManager.inMemory(cwd),
+      cwd
+    })
 
-  await session.prompt(prompt)
+    await session.prompt(prompt)
+  })
 }

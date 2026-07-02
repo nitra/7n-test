@@ -3,7 +3,7 @@ type: JS Module
 title: pi-client.mjs
 resource: npm/src/lib/pi-client.mjs
 docgen:
-  crc: 4649ce83
+  crc: f2c45cdc
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98
