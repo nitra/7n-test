@@ -7,12 +7,33 @@ version: '1.0'
 ---
 
 <!-- n-cursor:worktree:start -->
-
 > [!IMPORTANT]
-> **Worktree-only skill.** Запускай у окремому worktree `.worktrees/<current-branch>-taze/` і не паралель з іншими worktree-only скілами.
+> **Worktree-only skill.** Виконується **виключно** в окремому git-worktree (`.worktrees/<current-branch>-taze/`) і **не** паралелиться — один інстанс за раз.
 
-**Preflight:** у корені репо виконай `pwd`, `git rev-parse --show-toplevel`, `git branch --show-current`. Якщо `pwd` ≠ toplevel — спершу `cd` у корінь. Далі створи worktree через `npx @7n/mt worktree create "<current-branch>-taze" "n-taze: worktree-only skill"`, перейди в `.worktrees/<branch-with-dashes>-taze`, і після цього запусти `bun install`.
+**Крок 0 — preflight (обовʼязковий, перед будь-якими іншими діями).** Якщо перевірка падає — **STOP**: не питай користувача про назву гілки, а сам створи worktree від поточної гілки за конвенцією `<current-branch>-taze`. Суфікс `taze` — коротка (до 10 символів) транслітерація задачі. Не виконуй **жоден** наступний крок скіла, поки preflight не завершився успіхом.
 
+```bash
+pwd
+git rev-parse --show-toplevel
+git branch --show-current
+```
+
+**Root-assert.** Якщо `pwd` **не** збігається з виводом `git rev-parse --show-toplevel` — ти в **піддиректорії** робочого дерева (worktree-шляхи нижче відносні до кореня репо). Спершу перейди в корінь: `cd <toplevel>` (literal-шлях із виводу), і лише тоді продовжуй preflight. Не створюй worktree з піддиректорії — `cd .worktrees/<…>` звідти впаде.
+
+Якщо `git rev-parse --show-toplevel` показав, що ти **не** в `.worktrees/`, візьми вивід `git branch --show-current` як `<current-branch>` і виконай **literal-команди без shell expansion** (без command substitution, variable expansion чи backticks). Наприклад, якщо поточна гілка `feature/x`:
+
+```bash
+npx @7n/mt worktree create "feature/x-taze" "n-taze: worktree-only skill"
+cd ".worktrees/feature-x-taze"
+```
+
+Тобто branch-argument лишає slash як у git-гілці, а шлях для `cd` бере sanitized форму: slash → `-`.
+
+**Крок 0.1 — bootstrap у новому дереві (після `cd`).** Дерево щойно створене й **без** `node_modules`. Постав залежності локально — тоді `npx @nitra/cursor <cmd>` бере локальну копію без походу в реєстр:
+
+```bash
+bun install
+```
 <!-- n-cursor:worktree:end -->
 
 # n-taze — Оновлення версій проекту

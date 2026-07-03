@@ -3,7 +3,7 @@ type: JS Module
 title: coverage-per-file.mjs
 resource: npm/src/coverage-per-file.mjs
 docgen:
-  crc: edc508cb
+  crc: d167dff5
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98

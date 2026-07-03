@@ -110,6 +110,8 @@ export async function measureCoveragePerFile(dir) {
         '--passWithNoTests',
         '--coverage',
         '--coverage.reporter=lcov',
+        // vitest 4 прибрав coverage.all — явний include, щоб файли без тестів лишались у lcov (0%)
+        '--coverage.include=**/*.{js,mjs,ts,vue}',
         `--coverage.reportsDirectory=${lcovDir}`,
         '--reporter=verbose',
         '--reporter=json',

@@ -155,6 +155,23 @@ Recursive globs ловлять файли всередині `tests/` так с�
 
 Усі `*Sync`-варіанти охоплені аналогічно.
 
+## Обовʼязкові скрипти в package.json
+
+Rego-пакет: `test.package_json`
+
+Цільовий файл: `package.json` кожного workspace.
+
+Перевіряє substring-відповідність значень у `scripts`:
+
+| Поле | Має містити |
+|---|---|
+| `scripts.coverage` | `n-cursor coverage` |
+| `scripts.test` | `vitest` |
+
+Substring-семантика: команди-обгортки (наприклад `bun run pre-coverage && n-cursor coverage`) дозволені — головне, щоб потрібний рядок був присутній.
+
+Канон підтягується через `--data`: [package.json.contains.json](./template/package.json.contains.json)
+
 ## Sandbox-aware тести (Stryker)
 
 Stryker за замовчуванням копіює репо у sandbox-каталог (`reports/stryker/.tmp/sandbox-XXX/`), щоб AST-патчити мутантів без зачеплення робочого дерева. У sandbox **немає `.git/`**, і будь-який тест, що звертається до **реального** git-дерева через `import.meta.url + N≥3 рівнів вгору** (типу`const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..', '..')`) фактично адресує sandbox-корінь, а не справжній репо. Це ламає`git rev-parse`/`git ls-files`/перевірки`.n-cursor.json`/CHANGELOG-співставлення — Stryker dry-run падає, мутаційний прогон не стартує,`mutation.json` лишається stale.
@@ -245,20 +262,3 @@ export default mergeConfig(viteConfig, defineConfig({
 ```
 
 Концерн ставить node-варіант baseline; перехід на frontend — ручна модифікація, після якої концерн уже не перетирає (idempotent).
-
-## Обовʼязкові скрипти в package.json
-
-Rego-пакет: `test.package_json`
-
-Цільовий файл: `package.json` кожного workspace.
-
-Перевіряє substring-відповідність значень у `scripts`:
-
-| Поле | Має містити |
-|---|---|
-| `scripts.coverage` | `n-cursor coverage` |
-| `scripts.test` | `vitest` |
-
-Substring-семантика: команди-обгортки (наприклад `bun run pre-coverage && n-cursor coverage`) дозволені — головне, щоб потрібний рядок був присутній.
-
-Канон підтягується через `--data`: [package.json.contains.json](./template/package.json.contains.json)

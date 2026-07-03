@@ -94,6 +94,50 @@ jobs:
 }
 ```
 
+## Rego-gate: конфігурація генерації типів `npm/tsconfig.emit-types.json`
+
+Rego-пакет: `npm-module.emit_types_config`
+
+Цільовий файл: `npm/tsconfig.emit-types.json`
+
+### Що перевіряється
+
+Leaf-by-leaf порівняння з канонічним сніпетом (через `--data`): кожне поле всередині `compilerOptions` має точно відповідати очікуваному значенню. Якщо секція `compilerOptions` відсутня або не є обʼєктом — окрема deny-помилка.
+
+Канонічний сніпет: [tsconfig.emit-types.json.snippet.json](./template/tsconfig.emit-types.json.snippet.json)
+
+### Допустимі відхилення
+
+Додаткові поля у `compilerOptions` (наприклад `rootDir`, `baseUrl`) не спричиняють помилку — перевіряється лише наявність і коректність обовʼязкових ключів зі сніпету.
+
+### Приклади
+
+✓ Правильно:
+
+```json
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "types",
+    "skipLibCheck": true
+  }
+}
+```
+
+✗ Неправильно — неправильний `outDir`:
+
+```json
+{ "compilerOptions": { "outDir": "dist" } }
+```
+
+✗ Неправильно — відсутній `compilerOptions`:
+
+```json
+{}
+```
+
 ## Module-level JSDoc як pointer
 
 Якщо поряд із `js/<stem>.mjs` є файл `js/docs/<stem>.md` — module-level JSDoc у `.mjs` має бути **pointer** (не більше одного непорожнього рядка), а не повноцінний наратив.
@@ -111,6 +155,64 @@ jobs:
 ```js
 /** @see ./docs/package_structure.md */
 import { existsSync } from 'node:fs'
+```
+
+## Rego-gate: валідація `npm/package.json`
+
+Rego-пакет: `npm-module.npm_package_json`
+
+Цільовий файл: `npm/package.json`
+
+### Що перевіряється
+
+**Поле `types`** (логіка в rego, не template-driven):
+
+- Має відповідати патерну `./types/index.d.ts` або `./types/<назва>.d.ts|.d.mts`.
+- Шляхи поза директорією `types/` або з іншими розширеннями (`.ts` без `.d`) — deny.
+
+**Поле `files`** (частково template-driven):
+
+- Обовʼязкове, має бути непорожнім масивом.
+- Subset-of перевірка: кожне значення з канонічного сніпету має бути присутнє у `files`. За замовчуванням — `"types"` обовʼязковий.
+
+**Поле `devDependencies`** (inverse-pattern, логіка в rego):
+
+- Не публікуються користувачам пакета — має бути відсутнє або порожнє `{}`.
+- Наявність будь-яких devDeps → deny з переліком залежностей. Перенести у кореневий `package.json`.
+
+Канонічний сніпет `files`: [package.json.snippet.json](./template/package.json.snippet.json)
+
+FS-перевірки (наявність файлу зі шляху `types`, скан tarball на тест-патерни) — у JS-перевірці, не тут.
+
+### Приклади
+
+✓ Правильно:
+
+```json
+{
+  "name": "@nitra/cursor",
+  "types": "./types/bin/n-cursor.d.ts",
+  "files": ["types", "mdc", "bin", "CHANGELOG.md"],
+  "dependencies": { "oxc-parser": "^0.128.0" }
+}
+```
+
+✗ Неправильно — `types` поза директорією `types/`:
+
+```json
+{ "types": "./dist/index.d.ts" }
+```
+
+✗ Неправильно — `files` без `"types"`:
+
+```json
+{ "files": ["bin", "mdc"] }
+```
+
+✗ Неправильно — наявні `devDependencies`:
+
+```json
+{ "devDependencies": { "@nitra/cursor": "^1.0.0" } }
 ```
 
 ## Структура монорепо та компактний пакет
@@ -177,132 +279,6 @@ Workflow робить **release + publish** одним job (`release-publish`): 
 - `npm/package.json` (whitelist `files` обовʼязково має містити `types`): [package.json.snippet.json](./policy/npm_package_json/template/package.json.snippet.json)
 - `npm/tsconfig.emit-types.json` (canonical `compilerOptions` для emit-types): [tsconfig.emit-types.json.snippet.json](./policy/emit_types_config/template/tsconfig.emit-types.json.snippet.json)
 
-## Валідація `main.json` правил
-
-Кожне правило у `npm/rules/<id>/` повинно мати коректний `main.json` (метадані правила).
-
-Перевірки (`rule_meta.mjs`):
-
-- **`main.mdc` обовʼязковий** у кожному `npm/rules/<id>/` — без нього `check` падає.
-- **`auto.md` є пережитком** — якщо такий файл залишився, `check` вимагає його видалити (метадані тепер у `main.json`).
-- **`main.json` має бути валідним JSON** із коректними полями:
-  - **`auto`** (опційне): `"завжди"` / масив glob-рядків / `{ glob }` / `{ predicate }`. Якщо `predicate` вказано — він має бути зареєстрований у `RULE_PREDICATES`.
-  - **`lint`** (опційне): `"per-file"` або `"full"`. Якщо вказано — `main.mjs` повинен експортувати функцію `lint` (або `export { lint } from …`).
-
-## Валідація `main.json` скілів
-
-Кожен скіл у `npm/skills/<id>/` повинен мати коректний `main.json` (метадані скіла).
-
-Перевірки (`skill_meta.mjs`):
-
-- **`auto.md` є пережитком** — якщо такий файл залишився, `check` вимагає його видалити (метадані тепер у `main.json`).
-- **`main.json` має бути валідним JSON** із коректними полями:
-  - **`worktree`** (обовʼязкове): `boolean`. Якщо `true` — скіл запускається виключно в окремому git-worktree.
-  - **`auto`** (опційне): `"завжди"` або непорожній масив ідентифікаторів правил-тригерів.
-  - **`requireRoot`** (опційне): `boolean`. Значення `false` несумісне з `worktree: true` — таку комбінацію `check` відхиляє.
-
-## Rego-gate: конфігурація генерації типів `npm/tsconfig.emit-types.json`
-
-Rego-пакет: `npm-module.emit_types_config`
-
-Цільовий файл: `npm/tsconfig.emit-types.json`
-
-### Що перевіряється
-
-Leaf-by-leaf порівняння з канонічним сніпетом (через `--data`): кожне поле всередині `compilerOptions` має точно відповідати очікуваному значенню. Якщо секція `compilerOptions` відсутня або не є обʼєктом — окрема deny-помилка.
-
-Канонічний сніпет: [tsconfig.emit-types.json.snippet.json](./template/tsconfig.emit-types.json.snippet.json)
-
-### Допустимі відхилення
-
-Додаткові поля у `compilerOptions` (наприклад `rootDir`, `baseUrl`) не спричиняють помилку — перевіряється лише наявність і коректність обовʼязкових ключів зі сніпету.
-
-### Приклади
-
-✓ Правильно:
-
-```json
-{
-  "compilerOptions": {
-    "allowJs": true,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": "types",
-    "skipLibCheck": true
-  }
-}
-```
-
-✗ Неправильно — неправильний `outDir`:
-
-```json
-{ "compilerOptions": { "outDir": "dist" } }
-```
-
-✗ Неправильно — відсутній `compilerOptions`:
-
-```json
-{}
-```
-
-## Rego-gate: валідація `npm/package.json`
-
-Rego-пакет: `npm-module.npm_package_json`
-
-Цільовий файл: `npm/package.json`
-
-### Що перевіряється
-
-**Поле `types`** (логіка в rego, не template-driven):
-
-- Має відповідати патерну `./types/index.d.ts` або `./types/<назва>.d.ts|.d.mts`.
-- Шляхи поза директорією `types/` або з іншими розширеннями (`.ts` без `.d`) — deny.
-
-**Поле `files`** (частково template-driven):
-
-- Обовʼязкове, має бути непорожнім масивом.
-- Subset-of перевірка: кожне значення з канонічного сніпету має бути присутнє у `files`. За замовчуванням — `"types"` обовʼязковий.
-
-**Поле `devDependencies`** (inverse-pattern, логіка в rego):
-
-- Не публікуються користувачам пакета — має бути відсутнє або порожнє `{}`.
-- Наявність будь-яких devDeps → deny з переліком залежностей. Перенести у кореневий `package.json`.
-
-Канонічний сніпет `files`: [package.json.snippet.json](./template/package.json.snippet.json)
-
-FS-перевірки (наявність файлу зі шляху `types`, скан tarball на тест-патерни) — у JS-перевірці, не тут.
-
-### Приклади
-
-✓ Правильно:
-
-```json
-{
-  "name": "@nitra/cursor",
-  "types": "./types/bin/n-cursor.d.ts",
-  "files": ["types", "mdc", "bin", "CHANGELOG.md"],
-  "dependencies": { "oxc-parser": "^0.128.0" }
-}
-```
-
-✗ Неправильно — `types` поза директорією `types/`:
-
-```json
-{ "types": "./dist/index.d.ts" }
-```
-
-✗ Неправильно — `files` без `"types"`:
-
-```json
-{ "files": ["bin", "mdc"] }
-```
-
-✗ Неправильно — наявні `devDependencies`:
-
-```json
-{ "devDependencies": { "@nitra/cursor": "^1.0.0" } }
-```
-
 ## Rego-gate: валідація кореневого `package.json`
 
 Rego-пакет: `npm-module.root_package_json`
@@ -344,3 +320,27 @@ Subset-of перевірка масиву `workspaces`: кожне значен�
 ```json
 { "workspaces": ["demo"] }
 ```
+
+## Валідація `main.json` правил
+
+Кожне правило у `npm/rules/<id>/` повинно мати коректний `main.json` (метадані правила).
+
+Перевірки (`rule_meta.mjs`):
+
+- **`main.mdc` обовʼязковий** у кожному `npm/rules/<id>/` — без нього `check` падає.
+- **`auto.md` є пережитком** — якщо такий файл залишився, `check` вимагає його видалити (метадані тепер у `main.json`).
+- **`main.json` має бути валідним JSON** із коректними полями:
+  - **`auto`** (опційне): `"завжди"` / масив glob-рядків / `{ glob }` / `{ predicate }`. Якщо `predicate` вказано — він має бути зареєстрований у `RULE_PREDICATES`.
+  - **`lint`** (опційне): `"per-file"` або `"full"`. Якщо вказано — `main.mjs` повинен експортувати функцію `lint` (або `export { lint } from …`).
+
+## Валідація `main.json` скілів
+
+Кожен скіл у `npm/skills/<id>/` повинен мати коректний `main.json` (метадані скіла).
+
+Перевірки (`skill_meta.mjs`):
+
+- **`auto.md` є пережитком** — якщо такий файл залишився, `check` вимагає його видалити (метадані тепер у `main.json`).
+- **`main.json` має бути валідним JSON** із коректними полями:
+  - **`worktree`** (обовʼязкове): `boolean`. Якщо `true` — скіл запускається виключно в окремому git-worktree.
+  - **`auto`** (опційне): `"завжди"` або непорожній масив ідентифікаторів правил-тригерів.
+  - **`requireRoot`** (опційне): `boolean`. Значення `false` несумісне з `worktree: true` — таку комбінацію `check` відхиляє.

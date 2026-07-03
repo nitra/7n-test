@@ -42,12 +42,17 @@ export function ensureVitestShim() {
     VITEST_SHIM_CONFIG,
     `import { defineConfig } from ${JSON.stringify('file://' + VITEST_CONFIG_ENTRY)}\n` +
       `export default defineConfig({\n` +
-      `  test: { environment: 'node' },\n` +
-      `  coverage: {\n` +
-      `    provider: 'v8',\n` +
+      `  test: {\n` +
+      `    environment: 'node',\n` +
+      // coverage МАЄ бути всередині test — поза ним vitest блок ігнорує (виправлено разом
+      // із міграцією на vitest 4; include — заміна видаленого all:true).
+      `    coverage: {\n` +
+      `      provider: 'v8',\n` +
+      `      include: ['**/*.{js,mjs,ts,vue}'],\n` +
       // Exclude test files that use non-vitest runners (bun:test, jest) from
       // the coverage scan so they don't cause import errors or skewed data.
-      `    exclude: ['**/node_modules/**'],\n` +
+      `      exclude: ['**/node_modules/**'],\n` +
+      `    },\n` +
       `  },\n` +
       `})\n`
   )

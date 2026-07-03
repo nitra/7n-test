@@ -3,7 +3,7 @@ type: JS Module
 title: vitest.config.mjs
 resource: npm/vitest.config.mjs
 docgen:
-  crc: 53a58e6d
+  crc: bd0d6fb0
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.99

@@ -9,13 +9,19 @@ CLI [`@nitra/minify-image`](https://www.npmjs.com/package/@nitra/minify-image) (
 
 Окремий workflow `lint-image.yml` створювати не треба; якщо потрібен CI-gate для зображень, використовуй `n-cursor lint image-compress --read-only`.
 
-## Заборонені залежності у `package.json`
+## Заборона `@nitra/minify-image` у залежностях (`package.json`)
 
-`@nitra/minify-image` не повинен зʼявлятися ні в `dependencies`, ні в `devDependencies` — CLI запускається лише через `npx`. Якщо потрібен явний пін — у самому виклику (`npx @nitra/minify-image@^3 --src=. --write`).
+Rego-пакет: `image_compress.package_json`
 
-Перевіряється через Rego-пакет `image_compress.package_json`: [package.json.deny.json](./policy/package_json/template/package.json.deny.json)
+Цільовий файл: `package.json` (єдиний файл проєкту).
 
-Окремий `package.json`-скрипт `lint-image` не потрібен і не перевіряється — єдина точка входу `n-cursor lint image-compress`.
+Перевіряє поля `dependencies` та `devDependencies`: якщо там присутній пакет `@nitra/minify-image` — deny. Список заборонених пакетів надходить через `--data` з канонічного шаблону:
+
+[package.json.deny.json](./template/package.json.deny.json)
+
+✓ `{}` — порожній `package.json` без залежностей
+✗ `{ "dependencies": { "@nitra/minify-image": "^4.0.1" } }` — заборонено, використовуй `npx`
+✗ `{ "devDependencies": { "@nitra/minify-image": "^4.0.1" } }` — заборонено, використовуй `npx`
 
 ## Кеш-файли: що зберігати в git
 
@@ -30,17 +36,3 @@ git rm --cached .minify-image-cache.tsv 2>/dev/null || true && rm -f .minify-ima
 ```
 
 Також прибери відповідний рядок з `.gitignore`, якщо є.
-
-## Заборона `@nitra/minify-image` у залежностях (`package.json`)
-
-Rego-пакет: `image_compress.package_json`
-
-Цільовий файл: `package.json` (єдиний файл проєкту).
-
-Перевіряє поля `dependencies` та `devDependencies`: якщо там присутній пакет `@nitra/minify-image` — deny. Список заборонених пакетів надходить через `--data` з канонічного шаблону:
-
-[package.json.deny.json](./template/package.json.deny.json)
-
-✓ `{}` — порожній `package.json` без залежностей
-✗ `{ "dependencies": { "@nitra/minify-image": "^4.0.1" } }` — заборонено, використовуй `npx`
-✗ `{ "devDependencies": { "@nitra/minify-image": "^4.0.1" } }` — заборонено, використовуй `npx`

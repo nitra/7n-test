@@ -3,7 +3,7 @@ type: JS Module
 title: vitest-shim.mjs
 resource: npm/src/lib/vitest-shim.mjs
 docgen:
-  crc: 5d7aaaf0
+  crc: e08618cc
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.97
