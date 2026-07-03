@@ -7,17 +7,24 @@
  *   3. Bootstrap: when no tests exist, scan sources and quickClassify locally.
  *   4. Repeat until coverage maxes out or no improvement.
  *
- * Phase 2:
+ * Phase 2 (skipped entirely with --no-mutation, which instead writes
+ * COVERAGE.md from the last Phase 1 per-file measurement):
  *   5. Mutation testing via existing coverage providers (requires .n-cursor.json#rules).
  *   6. Auto-fix survived mutants via pi agent.
  */
-import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
+import {
+  measureCoveragePerFile,
+  getUncoveredFiles,
+  findSourceFiles,
+  renderPerFileMarkdown
+} from './coverage-per-file.mjs'
 import { quickClassify } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
 import { fixFailingTests } from './fix-tests.mjs'
 import { runCoverageSteps } from './coverage/coverage.mjs'
 import { withLock } from './scripts/utils/with-lock.mjs'
 import { readFileSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const MAX_ITERATIONS = 5
@@ -25,18 +32,20 @@ const COVERAGE_THRESHOLD = 80
 
 /**
  * @param {string} dir absolute path to project root
- * @param {{ noMutation?: boolean }} [opts]
+ * @param {{ noMutation?: boolean }} [opts] опції запуску
  * @returns {Promise<number>} exit code
  */
 export async function runAutoTest(dir, opts = {}) {
   console.log(`\n📁 ${dir}\n`)
 
   let prevUncoveredCount = Infinity
+  let lastFiles = []
 
   for (let i = 1; i <= MAX_ITERATIONS; i++) {
     console.log(`\n── Ітерація ${i}/${MAX_ITERATIONS}: coverage ──\n`)
 
     const { files: allFiles, failingTests } = await measureCoveragePerFile(dir)
+    lastFiles = allFiles
 
     if (failingTests.length > 0) {
       console.log(`\n── ${failingTests.length} тестів падають — виправляю (pi agent) ──\n`)
@@ -107,6 +116,12 @@ export async function runAutoTest(dir, opts = {}) {
 
   if (opts.noMutation) {
     console.log('\n── Мутаційне тестування пропущено (--no-mutation) ──\n')
+    if (lastFiles.length > 0) {
+      await writeFile(join(dir, 'COVERAGE.md'), renderPerFileMarkdown(lastFiles), 'utf8')
+      console.log('✓ COVERAGE.md (тільки per-file покриття, без мутантів)')
+    } else {
+      console.log('⚠ Немає даних покриття — COVERAGE.md не записано.')
+    }
     return 0
   }
 

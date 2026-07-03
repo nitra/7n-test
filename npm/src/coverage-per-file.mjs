@@ -148,6 +148,35 @@ export function getUncoveredFiles(files, threshold = 80) {
   return files.filter(f => f.pct < threshold)
 }
 
+/**
+ * Рендерить per-file line coverage як Markdown-таблицю без мутаційних даних.
+ * Використовується для `COVERAGE.md`, коли мутаційне тестування пропущено
+ * (`--no-mutation`) і провайдери `.n-cursor.json#rules` не викликались.
+ * @param {Array<{file: string, pct: number, linesFound: number, linesCovered: number}>} files per-file coverage rows
+ * @returns {string} Markdown з заголовком `# Coverage`
+ */
+export function renderPerFileMarkdown(files) {
+  const sorted = files.toSorted((a, b) => a.pct - b.pct || a.file.localeCompare(b.file))
+  const lines = [
+    '# Coverage',
+    '',
+    '_Мутаційне тестування пропущено (`--no-mutation`) — лише per-file покриття рядків._',
+    '',
+    '| Файл | Рядки | % |',
+    '| --- | --- | --- |'
+  ]
+  let coveredTotal = 0
+  let foundTotal = 0
+  for (const f of sorted) {
+    lines.push(`| ${f.file} | ${f.linesCovered}/${f.linesFound} | ${f.pct.toFixed(2)}% |`)
+    coveredTotal += f.linesCovered
+    foundTotal += f.linesFound
+  }
+  const totalPct = foundTotal === 0 ? 100 : (coveredTotal / foundTotal) * 100
+  lines.push(`| **Разом** | ${coveredTotal}/${foundTotal} | ${totalPct.toFixed(2)}% |`)
+  return `${lines.join('\n')}\n`
+}
+
 const SOURCE_EXT_RE = /\.(mjs|js|ts|vue|py)$/
 const IGNORE_DIRS = new Set([
   'node_modules',
