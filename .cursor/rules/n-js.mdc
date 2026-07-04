@@ -55,7 +55,6 @@ jobs:
       - name: Eslint
         run: bunx n-cursor lint js --read-only
 ```
-
 - `.jscpd.json`:
 
 ```json
@@ -67,7 +66,6 @@ jobs:
   "ignore": [".claude/worktrees/**", "**/dist/**", "**/CHANGELOG.md"]
 }
 ```
-
 - `extensions.json`:
 
 ```json
@@ -75,7 +73,6 @@ jobs:
   "recommendations": ["dbaeumer.vscode-eslint", "github.vscode-github-actions", "oxc.oxc-vscode"]
 }
 ```
-
 - `package.json`:
 
 ```json

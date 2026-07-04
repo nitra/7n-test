@@ -16,7 +16,6 @@ alwaysApply: false
   "scss.validate": false
 }
 ```
-
 - `lint-style.yml`:
 
 ```yaml
@@ -60,13 +59,11 @@ jobs:
       - name: StyleLint
         run: bunx n-cursor lint style --read-only
 ```
-
 - `extensions.json`:
 
 ```json
 { "recommendations": ["stylelint.vscode-stylelint"] }
 ```
-
 - `package.json`:
 
 ```json
