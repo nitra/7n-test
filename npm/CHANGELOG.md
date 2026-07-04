@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.0] - 2026-07-04
+
+### Added
+
+- 🤖 feat(core): спільний prompt-budget (бюджет символів + per-call maxTokens за типом задачі через streamFn-обгортку), батчинг fix-tests під бюджет з анти-starvation, повтор на обрізану генерацію (stopReason length)
+
+### Fixed
+
+- 🤖 fix(core): coverage-скан виключає `**/*.d.ts` — vitest 4 прибрав дефолтний exclude, і v8-remap падав із RolldownError на TS-синтаксисі декларацій у цільових проєктах (CLI-прапорець у coverage-per-file та exclude у shim-конфігу)
+- CLI більше не висить після завершення роботи: явний process.exit у bin (незакриті pi-сесії тримали event loop) і session.dispose() у finally для callText/callAgent
+
 ## [0.11.2] - 2026-07-04
 
 ### Fixed
