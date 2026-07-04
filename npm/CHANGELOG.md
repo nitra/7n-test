@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.1] - 2026-07-04
+
+### Changed
+
+- test(core): моки node:fs під vitest-shim і актуалізація shouldDedup-очікування
+
 ## [0.12.0] - 2026-07-04
 
 ### Added
