@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
 import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
+import { budgetFor } from './lib/prompt-budget.mjs'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
@@ -867,7 +868,7 @@ async function generateSharedHeader(ctx, dir, callTextFn) {
   try {
     const headerResp = await callTextFn(
       buildHeaderPrompt({ file, testFilePath, importPath, hasSideEffects, content, exports, testRules, astInfo }),
-      { cwd: dir }
+      { cwd: dir, maxTokens: budgetFor('header').maxTokens }
     )
     const header = extractCode(headerResp)
     if (header) return header
@@ -892,7 +893,7 @@ async function generateLocalBlock(opts) {
   const result = await generateBlockWithLoop(
     blockPrompt,
     callLocalFn,
-    {},
+    { maxTokens: budgetFor('block').maxTokens },
     header,
     dir,
     testDir,
@@ -920,7 +921,7 @@ async function generateCloudBlock(opts) {
   const result = await generateBlockWithLoop(
     blockPrompt,
     callTextFn,
-    { cwd: dir },
+    { cwd: dir, maxTokens: budgetFor('block').maxTokens },
     header,
     dir,
     testDir,
@@ -1109,7 +1110,7 @@ async function generateOneTest(fileInfo, dir, callTextFn) {
   const prompt = buildSingleFilePrompt(fileInfo, dir)
   let response
   try {
-    response = await callTextFn(prompt, { cwd: dir })
+    response = await callTextFn(prompt, { cwd: dir, maxTokens: budgetFor('single-file').maxTokens })
   } catch (error) {
     if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
     console.error(`  ✗ pi помилка для ${fileInfo.file}: ${error.message}`)
@@ -1181,7 +1182,7 @@ export async function generateTests(files, dir, opts = {}) {
 
   const callTextFn = opts.callText ?? callText
   const localModel = resolveLocalModel(opts)
-  const localFn = localModel ? prompt => callTextFn(prompt, { model: localModel, cwd: dir }) : null
+  const localFn = localModel ? (prompt, opts = {}) => callTextFn(prompt, { ...opts, model: localModel, cwd: dir }) : null
 
   const mode = localFn ? `per-export (local:${localModel} + cloud)` : 'single-file (cloud)'
   console.log(`\n🤖 Генерую тести для ${files.length} файлів [${mode}]...\n`)

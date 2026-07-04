@@ -1,11 +1,14 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { callText, callAgent } from './pi-client.mjs'
-import { createAgentSession, SessionManager } from '@earendil-works/pi-coding-agent'
+
+// vi.hoisted: vi.mock піднімається на початок файлу, тож звичайний top-level
+// const ще не ініціалізований, коли factory виконується під час імпорту SUT
+const mockCreateAgentSession = vi.hoisted(() => vi.fn())
 
 // Mock the entire pi-coding-agent SDK
 vi.mock('@earendil-works/pi-coding-agent', () => ({
-  createAgentSession: vi.fn(),
+  createAgentSession: mockCreateAgentSession,
   SessionManager: {
     inMemory: vi.fn().mockReturnValue({ type: 'inMemory' })
   }
@@ -15,8 +18,6 @@ vi.mock('@earendil-works/pi-coding-agent', () => ({
 vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn().mockResolvedValue() }))
 
 describe('pi-client.mjs', () => {
-  const mockCreateAgentSession = vi.mocked(createAgentSession)
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -25,6 +26,7 @@ describe('pi-client.mjs', () => {
     it('should call createAgentSession with correct parameters and return assistant content on success', async () => {
       const mockSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [
             {
@@ -56,6 +58,7 @@ describe('pi-client.mjs', () => {
     it('should return an empty string if the last message role is not assistant', async () => {
       const mockSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [
             {
@@ -79,6 +82,7 @@ describe('pi-client.mjs', () => {
     it('should throw an error if pi stops with an error reason', async () => {
       const mockSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [
             {
@@ -102,6 +106,7 @@ describe('pi-client.mjs', () => {
     it('should throw an error if pi stops with an aborted reason', async () => {
       const mockSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [
             {
@@ -122,9 +127,30 @@ describe('pi-client.mjs', () => {
       await expect(callText('Test')).rejects.toThrow('pi error: aborted')
     })
 
+    it('disposes the session on success and even when prompt throws', async () => {
+      const okSession = {
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
+        state: { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'OK' }] }] }
+      }
+      mockCreateAgentSession.mockResolvedValue({ session: okSession })
+      await callText('Test')
+      expect(okSession.dispose).toHaveBeenCalledTimes(1)
+
+      const failSession = {
+        prompt: vi.fn().mockRejectedValue(new Error('Authentication failed')),
+        dispose: vi.fn(),
+        state: { messages: [] }
+      }
+      mockCreateAgentSession.mockResolvedValue({ session: failSession })
+      await expect(callText('Test')).rejects.toThrow('Authentication failed')
+      expect(failSession.dispose).toHaveBeenCalledTimes(1)
+    })
+
     it('should handle message content with different types correctly', async () => {
       const mockSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [
             {
@@ -152,6 +178,7 @@ describe('pi-client.mjs', () => {
     it('retries on a transient connection error and succeeds once the server recovers', async () => {
       const okSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'OK' }] }] }
       }
       mockCreateAgentSession
@@ -168,6 +195,7 @@ describe('pi-client.mjs', () => {
     it('does not retry non-transient errors (e.g. auth failure)', async () => {
       const failSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: {
           messages: [{ role: 'assistant', stopReason: 'error', errorMessage: 'Authentication failed', content: [] }]
         }
@@ -222,7 +250,7 @@ describe('pi-client.mjs', () => {
 
       await expect(callText('x')).rejects.toThrow('omlx memory-guard')
 
-      // 3 спроби → 2 паузи; базa 15s з jitter 0.5–1.0, далі експоненційно
+      // 3 спроби → 2 паузи; база 15s з jitter 0.5–1.0, далі експоненційно
       expect(sleepMock).toHaveBeenCalledTimes(2)
       const [first, second] = sleepMock.mock.calls.map(c => c[0])
       expect(first).toBeGreaterThanOrEqual(7500)
@@ -236,6 +264,7 @@ describe('pi-client.mjs', () => {
     it('recovers when a memory-guard rejection clears on a later attempt, without printing the body', async () => {
       const okSession = {
         prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
         state: { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'OK' }] }] }
       }
       mockCreateAgentSession
@@ -249,6 +278,65 @@ describe('pi-client.mjs', () => {
       expect(result).toBe('OK')
       expect(mockCreateAgentSession).toHaveBeenCalledTimes(2)
       expect(logSpy).not.toHaveBeenCalledWith(prompt)
+
+      logSpy.mockRestore()
+    })
+
+    it('wraps agent.streamFn to inject per-call maxTokens into stream options', async () => {
+      const streamFnCalls = []
+      const mockSession = {
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
+        agent: {
+          streamFn: (model, ctx, options) => {
+            streamFnCalls.push(options)
+          }
+        },
+        state: { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'OK' }] }] }
+      }
+      mockCreateAgentSession.mockResolvedValue({ session: mockSession })
+
+      const result = await callText('Test', { maxTokens: 2048 })
+
+      expect(result).toBe('OK')
+      mockSession.agent.streamFn('m', 'ctx', { signal: 1 })
+      expect(streamFnCalls[0]).toMatchObject({ signal: 1, maxTokens: 2048 })
+    })
+
+    it('retries once with doubled maxTokens when the response is truncated (stopReason length)', async () => {
+      const makeSession = (text, stopReason) => ({
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
+        agent: { streamFn: vi.fn() },
+        state: { messages: [{ role: 'assistant', stopReason, content: [{ type: 'text', text }] }] }
+      })
+      mockCreateAgentSession
+        .mockResolvedValueOnce({ session: makeSession('обрізаний', 'length') })
+        .mockResolvedValueOnce({ session: makeSession('повний', 'stop') })
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      const result = await callText('Test', { maxTokens: 2048 })
+
+      expect(result).toBe('повний')
+      expect(mockCreateAgentSession).toHaveBeenCalledTimes(2)
+
+      logSpy.mockRestore()
+    })
+
+    it('does not retry truncation more than once', async () => {
+      const truncated = () => ({
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn(),
+        agent: { streamFn: vi.fn() },
+        state: { messages: [{ role: 'assistant', stopReason: 'length', content: [{ type: 'text', text: 'half' }] }] }
+      })
+      mockCreateAgentSession.mockImplementation(async () => ({ session: truncated() }))
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      const result = await callText('Test', { maxTokens: 2048 })
+
+      expect(result).toBe('half')
+      expect(mockCreateAgentSession).toHaveBeenCalledTimes(2)
 
       logSpy.mockRestore()
     })
@@ -281,7 +369,8 @@ describe('pi-client.mjs', () => {
   describe('callAgent', () => {
     it('should call createAgentSession with coding tools and specified cwd', async () => {
       const mockSession = {
-        prompt: vi.fn().mockResolvedValue()
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn()
         // State is irrelevant for callAgent as it returns void
       }
       const projectCwd = '/path/to/project'
@@ -295,12 +384,25 @@ describe('pi-client.mjs', () => {
         cwd: projectCwd
       })
       expect(mockSession.prompt).toHaveBeenCalledWith('Write a test file')
+      expect(mockSession.dispose).toHaveBeenCalledTimes(1)
+    })
+
+    it('disposes the session even when the agent prompt throws', async () => {
+      const mockSession = {
+        prompt: vi.fn().mockRejectedValue(new Error('Authentication failed')),
+        dispose: vi.fn()
+      }
+      mockCreateAgentSession.mockResolvedValue({ session: mockSession })
+
+      await expect(callAgent('Write a test file', '/tmp')).rejects.toThrow('Authentication failed')
+      expect(mockSession.dispose).toHaveBeenCalledTimes(1)
     })
 
     it('should call createAgentSession with default tools if logic were to change (implicit test)', async () => {
       // Since the implementation hardcodes the tools list, we test that it is called as expected.
       const mockSession = {
-        prompt: vi.fn().mockResolvedValue()
+        prompt: vi.fn().mockResolvedValue(),
+        dispose: vi.fn()
       }
       mockCreateAgentSession.mockResolvedValue({ session: mockSession })
 

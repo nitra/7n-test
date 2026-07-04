@@ -20,6 +20,7 @@ import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { env } from 'node:process'
 import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
+import { budgetFor, capText, packBatch } from './lib/prompt-budget.mjs'
 import { findTestRules } from './gen-tests.mjs'
 import { parseFailingTests } from './coverage-per-file.mjs'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
@@ -109,6 +110,44 @@ function extractCode(text) {
 }
 
 /**
+ * Читає складники секції одного падаючого файлу для промпту.
+ * @param {{file: string, errors: string[]}} failure падаючий тест-файл
+ * @param {string} [dir] project root
+ * @returns {{file: string, errBlock: string, testCode: string, sourceCode: string|null}} сирі частини секції
+ */
+function readFailureParts({ file, errors }, dir) {
+  const absPath = dir ? join(dir, file) : file
+  const testCode = existsSync(absPath) ? readFileSync(absPath, 'utf8').slice(0, 6000) : '(файл не знайдено)'
+  // Heuristically find source file: strip tests/ prefix from path
+  const sourcePath = inferSourcePath(absPath)
+  const sourceCode =
+    sourcePath && existsSync(sourcePath) ? readFileSync(sourcePath, 'utf8').slice(0, MAX_SRC_BYTES) : null
+  return { file, errBlock: errors.join('\n\n'), testCode, sourceCode }
+}
+
+/**
+ * Складає секцію файлу з готових частин.
+ * @param {{file: string, errBlock: string, testCode: string, sourceCode: string|null}} parts частини з `readFailureParts`
+ * @returns {string} markdown-секція файлу
+ */
+function buildFileSection({ file, errBlock, testCode, sourceCode }) {
+  return [
+    `### \`${file}\``,
+    '',
+    '**Помилки:**',
+    '```',
+    errBlock,
+    '```',
+    '',
+    '**Поточний тест-файл:**',
+    '```js',
+    testCode,
+    '```',
+    ...(sourceCode ? ['', '**Source (для довідки, не міняй):**', '```js', sourceCode, '```'] : [])
+  ].join('\n')
+}
+
+/**
  * Builds a prompt to fix one failing test file.
  * Includes current file content so the LLM doesn't need file-read tools.
  * @param {Array<{file: string, errors: string[]}>} failures failing test files
@@ -117,34 +156,17 @@ function extractCode(text) {
  */
 export function buildFixTestsPrompt(failures, dir) {
   const testRules = dir ? findTestRules(dir) : null
+  const sections = failures.map(f => buildFileSection(readFailureParts(f, dir)))
+  return buildPromptShell(sections, testRules)
+}
 
-  const sections = failures.map(({ file, errors }) => {
-    const absPath = dir ? join(dir, file) : file
-    const testCode = existsSync(absPath) ? readFileSync(absPath, 'utf8').slice(0, 6000) : '(файл не знайдено)'
-
-    // Heuristically find source file: strip tests/ prefix from path
-    const sourcePath = inferSourcePath(absPath)
-    const sourceCode =
-      sourcePath && existsSync(sourcePath) ? readFileSync(sourcePath, 'utf8').slice(0, MAX_SRC_BYTES) : null
-
-    const errBlock = errors.join('\n\n')
-
-    return [
-      `### \`${file}\``,
-      '',
-      '**Помилки:**',
-      '```',
-      errBlock,
-      '```',
-      '',
-      '**Поточний тест-файл:**',
-      '```js',
-      testCode,
-      '```',
-      ...(sourceCode ? ['', '**Source (для довідки, не міняй):**', '```js', sourceCode, '```'] : [])
-    ].join('\n')
-  })
-
+/**
+ * Обгортає секції файлів спільними правилами й інструкцією формату відповіді.
+ * @param {string[]} sections markdown-секції падаючих файлів
+ * @param {string|null} testRules конвенції тестів проєкту
+ * @returns {string} повний текст промпту
+ */
+function buildPromptShell(sections, testRules) {
   return [
     'Виправ падаючі unit-тести. Поверни ПОВНИЙ вміст КОЖНОГО виправленого тест-файлу.',
     '',
@@ -174,6 +196,54 @@ export function buildFixTestsPrompt(failures, dir) {
     '... повний вміст ...',
     '```'
   ].join('\n')
+}
+
+/**
+ * Складає промпт під бюджет `budgetFor('fix')`: скільки файлів влазить —
+ * стільки в батч (найменші першими), решта — у `deferred` на наступний
+ * прохід. Файл, що сам-один перевищує бюджет, отримує соло-промпт із
+ * внутрішнім обрізанням (`fitToBudget`: спершу ріжеться source-довідка,
+ * потім vitest-помилки; сам тест-код захищений) — ніколи не скипається.
+ * @param {Array<{file: string, errors: string[]}>} failures падаючі тест-файли
+ * @param {string} [dir] project root
+ * @returns {{prompt: string, included: string[], deferred: string[]}} промпт + розподіл файлів
+ */
+export function buildFixTestsBatch(failures, dir) {
+  const testRules = dir ? findTestRules(dir) : null
+  const shellOverhead = buildPromptShell([], testRules).length
+  const sectionBudget = Math.max(1000, budgetFor('fix').maxPromptChars - shellOverhead)
+
+  const parts = failures.map(f => {
+    const p = readFailureParts(f, dir)
+    return { ...p, section: buildFileSection(p) }
+  })
+  const { included, deferred } = packBatch(
+    parts.map(p => ({ key: p.file, size: p.section.length })),
+    sectionBudget
+  )
+
+  if (included.length === 0) {
+    // Соло-режим: навіть найменший файл не влазить — жорстко обрізаємо
+    // нутрощі секції (source геть, помилки до чверті бюджету, тест-код —
+    // найцінніше — до половини), замість мовчазного skip
+    const smallest = parts.toSorted((a, b) => a.section.length - b.section.length)[0]
+    console.log(`  ⚠ ${smallest.file}: секція завелика (${smallest.section.length} симв.) — соло-виклик з обрізанням`)
+    const section = buildFileSection({
+      file: smallest.file,
+      errBlock: capText(smallest.errBlock, Math.floor(sectionBudget / 4)),
+      testCode: capText(smallest.testCode, Math.floor(sectionBudget / 2)),
+      sourceCode: null
+    })
+    return {
+      prompt: buildPromptShell([section], testRules),
+      included: [smallest.file],
+      deferred: failures.map(f => f.file).filter(f => f !== smallest.file)
+    }
+  }
+
+  const includedSet = new Set(included)
+  const sections = parts.filter(p => includedSet.has(p.file)).map(p => p.section)
+  return { prompt: buildPromptShell(sections, testRules), included, deferred }
 }
 
 /**
@@ -256,7 +326,8 @@ function writeFixedFiles(fixed, remaining, dir) {
  * @returns {Promise<{count: number, fixed: number, remaining: number}>} fix result summary
  */
 export async function fixFailingTests(dir, opts = {}) {
-  const callTextFn = opts.callTextFn ?? (prompt => callText(prompt, { model: MODEL, cwd: dir }))
+  const callTextFn =
+    opts.callTextFn ?? (prompt => callText(prompt, { model: MODEL, cwd: dir, maxTokens: budgetFor('fix').maxTokens }))
   const failures = opts.failures ?? (await getFailingTests(dir))
 
   if (failures.length === 0) return { count: 0, fixed: 0, remaining: 0 }
@@ -268,15 +339,27 @@ export async function fixFailingTests(dir, opts = {}) {
   console.log()
 
   let remaining = failures
-  for (let attempt = 1; attempt <= MAX_FIX_ATTEMPTS && remaining.length > 0; attempt++) {
-    if (attempt > 1) {
-      console.log(`\n🔄 Спроба ${attempt}/${MAX_FIX_ATTEMPTS}: залишилось ${remaining.length} файлів...\n`)
-    }
+  const attempts = new Map()
+  let prevDeferred = new Set()
+  for (;;) {
+    // Спроби рахуються per-file (лише коли файл реально був у батчі),
+    // тож deferred-черга не з'їдає ліміт файлів, які ще не пробували
+    const eligible = remaining
+      .filter(f => (attempts.get(f.file) ?? 0) < MAX_FIX_ATTEMPTS)
+      // Анти-starvation: відкладені минулого разу файли йдуть першими
+      .toSorted((a, b) => (prevDeferred.has(b.file) ? 1 : 0) - (prevDeferred.has(a.file) ? 1 : 0))
+    if (eligible.length === 0) break
 
-    const prompt = buildFixTestsPrompt(remaining, dir)
+    const batch = buildFixTestsBatch(eligible, dir)
+    if (batch.deferred.length) {
+      console.log(`  📦 батч: ${batch.included.length} файлів, відкладено на наступний прохід: ${batch.deferred.length}`)
+    }
+    for (const file of batch.included) attempts.set(file, (attempts.get(file) ?? 0) + 1)
+    prevDeferred = new Set(batch.deferred)
+
     let response
     try {
-      response = await callTextFn(prompt)
+      response = await callTextFn(batch.prompt)
     } catch (error) {
       // memory-guard: не звичайна per-file помилка — RAM-стеля фіксована, продовжувати
       // до наступного файлу немає сенсу. Пробиваємо нагору до CLI, аби процес завершився.
@@ -292,7 +375,8 @@ export async function fixFailingTests(dir, opts = {}) {
       break
     }
 
-    writeFixedFiles(fixed, remaining, dir)
+    const includedSet = new Set(batch.included)
+    writeFixedFiles(fixed, eligible.filter(f => includedSet.has(f.file)), dir)
 
     remaining = await getFailingTests(dir)
   }
