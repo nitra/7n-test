@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.2] - 2026-07-04
+
+### Fixed
+
+- 🤖 fix(core): кап runtime-probe виходів (shape-summary + tmp-cwd) і bounded backoff на omlx memory-guard замість миттєвого падіння
+
 ## [0.11.1] - 2026-07-04
 
 ### Changed
