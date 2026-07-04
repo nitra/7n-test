@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { callText, callAgent } from './pi-client.mjs'
 import { createAgentSession, SessionManager } from '@earendil-works/pi-coding-agent'
 
@@ -184,7 +185,7 @@ describe('pi-client.mjs', () => {
       expect(mockCreateAgentSession).toHaveBeenCalledTimes(4)
     })
 
-    it('prints the request body and throws on a memory-guard rejection, without retrying', async () => {
+    it('retries a memory-guard rejection with backoff and throws after the bounded attempts are exhausted', async () => {
       mockCreateAgentSession.mockRejectedValue(
         new Error('Prefill would require ~12.32 GB peak but metal_cap ceiling is 11.84 GB.')
       )
@@ -193,8 +194,85 @@ describe('pi-client.mjs', () => {
       const prompt = 'Summarize this huge source file...'
       await expect(callText(prompt)).rejects.toThrow('omlx memory-guard')
 
-      expect(mockCreateAgentSession).toHaveBeenCalledTimes(1)
+      // default N_PI_MEMORY_RETRY_ATTEMPTS = 3 — одно-слотова черга oMLX
+      // вивільняє залишкову пам'ять сама, тож обмежений повтор легітимний
+      expect(mockCreateAgentSession).toHaveBeenCalledTimes(3)
       expect(logSpy).toHaveBeenCalledWith(prompt)
+
+      logSpy.mockRestore()
+    })
+
+    it('prints the request body only on the final memory-guard failure, not on intermediate attempts', async () => {
+      mockCreateAgentSession.mockRejectedValue(new Error('oMLX prefill memory guard rejected this prompt'))
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      const prompt = 'body-printed-once'
+      await expect(callText(prompt)).rejects.toThrow('omlx memory-guard')
+
+      const bodyPrints = logSpy.mock.calls.filter(c => c[0] === prompt)
+      expect(bodyPrints).toHaveLength(1)
+
+      logSpy.mockRestore()
+    })
+
+    it('waits with the dedicated memory schedule between memory-guard attempts', async () => {
+      mockCreateAgentSession.mockRejectedValue(new Error('memory limit reached'))
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+      const sleepMock = vi.mocked(sleep)
+
+      await expect(callText('x')).rejects.toThrow('omlx memory-guard')
+
+      // 3 спроби → 2 паузи; базa 15s з jitter 0.5–1.0, далі експоненційно
+      expect(sleepMock).toHaveBeenCalledTimes(2)
+      const [first, second] = sleepMock.mock.calls.map(c => c[0])
+      expect(first).toBeGreaterThanOrEqual(7500)
+      expect(first).toBeLessThanOrEqual(15000)
+      expect(second).toBeGreaterThanOrEqual(15000)
+      expect(second).toBeLessThanOrEqual(30000)
+
+      logSpy.mockRestore()
+    })
+
+    it('recovers when a memory-guard rejection clears on a later attempt, without printing the body', async () => {
+      const okSession = {
+        prompt: vi.fn().mockResolvedValue(),
+        state: { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'OK' }] }] }
+      }
+      mockCreateAgentSession
+        .mockRejectedValueOnce(new Error('oMLX prefill memory guard rejected this prompt'))
+        .mockResolvedValueOnce({ session: okSession })
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      const prompt = 'recovers-after-wait'
+      const result = await callText(prompt)
+
+      expect(result).toBe('OK')
+      expect(mockCreateAgentSession).toHaveBeenCalledTimes(2)
+      expect(logSpy).not.toHaveBeenCalledWith(prompt)
+
+      logSpy.mockRestore()
+    })
+
+    it('attaches structured omlx fields from the 400 body to the thrown error', async () => {
+      const body =
+        'pi error: {"error":{"message":"oMLX prefill memory guard rejected this prompt",' +
+        '"code":"prefill_memory_exceeded","omlx_code":"prefill_memory_exceeded",' +
+        '"estimated_bytes":13006865768,"limit_bytes":12713115648},"type":"error"}'
+      mockCreateAgentSession.mockRejectedValue(new Error(body))
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      let thrown
+      try {
+        await callText('structured')
+      } catch (error) {
+        thrown = error
+      }
+
+      expect(thrown.message).toContain('omlx memory-guard')
+      expect(thrown.omlxCode).toBe('prefill_memory_exceeded')
+      expect(thrown.estimatedBytes).toBe(13006865768)
+      expect(thrown.limitBytes).toBe(12713115648)
+      expect(thrown.cause).toBeInstanceOf(Error)
 
       logSpy.mockRestore()
     })

@@ -9,10 +9,26 @@
  * 4. probeHelpers — extracts non-exported helper functions from source and calls them
  *    with generic param combos to reveal their actual output shapes.
  */
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const PROBE_TIMEOUT_MS = 10_000
+/**
+ * Кап на серіалізований probe-вихід (символів). Довший вихід замінюється
+ * shape-summary — стислим описом форми замість значення: гігантський дамп
+ * (напр. функція, що читає файл проєкту) інакше роздуває LLM-промпт до
+ * сотень тисяч символів і впирається в memory guard моделі, а обрізаний
+ * JSON модель копіює в expected як сміття.
+ */
+const PROBE_OUTPUT_MAX_CHARS = 600
+/** Максимум probe-рядків на один export — багато середніх виходів теж не мають роздувати промпт. */
+const PROBE_MAX_ENTRIES_PER_EXPORT = 12
+/** Глибина рекурсії shape-summary. */
+const SHAPE_MAX_DEPTH = 4
+/** Скільки ключів об'єкта показує shape-summary до «…». */
+const SHAPE_MAX_KEYS = 8
 
 /** Generic argument combos to try when probing async/fetch functions. */
 const FETCH_ARG_COMBOS = [
@@ -71,6 +87,97 @@ const PROBE_INPUTS = [
 ]
 
 /**
+ * Рекурсивно описує форму значення без самих даних.
+ * @param {unknown} value розпарсене JSON-значення
+ * @param {number} [depth] залишкова глибина рекурсії; за замовчуванням `SHAPE_MAX_DEPTH`
+ * @returns {string} стислий опис форми, напр. `Array(34) of {file: string, mutants: Array(12)}`
+ */
+export function describeShape(value, depth = SHAPE_MAX_DEPTH) {
+  if (value === null) return 'null'
+  if (Array.isArray(value)) {
+    if (value.length === 0) return 'Array(0)'
+    if (depth <= 0) return `Array(${value.length})`
+    return `Array(${value.length}) of ${describeShape(value[0], depth - 1)}`
+  }
+  const type = typeof value
+  if (type === 'object') {
+    const keys = Object.keys(value)
+    if (depth <= 0 || keys.length === 0) return 'Object'
+    const shown = keys.slice(0, SHAPE_MAX_KEYS)
+    const inner =
+      depth > 1 ? shown.map(k => `${k}: ${describeShape(value[k], depth - 1)}`).join(', ') : shown.join(', ')
+    return `{${inner}${keys.length > shown.length ? ', …' : ''}}`
+  }
+  if (type === 'string') return 'string'
+  return type
+}
+
+/**
+ * Обмежує серіалізований probe-вихід: до `PROBE_OUTPUT_MAX_CHARS` — без змін,
+ * довший — shape-summary замість значення (модель бачить структуру для
+ * asserts на форму, але не тягне дамп у промпт і не копіює його в expected).
+ * @param {string} serialized JSON-серіалізований вихід probe
+ * @returns {string} оригінал або `[shape-summary, ~N chars] <форма>`
+ */
+export function capProbeOutput(serialized) {
+  if (typeof serialized !== 'string' || serialized.length <= PROBE_OUTPUT_MAX_CHARS) return serialized
+  let shape
+  try {
+    shape = describeShape(JSON.parse(serialized))
+  } catch {
+    shape = 'string'
+  }
+  const summary = `[shape-summary, ~${serialized.length} chars] ${shape}`
+  return summary.length > PROBE_OUTPUT_MAX_CHARS ? `${summary.slice(0, PROBE_OUTPUT_MAX_CHARS - 1)}…` : summary
+}
+
+/**
+ * Застосовує кап виходів і ліміт кількості рядків до результатів `probeModule`.
+ * @param {Record<string, Array<{input: string, output: string}> | {constant: string}>} results сирі результати з дочірнього процесу
+ * @returns {typeof results} результати з capped-виходами
+ */
+function capModuleResults(results) {
+  const capped = {}
+  for (const [name, section] of Object.entries(results)) {
+    if (Array.isArray(section)) {
+      capped[name] = section
+        .slice(0, PROBE_MAX_ENTRIES_PER_EXPORT)
+        .map(entry => ({ ...entry, output: capProbeOutput(entry.output) }))
+    } else if (section && typeof section === 'object' && 'constant' in section) {
+      capped[name] = { constant: capProbeOutput(section.constant) }
+    } else {
+      capped[name] = section
+    }
+  }
+  return capped
+}
+
+/**
+ * Запускає node з probe-скриптом у порожній тимчасовій cwd: відносні
+ * I/O-читання probe-ованих функцій (напр. `readFile('COVERAGE.md')` при
+ * порожньому аргументі шляху) не бачать файлів проєкту — вихід
+ * детермінований між машинами і не може випадково затягнути великий
+ * файл репозиторію у LLM-промпт.
+ * @param {string} script код для виконання
+ * @param {number} [timeout] ліміт очікування в мс; за замовчуванням `PROBE_TIMEOUT_MS`
+ * @returns {import('node:child_process').SpawnSyncReturns<string>} результат spawnSync
+ */
+function spawnProbe(script, timeout = PROBE_TIMEOUT_MS) {
+  const cwd = mkdtempSync(join(tmpdir(), 'n-probe-'))
+  try {
+    return spawnSync('node', ['--input-type=module'], {
+      input: script,
+      encoding: 'utf8',
+      timeout,
+      env: { ...process.env },
+      cwd
+    })
+  } finally {
+    rmSync(cwd, { recursive: true, force: true })
+  }
+}
+
+/**
  * Пробує експорти модуля у дочірньому процесі й повертає фактичні виходи.
  * @param {string} absFilePath абсолютний шлях до джерела модуля
  * @param {string[]} exportedNames назви експортів для probing
@@ -122,18 +229,13 @@ for (const name of names) {
 process.stdout.write(JSON.stringify(results))
 `
 
-  const proc = spawnSync('node', ['--input-type=module'], {
-    input: script,
-    encoding: 'utf8',
-    timeout: PROBE_TIMEOUT_MS,
-    env: { ...process.env }
-  })
+  const proc = spawnProbe(script)
 
   if (!proc.stdout) return {}
   try {
     const parsed = JSON.parse(proc.stdout)
     if (parsed.__importError) return {}
-    return parsed
+    return capModuleResults(parsed)
   } catch {
     return {}
   }
@@ -150,12 +252,7 @@ process.stdout.write(JSON.stringify(results))
  * @returns {Record<string, unknown> | null} розпарсений JSON або `null` при помилці
  */
 function runProbeScript(script, timeout = PROBE_TIMEOUT_MS) {
-  const proc = spawnSync('node', ['--input-type=module'], {
-    input: script,
-    encoding: 'utf8',
-    timeout,
-    env: { ...process.env }
-  })
+  const proc = spawnProbe(script, timeout)
   if (!proc.stdout) return null
   try {
     const parsed = JSON.parse(proc.stdout)
@@ -209,6 +306,33 @@ for (const name of ${JSON.stringify(exportedNames)}) {
 process.stdout.write(JSON.stringify(results))
 `
   return runProbeScript(script) ?? {}
+}
+
+/**
+ * Застосовує кап до результатів `probeHelpers`: завеликий `result`
+ * замінюється shape-summary рядком, кількість комбо на helper обмежується.
+ * @param {Record<string, Array<{params: Record<string, unknown>, result: unknown}>>} results сирі результати helper-probe
+ * @returns {typeof results} результати з capped-виходами
+ */
+function capHelperResults(results) {
+  const capped = {}
+  for (const [name, entries] of Object.entries(results)) {
+    if (!Array.isArray(entries)) {
+      capped[name] = entries
+      continue
+    }
+    capped[name] = entries.slice(0, PROBE_MAX_ENTRIES_PER_EXPORT).map(entry => {
+      let serialized
+      try {
+        serialized = JSON.stringify(entry.result)
+      } catch {
+        return entry
+      }
+      if (typeof serialized !== 'string' || serialized.length <= PROBE_OUTPUT_MAX_CHARS) return entry
+      return { ...entry, result: capProbeOutput(serialized) }
+    })
+  }
+  return capped
 }
 
 // ---------------------------------------------------------------------------
@@ -386,5 +510,5 @@ for (const name of ${names}) {
 }
 process.stdout.write(JSON.stringify(results))
 `
-  return runProbeScript(script) ?? {}
+  return capHelperResults(runProbeScript(script) ?? {})
 }

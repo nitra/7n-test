@@ -6,7 +6,10 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   mkdirSync: vi.fn(),
   readFileSync: vi.fn(),
-  writeFileSync: vi.fn()
+  writeFileSync: vi.fn(),
+  // runtime-probe.mjs (імпортується з gen-tests.mjs) створює tmp-cwd для probe-сабпроцесів
+  mkdtempSync: vi.fn().mockReturnValue('/probe-cwd-mock'),
+  rmSync: vi.fn()
 }))
 vi.mock('node:path', () => ({
   join: vi.fn((...a) => a.join('/')),
