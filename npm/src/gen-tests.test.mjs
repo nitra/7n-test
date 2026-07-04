@@ -20,7 +20,10 @@ vi.mock('node:path', () => ({
   }),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
-vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
+vi.mock('./lib/pi-client.mjs', async importOriginal => {
+  const actual = await importOriginal()
+  return { callText: vi.fn(), MEMORY_ERROR_RE: actual.MEMORY_ERROR_RE }
+})
 vi.mock('./classify-exports.mjs', () => ({
   extractExportsWithComplexity: vi.fn().mockReturnValue([])
 }))

@@ -168,9 +168,7 @@ describe('pi-client.mjs', () => {
       const failSession = {
         prompt: vi.fn().mockResolvedValue(),
         state: {
-          messages: [
-            { role: 'assistant', stopReason: 'error', errorMessage: 'Authentication failed', content: [] }
-          ]
+          messages: [{ role: 'assistant', stopReason: 'error', errorMessage: 'Authentication failed', content: [] }]
         }
       }
       mockCreateAgentSession.mockResolvedValue({ session: failSession })
@@ -184,6 +182,21 @@ describe('pi-client.mjs', () => {
 
       await expect(callText('Test')).rejects.toThrow('Connection error.')
       expect(mockCreateAgentSession).toHaveBeenCalledTimes(4)
+    })
+
+    it('prints the request body and throws on a memory-guard rejection, without retrying', async () => {
+      mockCreateAgentSession.mockRejectedValue(
+        new Error('Prefill would require ~12.32 GB peak but metal_cap ceiling is 11.84 GB.')
+      )
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => null)
+
+      const prompt = 'Summarize this huge source file...'
+      await expect(callText(prompt)).rejects.toThrow('omlx memory-guard')
+
+      expect(mockCreateAgentSession).toHaveBeenCalledTimes(1)
+      expect(logSpy).toHaveBeenCalledWith(prompt)
+
+      logSpy.mockRestore()
     })
   })
 

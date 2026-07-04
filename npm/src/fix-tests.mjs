@@ -19,7 +19,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { env } from 'node:process'
-import { callText } from './lib/pi-client.mjs'
+import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
 import { findTestRules } from './gen-tests.mjs'
 import { parseFailingTests } from './coverage-per-file.mjs'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
@@ -278,6 +278,9 @@ export async function fixFailingTests(dir, opts = {}) {
     try {
       response = await callTextFn(prompt)
     } catch (error) {
+      // memory-guard: не звичайна per-file помилка — RAM-стеля фіксована, продовжувати
+      // до наступного файлу немає сенсу. Пробиваємо нагору до CLI, аби процес завершився.
+      if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
       console.error(`  ✗ pi помилка: ${error.message}`)
       break
     }

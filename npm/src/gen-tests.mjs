@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
-import { callText } from './lib/pi-client.mjs'
+import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
@@ -51,7 +51,6 @@ const MOCK_TYPE_RE = /:\s*\w*Mock\b/
 const FETCH_CALL_RE = /\bfetch\s*\(/
 const TIME_DEPS_RE = /\bnew\s+Date\b|\bgetHours\b|\bgetDay\b|\bgetMinutes\b|\bDate\.now\b/
 const VITEST_FAIL_RE = /Failed Tests|FAIL /
-const MEMORY_ERROR_RE = /memory guard|memory limit|prefill would require/i
 const EXPECTED_LINE_RE = /Expected:\s+"([^"]+)"/
 const RECEIVED_LINE_RE = /Received:\s+"([^"]+)"/
 const TO_CONTAIN_RE = /to contain '([^='\s]+)=([^']+)'/
@@ -703,13 +702,15 @@ function buildRetryDiagnostics(lastErrors, prevErrorSig, staleCount, label) {
  * @param {number} attempt current attempt number
  * @param {number} maxAttempts retry limit
  * @param {string} label display name for logging
- * @returns {{stop: boolean, reset: boolean, lastErrors: string|null}} loop-control state
+ * @returns {{stop: boolean, lastErrors: string|null}} loop-control state
  */
 function resolveLoopCallFailure(error, attempt, maxAttempts, label) {
+  // memory-guard: не звичайна per-file помилка — RAM-стеля фіксована, продовжувати
+  // до наступного файлу немає сенсу. Пробиваємо нагору до CLI, аби процес завершився.
+  if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
   console.log(`    ${label} ✗ LLM error (спроба ${attempt}): ${error.message}`)
-  if (attempt >= maxAttempts) return { stop: true, reset: false, lastErrors: null }
-  if (MEMORY_ERROR_RE.test(error.message)) return { stop: false, reset: true, lastErrors: null }
-  return { stop: false, reset: false, lastErrors: `LLM error: ${error.message}` }
+  if (attempt >= maxAttempts) return { stop: true, lastErrors: null }
+  return { stop: false, lastErrors: `LLM error: ${error.message}` }
 }
 
 /**
@@ -760,14 +761,7 @@ async function generateBlockWithLoop(
     } catch (error) {
       const failure = resolveLoopCallFailure(error, attempt, maxAttempts, label)
       if (failure.stop) break
-      if (failure.reset) {
-        lastBlock = null
-        lastErrors = null
-        prevErrorSig = null
-        staleCount = 0
-      } else {
-        lastErrors = failure.lastErrors
-      }
+      lastErrors = failure.lastErrors
       continue
     }
 
@@ -879,6 +873,7 @@ async function generateSharedHeader(ctx, dir, callTextFn) {
     if (header) return header
     console.error(`  ✗ cloud не повернув header для ${file}`)
   } catch (error) {
+    if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
     console.error(`  ✗ cloud header error: ${error.message}`)
   }
   return null
@@ -1116,6 +1111,7 @@ async function generateOneTest(fileInfo, dir, callTextFn) {
   try {
     response = await callTextFn(prompt, { cwd: dir })
   } catch (error) {
+    if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
     console.error(`  ✗ pi помилка для ${fileInfo.file}: ${error.message}`)
     return null
   }

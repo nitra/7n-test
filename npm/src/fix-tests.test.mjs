@@ -17,7 +17,10 @@ vi.mock('node:path', () => ({
   relative: vi.fn((base, full) => full.replace(base + '/', '')),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
-vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
+vi.mock('./lib/pi-client.mjs', async importOriginal => {
+  const actual = await importOriginal()
+  return { callText: vi.fn(), MEMORY_ERROR_RE: actual.MEMORY_ERROR_RE }
+})
 vi.mock('./gen-tests.mjs', () => ({
   findTestRules: vi.fn().mockReturnValue(null)
 }))
