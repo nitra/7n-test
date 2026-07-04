@@ -1,7 +1,7 @@
 ---
 kind: nitra-spec
 plan: null
-status: draft
+status: implemented
 risk: med
 date: 2026-07-04
 title: Кап runtime-probe виходів + бюджет промпту для omlx-викликів (gen-tests / fix-tests)
@@ -349,6 +349,29 @@ export function packBatch(items, maxChars)
    `requestBody` у логах myllm-проксі або в unit-тесті через мок SDK).
 8. `stopReason === 'length'` → один повтор із подвоєним `maxTokens`.
 9. Лінт + mutation score змінених файлів — зелені (`bun run coverage`).
+
+## Результат верифікації (2026-07-04, e2e sandbox-прогін)
+
+Фази 1 і 2 реалізовані (ADR 0001, ADR 0002; релізи `@7n/test@0.11.2`
+і `0.12.0`) і перевірені e2e-прогоном повного пайплайна на
+sandbox-проєкті через локальну модель (78 LLM-викликів у лозі
+myllm-проксі):
+
+- `max_completion_tokens` варіюється за taskKind: 2048/8192/16384
+  (було незмінно 32768) — критерій 7 фази 2 виконано.
+- Максимальний промпт 54.7k символів (у fix-бюджеті 60k; block <10k)
+  проти 124–177k до фіксів.
+- 0 відмов `prefill_memory_exceeded` (у інциденті — 3 за 2 секунди).
+- Канарковий export із відносним `readFileSync` не затягнув файлів
+  проєкту — tmp-cwd probe працює (критерій 3 фази 1).
+- Цикл fix-tests зупинився після 3 per-file спроб без зациклення.
+
+**Відомий залишок:** `callAgent` (agent-mode, pi-native fix-engine та
+capture-хуки) шле запити без `maxTokens`; контекст агентних сесій
+росте з tool-calls (спостережено до ~54k). Якщо цей шлях почне
+впиратись у memory guard — рішення те саме: streamFn-обгортка
+(`applyMaxTokens`) для `callAgent` + SDK-компакція. Свідомо поза
+обсягом цієї спеки.
 
 ## Elicitation History
 
