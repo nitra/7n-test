@@ -1182,7 +1182,9 @@ export async function generateTests(files, dir, opts = {}) {
 
   const callTextFn = opts.callText ?? callText
   const localModel = resolveLocalModel(opts)
-  const localFn = localModel ? (prompt, opts = {}) => callTextFn(prompt, { ...opts, model: localModel, cwd: dir }) : null
+  const localFn = localModel
+    ? (prompt, opts = {}) => callTextFn(prompt, { ...opts, model: localModel, cwd: dir })
+    : null
 
   const mode = localFn ? `per-export (local:${localModel} + cloud)` : 'single-file (cloud)'
   console.log(`\n🤖 Генерую тести для ${files.length} файлів [${mode}]...\n`)

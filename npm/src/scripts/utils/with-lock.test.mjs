@@ -44,8 +44,8 @@ describe('shouldDedup', () => {
     expect(shouldDedup({ exitCode: 0, fingerprint: 'fp', finishedAt: Date.now() - 1000 }, 'fp', 60000)).toBe(true)
   })
 
-  it('returns true when finishedAt is missing (NaN comparison returns false >= ttl = false → true)', () => {
-    expect(shouldDedup({ exitCode: 0, fingerprint: 'fp', finishedAt: undefined }, 'fp', 60000)).toBe(true)
+  it('returns false when finishedAt is missing (NaN < ttl → false: без часу завершення не дедуплікуємо)', () => {
+    expect(shouldDedup({ exitCode: 0, fingerprint: 'fp', finishedAt: undefined }, 'fp', 60000)).toBe(false)
   })
 
   it('returns false when result has no fingerprint property', () => {

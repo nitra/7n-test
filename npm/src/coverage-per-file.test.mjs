@@ -4,7 +4,8 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
 
-vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn() }))
+// mkdirSync/writeFileSync: vitest-shim.mjs (імпортується з coverage-per-file.mjs) пише shim-конфіг у tmp
+vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn(), mkdirSync: vi.fn(), writeFileSync: vi.fn() }))
 vi.mock('node:fs/promises', () => ({ mkdtemp: vi.fn(), rm: vi.fn(), readdir: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
@@ -64,7 +65,7 @@ describe('coverage-per-file.mjs', () => {
         if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS
         return SAMPLE_LCOV
       })
-      vi.mocked(rm).mockResolvedValue(undefined)
+      vi.mocked(rm).mockResolvedValue()
 
       const result = await measureCoveragePerFile('/proj')
 
@@ -88,7 +89,7 @@ describe('coverage-per-file.mjs', () => {
         if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS_FAILING
         return SAMPLE_LCOV
       })
-      vi.mocked(rm).mockResolvedValue(undefined)
+      vi.mocked(rm).mockResolvedValue()
 
       const result = await measureCoveragePerFile('/proj')
 
@@ -100,7 +101,7 @@ describe('coverage-per-file.mjs', () => {
     it('returns { files: [], failingTests: [] } when lcov.info is missing and no json', async () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(false)
-      vi.mocked(rm).mockResolvedValue(undefined)
+      vi.mocked(rm).mockResolvedValue()
 
       const result = await measureCoveragePerFile('/proj')
       expect(result).toEqual({ files: [], failingTests: [] })
@@ -110,7 +111,7 @@ describe('coverage-per-file.mjs', () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
       vi.mocked(readFileSync).mockImplementation(() => SAMPLE_JSON_RESULTS_FAILING)
-      vi.mocked(rm).mockResolvedValue(undefined)
+      vi.mocked(rm).mockResolvedValue()
 
       const result = await measureCoveragePerFile('/proj')
       expect(result.files).toEqual([])
@@ -131,7 +132,7 @@ describe('coverage-per-file.mjs', () => {
       vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
       vi.mocked(readFileSync).mockImplementation(() => suiteErrorJson)
-      vi.mocked(rm).mockResolvedValue(undefined)
+      vi.mocked(rm).mockResolvedValue()
 
       const result = await measureCoveragePerFile('/proj')
       expect(result.failingTests).toHaveLength(1)
@@ -158,22 +159,17 @@ describe('coverage-per-file.mjs', () => {
   })
 
   describe('findSourceFiles', () => {
+    /**
+     *
+     */
     function makeEntry(name, isDirectory = false) {
       return { name, isDirectory: () => isDirectory, isFile: () => !isDirectory }
     }
 
     it('returns source files excluding tests and node_modules', async () => {
       vi.mocked(readdir)
-        .mockResolvedValueOnce([
-          makeEntry('src', true),
-          makeEntry('node_modules', true),
-          makeEntry('index.js')
-        ])
-        .mockResolvedValueOnce([
-          makeEntry('a.mjs'),
-          makeEntry('a.test.mjs'),
-          makeEntry('b.ts')
-        ])
+        .mockResolvedValueOnce([makeEntry('src', true), makeEntry('node_modules', true), makeEntry('index.js')])
+        .mockResolvedValueOnce([makeEntry('a.mjs'), makeEntry('a.test.mjs'), makeEntry('b.ts')])
 
       const result = await findSourceFiles('/proj')
       expect(result).toContain('index.js')
@@ -190,10 +186,7 @@ describe('coverage-per-file.mjs', () => {
     })
 
     it('skips hidden directories', async () => {
-      vi.mocked(readdir).mockResolvedValueOnce([
-        makeEntry('.git', true),
-        makeEntry('src.js')
-      ])
+      vi.mocked(readdir).mockResolvedValueOnce([makeEntry('.git', true), makeEntry('src.js')])
       const result = await findSourceFiles('/proj')
       expect(result).toEqual(['src.js'])
     })

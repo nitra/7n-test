@@ -1,7 +1,9 @@
 {
   "version": "0.2",
   "language": "en,uk,ru-ru,nitra",
-  "import": ["@nitra/cspell-dict"],
+  "import": [
+    "@nitra/cspell-dict"
+  ],
   "ignorePaths": [
     "**/node_modules/**",
     "**/vscode-extension/**",
@@ -17,5 +19,16 @@
     "COVERAGE.md",
     "npm/reports/**"
   ],
-  "words": []
+  "words": [
+    "myllm",
+    "батчи",
+    "внутрішньопромптове",
+    "дропає",
+    "дропається",
+    "дропнути",
+    "нижчопріоритетні",
+    "падаючий",
+    "симв",
+    "слотова"
+  ]
 }

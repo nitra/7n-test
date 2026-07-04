@@ -5,11 +5,13 @@ vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
-  writeFileSync: vi.fn()
+  writeFileSync: vi.fn(),
+  // vitest-shim.mjs (імпортується з fix-tests.mjs) пише shim-конфіг у tmp
+  mkdirSync: vi.fn()
 }))
 vi.mock('node:fs/promises', () => ({
   mkdtemp: vi.fn().mockResolvedValue('/tmp/7n-fix-test'),
-  rm: vi.fn().mockResolvedValue(undefined)
+  rm: vi.fn().mockResolvedValue()
 }))
 vi.mock('node:os', () => ({ tmpdir: vi.fn(() => '/tmp') }))
 vi.mock('node:path', () => ({
@@ -102,10 +104,7 @@ describe('getFailingTests', () => {
 describe('buildFixTestsPrompt', () => {
   it('includes failing file names and errors', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false)
-    const prompt = buildFixTestsPrompt(
-      [{ file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }],
-      mockDir
-    )
+    const prompt = buildFixTestsPrompt([{ file: 'src/foo.test.mjs', errors: ['foo > bar:\nAssertionError'] }], mockDir)
     expect(prompt).toContain('src/foo.test.mjs')
     expect(prompt).toContain('AssertionError')
   })
@@ -170,9 +169,7 @@ describe('fixFailingTests', () => {
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ testResults: [] }))
 
     const fixedCode = "import { vi } from 'vitest'\nit('works', () => {})"
-    const mockCallTextFn = vi.fn().mockResolvedValue(
-      `<!-- file: src/foo.test.mjs -->\n\`\`\`js\n${fixedCode}\n\`\`\``
-    )
+    const mockCallTextFn = vi.fn().mockResolvedValue(`<!-- file: src/foo.test.mjs -->\n\`\`\`js\n${fixedCode}\n\`\`\``)
     const failures = [{ file: 'src/foo.test.mjs', errors: ['err'] }]
 
     await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
@@ -210,10 +207,12 @@ describe('fixFailingTests', () => {
       { file: 'a.test.mjs', errors: ['err'] },
       { file: 'b.test.mjs', errors: ['err'] }
     ]
-    const mockCallTextFn = vi.fn().mockResolvedValue(
-      '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
-        '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
-    )
+    const mockCallTextFn = vi
+      .fn()
+      .mockResolvedValue(
+        '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
+          '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
+      )
 
     const result = await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
 
@@ -247,10 +246,12 @@ describe('fixFailingTests', () => {
       { file: 'a.test.mjs', errors: ['err'] },
       { file: 'b.test.mjs', errors: ['err'] }
     ]
-    const mockCallTextFn = vi.fn().mockResolvedValue(
-      '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
-        '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
-    )
+    const mockCallTextFn = vi
+      .fn()
+      .mockResolvedValue(
+        '<!-- file: a.test.mjs -->\n```js\nit("ok",()=>{})\n```\n' +
+          '<!-- file: b.test.mjs -->\n```js\nit("ok",()=>{})\n```'
+      )
 
     const result = await fixFailingTests(mockDir, { failures, callTextFn: mockCallTextFn })
 

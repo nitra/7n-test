@@ -10,8 +10,7 @@ vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('../gen-tests.mjs', () => ({ findTestRules: vi.fn().mockReturnValue(null) }))
 vi.mock('../coverage-per-file.mjs', () => ({ parseFailingTests: vi.fn() }))
 vi.mock('../lib/vitest-shim.mjs', () => ({ resolveVitestRun: vi.fn() }))
-const MEMORY_ERROR_RE = /memory guard/i
-vi.mock('../lib/pi-client.mjs', () => ({ callText: vi.fn(), MEMORY_ERROR_RE: MEMORY_ERROR_RE }))
+vi.mock('../lib/pi-client.mjs', () => ({ callText: vi.fn(), MEMORY_ERROR_RE: /memory guard/i }))
 
 describe('buildFixTestsBatch', () => {
   beforeEach(() => {

@@ -96,7 +96,13 @@ export function fitToBudget(chunks, maxChars) {
     dropped.push(`${part.label} (видалено)`)
   }
 
-  return { text: parts.filter(p => p.kept).map(p => p.out).join('\n'), dropped }
+  return {
+    text: parts
+      .filter(p => p.kept)
+      .map(p => p.out)
+      .join('\n'),
+    dropped
+  }
 }
 
 /**

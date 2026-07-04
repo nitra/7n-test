@@ -10,5 +10,6 @@ resource: npm/src/lib/
 | ------------------------------------- | --------- |
 | [ast-analyze.mjs](ast-analyze.md)     | JS Module |
 | [pi-client.mjs](pi-client.md)         | JS Module |
+| [prompt-budget.mjs](prompt-budget.md) | JS Module |
 | [runtime-probe.mjs](runtime-probe.md) | JS Module |
 | [vitest-shim.mjs](vitest-shim.md)     | JS Module |

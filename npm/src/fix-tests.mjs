@@ -352,7 +352,9 @@ export async function fixFailingTests(dir, opts = {}) {
 
     const batch = buildFixTestsBatch(eligible, dir)
     if (batch.deferred.length) {
-      console.log(`  📦 батч: ${batch.included.length} файлів, відкладено на наступний прохід: ${batch.deferred.length}`)
+      console.log(
+        `  📦 батч: ${batch.included.length} файлів, відкладено на наступний прохід: ${batch.deferred.length}`
+      )
     }
     for (const file of batch.included) attempts.set(file, (attempts.get(file) ?? 0) + 1)
     prevDeferred = new Set(batch.deferred)
@@ -376,7 +378,11 @@ export async function fixFailingTests(dir, opts = {}) {
     }
 
     const includedSet = new Set(batch.included)
-    writeFixedFiles(fixed, eligible.filter(f => includedSet.has(f.file)), dir)
+    writeFixedFiles(
+      fixed,
+      eligible.filter(f => includedSet.has(f.file)),
+      dir
+    )
 
     remaining = await getFailingTests(dir)
   }
