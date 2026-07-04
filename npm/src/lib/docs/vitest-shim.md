@@ -3,7 +3,7 @@ type: JS Module
 title: vitest-shim.mjs
 resource: npm/src/lib/vitest-shim.mjs
 docgen:
-  crc: e08618cc
+  crc: 144cb026
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.97
@@ -18,7 +18,7 @@ docgen:
 
 VITEST_BIN — Абсолютний шлях до вбудованого виконуваного файлу Vitest.
 VITEST_SHIM_CONFIG — Абсолютний шлях до тимчасового файлу конфігурації Vitest, що забезпечує роботу збірки без встановлення Vitest у цільовому проекті.
-ensureVitestShim — Гарантує існування файлу конфігурації Vitest, записуючи мінімальний конфіг у тимчасову директорію, ігноруючи шляхи до `node_modules`.
+ensureVitestShim — Гарантує існування файлу конфігурації Vitest, записуючи мінімальний конфіг у тимчасову директорію, ігноруючи шляхи до `node_modules` та декларації типів `**/*.d.ts`.
 
 ## Публічний API
 
@@ -28,4 +28,4 @@ ensureVitestShim — Гарантує існування файлу конфіг
 
 ## Гарантії поведінки
 
-- Свідомо пропускає шляхи: `node_modules`.
+- Свідомо пропускає шляхи: `node_modules` і декларації типів `**/*.d.ts` (vitest 4 прибрав дефолтний exclude — без нього v8-remap падає на TS-синтаксисі декларацій).

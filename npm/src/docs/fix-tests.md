@@ -3,7 +3,7 @@ type: JS Module
 title: fix-tests.mjs
 resource: npm/src/fix-tests.mjs
 docgen:
-  crc: b807d1bc
+  crc: f198a4b3
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98

@@ -51,7 +51,8 @@ export function ensureVitestShim() {
       `      include: ['**/*.{js,mjs,ts,vue}'],\n` +
       // Exclude test files that use non-vitest runners (bun:test, jest) from
       // the coverage scan so they don't cause import errors or skewed data.
-      `      exclude: ['**/node_modules/**'],\n` +
+      // *.d.ts: vitest 4 прибрав дефолтний exclude — v8-remap падає на TS-синтаксисі декларацій.
+      `      exclude: ['**/node_modules/**', '**/*.d.ts'],\n` +
       `    },\n` +
       `  },\n` +
       `})\n`

@@ -3,7 +3,7 @@ type: JS Module
 title: runtime-probe.mjs
 resource: npm/src/lib/runtime-probe.mjs
 docgen:
-  crc: 31dd4fd6
+  crc: 6455ded4
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98

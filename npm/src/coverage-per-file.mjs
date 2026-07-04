@@ -112,6 +112,8 @@ export async function measureCoveragePerFile(dir) {
         '--coverage.reporter=lcov',
         // vitest 4 прибрав coverage.all — явний include, щоб файли без тестів лишались у lcov (0%)
         '--coverage.include=**/*.{js,mjs,ts,vue}',
+        // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
+        '--coverage.exclude=**/*.d.ts',
         `--coverage.reportsDirectory=${lcovDir}`,
         '--reporter=verbose',
         '--reporter=json',
