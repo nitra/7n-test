@@ -19,6 +19,7 @@ import { join, relative, dirname } from 'node:path'
 import { callText, MEMORY_ERROR_RE } from './lib/llm.mjs'
 import { env } from 'node:process'
 import { budgetFor } from '@nitra/llm-lib/prompt-budget'
+import { startChain } from '@nitra/llm-lib/chain'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
@@ -1149,9 +1150,10 @@ function resolveLocalModel(opts) {
  * @param {PiCallFn} callTextFn cloud LLM caller
  * @param {PiCallFn | null} localFn local LLM caller
  * @param {GenerateOneFn | undefined} generateOne custom single-file generator
+ * @param {typeof startChain} [makeChain] фабрика ланцюжка (інжект для тестів)
  * @returns {Promise<void>} resolves after generation for this file completes
  */
-async function generateTestsForFile(fileInfo, dir, callTextFn, localFn, generateOne) {
+async function generateTestsForFile(fileInfo, dir, callTextFn, localFn, generateOne, makeChain = startChain) {
   console.log(`  → ${fileInfo.file} (${fileInfo.pct.toFixed(1)}%)`)
 
   if (generateOne) {
@@ -1159,13 +1161,26 @@ async function generateTestsForFile(fileInfo, dir, callTextFn, localFn, generate
     return
   }
 
-  const exportsInfo = extractExportsWithComplexity(readSourceSnippet(join(dir, fileInfo.file)))
-  if (localFn && exportsInfo.length > 0) {
-    await generatePerExport(fileInfo, dir, callTextFn, localFn)
-    return
-  }
+  // Ланцюжок файлу: усі виклики (header, per-export local/cloud спроби,
+  // vitest-retry, length-retry) — кроки одного chain.
+  const chain = makeChain({ kind: 'test-generate', unit: fileInfo.file, cwd: dir })
+  const chainedCloud = (prompt, callOpts = {}) => callTextFn(prompt, { ...callOpts, chain })
+  const chainedLocal = localFn ? (prompt, callOpts = {}) => localFn(prompt, { ...callOpts, chain }) : null
+  let failed = null
+  try {
+    const exportsInfo = extractExportsWithComplexity(readSourceSnippet(join(dir, fileInfo.file)))
+    if (chainedLocal && exportsInfo.length > 0) {
+      await generatePerExport(fileInfo, dir, chainedCloud, chainedLocal)
+      return
+    }
 
-  await generateOneTest(fileInfo, dir, callTextFn)
+    await generateOneTest(fileInfo, dir, chainedCloud)
+  } catch (error) {
+    failed = String(error.message ?? error).slice(0, 200)
+    throw error
+  } finally {
+    chain.end({ outcome: failed ? 'fail' : 'success', extra: failed ? { error: failed } : {} })
+  }
 }
 
 /**

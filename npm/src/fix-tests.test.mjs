@@ -13,7 +13,7 @@ vi.mock('node:fs/promises', () => ({
   mkdtemp: vi.fn().mockResolvedValue('/tmp/7n-fix-test'),
   rm: vi.fn().mockResolvedValue()
 }))
-vi.mock('node:os', () => ({ tmpdir: vi.fn(() => '/tmp') }))
+vi.mock('node:os', () => ({ tmpdir: vi.fn(() => '/tmp'), homedir: vi.fn(() => '/tmp/home') }))
 vi.mock('node:path', () => ({
   join: vi.fn((...args) => args.join('/')),
   relative: vi.fn((base, full) => full.replace(base + '/', '')),

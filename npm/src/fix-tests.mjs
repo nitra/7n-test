@@ -21,6 +21,7 @@ import { join, relative } from 'node:path'
 import { env } from 'node:process'
 import { callText, MEMORY_ERROR_RE } from './lib/llm.mjs'
 import { CLOUD_MAX } from '@nitra/llm-lib/model-tiers'
+import { startChain } from '@nitra/llm-lib/chain'
 import { budgetFor, capText, packBatch } from '@nitra/llm-lib/prompt-budget'
 import { findTestRules } from './gen-tests.mjs'
 import { parseFailingTests } from './coverage-per-file.mjs'
@@ -322,16 +323,27 @@ function writeFixedFiles(fixed, remaining, dir) {
  * @param {string} dir project root
  * @param {{
  *   failures?: Array<{file: string, errors: string[]}>,
- *   callTextFn?: (prompt: string, opts?: object) => Promise<string>
- * }} [opts] overrides for callText and pre-fetched failures
+ *   callTextFn?: (prompt: string, opts?: object) => Promise<string>,
+ *   startChain?: typeof startChain
+ * }} [opts] overrides for callText, pre-fetched failures і фабрика ланцюжка (інжект для тестів)
  * @returns {Promise<{count: number, fixed: number, remaining: number}>} fix result summary
  */
 export async function fixFailingTests(dir, opts = {}) {
-  const callTextFn =
-    opts.callTextFn ?? (prompt => callText(prompt, { model: MODEL, cwd: dir, maxTokens: budgetFor('fix').maxTokens }))
   const failures = opts.failures ?? (await getFailingTests(dir))
 
   if (failures.length === 0) return { count: 0, fixed: 0, remaining: 0 }
+
+  // Один ланцюжок на прогін: батчі змішують файли, per-file chain неможливий
+  // без ламання батчингу; кожен batch-виклик = крок.
+  const chain = (opts.startChain ?? startChain)({
+    kind: 'test-fix',
+    unit: `fix:${failures.length}files`,
+    cwd: dir
+  })
+  let batches = 0
+  const callTextFn =
+    opts.callTextFn ??
+    (prompt => callText(prompt, { model: MODEL, cwd: dir, maxTokens: budgetFor('fix').maxTokens, chain }))
 
   console.log(`\n🔧 Виправляю ${failures.length} падаючих test-файлів (pi text mode)...\n`)
   for (const f of failures) {
@@ -342,50 +354,64 @@ export async function fixFailingTests(dir, opts = {}) {
   let remaining = failures
   const attempts = new Map()
   let prevDeferred = new Set()
-  for (;;) {
-    // Спроби рахуються per-file (лише коли файл реально був у батчі),
-    // тож deferred-черга не з'їдає ліміт файлів, які ще не пробували
-    const eligible = remaining
-      .filter(f => (attempts.get(f.file) ?? 0) < MAX_FIX_ATTEMPTS)
-      // Анти-starvation: відкладені минулого разу файли йдуть першими
-      .toSorted((a, b) => (prevDeferred.has(b.file) ? 1 : 0) - (prevDeferred.has(a.file) ? 1 : 0))
-    if (eligible.length === 0) break
+  try {
+    for (;;) {
+      // Спроби рахуються per-file (лише коли файл реально був у батчі),
+      // тож deferred-черга не з'їдає ліміт файлів, які ще не пробували
+      const eligible = remaining
+        .filter(f => (attempts.get(f.file) ?? 0) < MAX_FIX_ATTEMPTS)
+        // Анти-starvation: відкладені минулого разу файли йдуть першими
+        .toSorted((a, b) => (prevDeferred.has(b.file) ? 1 : 0) - (prevDeferred.has(a.file) ? 1 : 0))
+      if (eligible.length === 0) break
 
-    const batch = buildFixTestsBatch(eligible, dir)
-    if (batch.deferred.length) {
-      console.log(
-        `  📦 батч: ${batch.included.length} файлів, відкладено на наступний прохід: ${batch.deferred.length}`
+      const batch = buildFixTestsBatch(eligible, dir)
+      if (batch.deferred.length) {
+        console.log(
+          `  📦 батч: ${batch.included.length} файлів, відкладено на наступний прохід: ${batch.deferred.length}`
+        )
+      }
+      for (const file of batch.included) attempts.set(file, (attempts.get(file) ?? 0) + 1)
+      prevDeferred = new Set(batch.deferred)
+
+      let response
+      try {
+        batches++
+        response = await callTextFn(batch.prompt)
+      } catch (error) {
+        // memory-guard: не звичайна per-file помилка — RAM-стеля фіксована, продовжувати
+        // до наступного файлу немає сенсу. Пробиваємо нагору до CLI, аби процес завершився.
+        if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
+        console.error(`  ✗ pi помилка: ${error.message}`)
+        break
+      }
+
+      const fixed = parseFixedFiles(response)
+
+      if (fixed.length === 0) {
+        console.error('  ✗ pi не повернула виправлений код')
+        break
+      }
+
+      const includedSet = new Set(batch.included)
+      writeFixedFiles(
+        fixed,
+        eligible.filter(f => includedSet.has(f.file)),
+        dir
       )
+
+      remaining = await getFailingTests(dir)
     }
-    for (const file of batch.included) attempts.set(file, (attempts.get(file) ?? 0) + 1)
-    prevDeferred = new Set(batch.deferred)
-
-    let response
-    try {
-      response = await callTextFn(batch.prompt)
-    } catch (error) {
-      // memory-guard: не звичайна per-file помилка — RAM-стеля фіксована, продовжувати
-      // до наступного файлу немає сенсу. Пробиваємо нагору до CLI, аби процес завершився.
-      if (MEMORY_ERROR_RE.test(error.message ?? '')) throw error
-      console.error(`  ✗ pi помилка: ${error.message}`)
-      break
-    }
-
-    const fixed = parseFixedFiles(response)
-
-    if (fixed.length === 0) {
-      console.error('  ✗ pi не повернула виправлений код')
-      break
-    }
-
-    const includedSet = new Set(batch.included)
-    writeFixedFiles(
-      fixed,
-      eligible.filter(f => includedSet.has(f.file)),
-      dir
-    )
-
-    remaining = await getFailingTests(dir)
+  } finally {
+    const fixedSoFar = failures.length - remaining.length
+    chain.end({
+      outcome: remaining.length === 0 ? 'success' : fixedSoFar > 0 ? 'partial' : 'fail',
+      extra: {
+        files: failures.map(f => f.file),
+        batches,
+        fixed: fixedSoFar,
+        remaining: remaining.length
+      }
+    })
   }
 
   const fixedCount = failures.length - remaining.length
