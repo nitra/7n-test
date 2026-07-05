@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { buildGenTestsPrompt, generateTests, findTestRules } from './gen-tests.mjs'
-import { callText } from './lib/pi-client.mjs'
+import { callText } from './lib/llm.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 
 vi.mock('node:fs', () => ({
@@ -31,7 +31,7 @@ vi.mock('node:path', () => ({
 vi.mock('node:child_process', () => ({
   spawnSync: vi.fn().mockReturnValue({ status: 0, stdout: '', stderr: '' })
 }))
-vi.mock('./lib/pi-client.mjs', async importOriginal => {
+vi.mock('./lib/llm.mjs', async importOriginal => {
   const actual = await importOriginal()
   return { callText: vi.fn(), MEMORY_ERROR_RE: actual.MEMORY_ERROR_RE }
 })

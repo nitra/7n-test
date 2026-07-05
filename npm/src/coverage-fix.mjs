@@ -8,10 +8,11 @@
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { spawnSync } from 'node:child_process'
 import { env } from 'node:process'
+import { CLOUD_MAX } from '@nitra/llm-lib/model-tiers'
+import { callAgent } from './lib/llm.mjs'
 
-const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? env.N_CLOUD_MAX_MODEL ?? ''
+const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? CLOUD_MAX
 
 /**
  * @typedef {{line:number, col:number, mutantType:string, original:string, replacement:string}} MutantDetail
@@ -22,7 +23,7 @@ const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? env.N_CLOUD_MAX_MODEL ?? ''
  * Запускає pi-агента для написання тестів по вцілілих мутантах.
  * @param {SurvivedFileGroup[]} survived вцілілі мутанти, згруповані по файлах
  * @param {string} projectRoot абсолютний шлях до кореня проєкту
- * @param {{ callPi?: (prompt: string, model: string, opts: { cwd: string }) => void }} [opts] ін'єкції для тестів
+ * @param {{ callPi?: (prompt: string, model: string, opts: { cwd: string }) => Promise<void> }} [opts] ін'єкції для тестів
  * @returns {Promise<void>}
  */
 export async function fixSurvivedMutants(survived, projectRoot, opts = {}) {
@@ -36,22 +37,19 @@ export async function fixSurvivedMutants(survived, projectRoot, opts = {}) {
   console.log(`\n🤖 coverage --fix: запускаю агента для ${totalMutants} вцілілих мутантів...\n`)
 
   const callPiFn = opts.callPi ?? callPi
-  callPiFn(prompt, MODEL, { cwd: projectRoot })
+  await callPiFn(prompt, MODEL, { cwd: projectRoot })
 }
 
 /**
- * Викликає pi в агентному режимі з live-output до stdout.
+ * Викликає агента через @nitra/llm-lib (SDK-embed, live-output до stdout) —
+ * заміна колишнього spawnSync pi CLI.
  * @param {string} prompt текст промпта
  * @param {string} model  provider/model-id або '' для pi-дефолту
  * @param {{ cwd?: string }} [piOpts] опційні параметри (cwd)
+ * @returns {Promise<void>} завершується після виконання агента
  */
 function callPi(prompt, model, { cwd } = {}) {
-  const modelArgs = model ? ['--model', model] : []
-  spawnSync('pi', ['-p', prompt, ...modelArgs, '--no-session'], {
-    cwd,
-    stdio: 'inherit',
-    timeout: 900_000
-  })
+  return callAgent(prompt, cwd, { model })
 }
 
 /**

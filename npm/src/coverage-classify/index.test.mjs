@@ -30,10 +30,10 @@ describe('classify', () => {
     vi.mocked(readCache).mockReturnValue({
       version: 1,
       model: 'default+cloud',
-      entries: { mock_key: { verdict: 'ok', confidence: 1.0, reason: 'Cached' } }
+      entries: { mock_key: { verdict: 'ok', confidence: 1, reason: 'Cached' } }
     })
 
-    const results = await classify(mockSurvived, mockCwd)
+    const results = await classify(mockSurvived, mockCwd, { tier1: '', tier2: '' })
 
     expect(vi.mocked(deriveCacheKey)).toHaveBeenCalled()
     expect(results[0].verdict.verdict).toBe('ok')
@@ -48,7 +48,7 @@ describe('classify', () => {
     })
     const mockCallModel = vi.fn().mockResolvedValue(validVerdict)
 
-    await classify(mockSurvived, mockCwd, { callModel: mockCallModel })
+    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
 
     expect(mockCallModel).toHaveBeenCalledWith(expect.any(String), '', mockCwd)
     expect(mockCallModel).toHaveBeenCalledTimes(1)
@@ -62,7 +62,7 @@ describe('classify', () => {
     })
     const mockCallModel = vi.fn().mockRejectedValueOnce(new Error('Tier 1 Fail')).mockResolvedValueOnce(validVerdict)
 
-    await classify(mockSurvived, mockCwd, { callModel: mockCallModel })
+    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
 
     expect(mockCallModel).toHaveBeenCalledTimes(2)
     expect(mockCallModel).toHaveBeenNthCalledWith(1, expect.any(String), '', mockCwd)
@@ -72,7 +72,7 @@ describe('classify', () => {
   it('should fallback to conservative verdict if both tiers fail', async () => {
     const mockCallModel = vi.fn().mockRejectedValue(new Error('Both Tiers Fail'))
 
-    const results = await classify(mockSurvived, mockCwd, { callModel: mockCallModel })
+    const results = await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
 
     expect(results[0].verdict.verdict).toBe('worth-testing')
     expect(results[0].verdict.confidence).toBe(0)

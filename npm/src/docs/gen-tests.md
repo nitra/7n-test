@@ -3,11 +3,8 @@ type: JS Module
 title: gen-tests.mjs
 resource: npm/src/gen-tests.mjs
 docgen:
-  crc: 0d24dc95
+  crc: 99d3e9b7
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
-  score: 100
-  issues: judge:inaccurate:0.99
-  judgeModel: openai-codex/gpt-5.4-mini
 ---
 
 ## Огляд

@@ -3,12 +3,8 @@ type: JS Module
 title: fix-tests.mjs
 resource: npm/src/fix-tests.mjs
 docgen:
-  crc: f82de3c4
+  crc: 6597b7fc
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
-  tier: local-min-retry
-  score: 90
-  issues: internal-name:callText,judge:inaccurate:0.99
-  judgeModel: openai-codex/gpt-5.4-mini
 ---
 
 ## Огляд

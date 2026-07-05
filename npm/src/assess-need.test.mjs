@@ -4,7 +4,7 @@ import { assessNeed, quickClassify } from './assess-need.mjs'
 
 vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn() }))
 vi.mock('node:path', () => ({ join: vi.fn((...a) => a.join('/')) }))
-vi.mock('./lib/pi-client.mjs', () => ({ callText: vi.fn() }))
+vi.mock('./lib/llm.mjs', () => ({ callText: vi.fn() }))
 
 const DIR = '/proj'
 const mockCallText = vi.fn()
@@ -51,16 +51,12 @@ describe('quickClassify', () => {
   })
 
   it('ignores single-line comments when classifying', () => {
-    const result = quickClassify(
-      '// This file only re-exports\nexport { foo } from "./foo.mjs"'
-    )
+    const result = quickClassify('// This file only re-exports\nexport { foo } from "./foo.mjs"')
     expect(result?.needsTests).toBe(false)
   })
 
   it('ignores block comments when classifying', () => {
-    const result = quickClassify(
-      '/* re-exports */\nexport * from "./bar.mjs"'
-    )
+    const result = quickClassify('/* re-exports */\nexport * from "./bar.mjs"')
     expect(result?.needsTests).toBe(false)
   })
 })
@@ -151,8 +147,8 @@ describe('assessNeed', () => {
   it('processes multiple files: local for obvious, LLM for ambiguous', async () => {
     vi.mocked(existsSync).mockReturnValue(true)
     vi.mocked(readFileSync)
-      .mockReturnValueOnce('export { foo } from "./foo.mjs"')  // obvious false
-      .mockReturnValueOnce('const x = 1')                       // ambiguous → LLM
+      .mockReturnValueOnce('export { foo } from "./foo.mjs"') // obvious false
+      .mockReturnValueOnce('const x = 1') // ambiguous → LLM
     mockCallText.mockResolvedValue('{"needsTests": true, "reason": "logic"}')
 
     const files = [
@@ -161,8 +157,8 @@ describe('assessNeed', () => {
     ]
     const result = await assessNeed(files, DIR, { callText: mockCallText })
     expect(result).toHaveLength(2)
-    expect(result[0].needsTests).toBe(false)   // local
-    expect(result[1].needsTests).toBe(true)    // LLM
-    expect(mockCallText).toHaveBeenCalledTimes(1)  // only 1 LLM call, not 2
+    expect(result[0].needsTests).toBe(false) // local
+    expect(result[1].needsTests).toBe(true) // LLM
+    expect(mockCallText).toHaveBeenCalledTimes(1) // only 1 LLM call, not 2
   })
 })
