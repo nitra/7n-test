@@ -1,10 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { readFile } from 'node:fs/promises'
-import { spawnSync } from 'node:child_process'
 import { fixSurvivedMutants, buildFixPrompt } from './coverage-fix.mjs'
 
 vi.mock('node:fs/promises', () => ({ readFile: vi.fn() }))
-vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
 vi.mock('node:path', () => ({ join: vi.fn((...a) => a.join('/')) }))
 
 const ROOT = '/proj'
@@ -23,23 +21,21 @@ describe('coverage-fix.mjs', () => {
   describe('fixSurvivedMutants', () => {
     it('logs and returns early when survived is empty', async () => {
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      await fixSurvivedMutants([], ROOT)
+      const callPi = vi.fn()
+      await fixSurvivedMutants([], ROOT, { callPi })
       expect(logSpy).toHaveBeenCalledWith('✓ Всі мутанти вбиті — доповнення тестів не потрібне')
-      expect(vi.mocked(spawnSync)).not.toHaveBeenCalled()
+      expect(callPi).not.toHaveBeenCalled()
       logSpy.mockRestore()
     })
 
     it('calls pi agent for non-empty survived list', async () => {
       vi.mocked(readFile).mockResolvedValue('const x = true')
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const callPi = vi.fn(() => Promise.resolve())
 
-      await fixSurvivedMutants(survived, ROOT)
+      await fixSurvivedMutants(survived, ROOT, { callPi })
 
-      expect(vi.mocked(spawnSync)).toHaveBeenCalledWith(
-        'pi',
-        expect.arrayContaining(['-p', expect.any(String), '--no-session']),
-        expect.objectContaining({ cwd: ROOT, stdio: 'inherit' })
-      )
+      expect(callPi).toHaveBeenCalledWith(expect.any(String), expect.any(String), { cwd: ROOT })
       logSpy.mockRestore()
     })
   })

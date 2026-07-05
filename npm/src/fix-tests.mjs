@@ -19,13 +19,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { env } from 'node:process'
-import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
-import { budgetFor, capText, packBatch } from './lib/prompt-budget.mjs'
+import { callText, MEMORY_ERROR_RE } from './lib/llm.mjs'
+import { CLOUD_MAX } from '@nitra/llm-lib/model-tiers'
+import { budgetFor, capText, packBatch } from '@nitra/llm-lib/prompt-budget'
 import { findTestRules } from './gen-tests.mjs'
 import { parseFailingTests } from './coverage-per-file.mjs'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
-const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? env.N_CLOUD_MAX_MODEL ?? undefined
+const MODEL = env.N_CURSOR_FIX_TESTS_MODEL ?? (CLOUD_MAX || undefined)
 const MAX_SRC_BYTES = 4000
 const TEST_DIR_MARKERS = ['/tests/', '\\tests\\']
 const TEST_FILE_SUFFIX = '.test.mjs'

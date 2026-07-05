@@ -3,11 +3,8 @@ type: JS Module
 title: index.mjs
 resource: npm/src/coverage-classify/index.mjs
 docgen:
-  crc: b7eff232
+  crc: bc7320ff
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
-  score: 100
-  issues: judge:inaccurate:0.99
-  judgeModel: openai-codex/gpt-5.4-mini
 ---
 
 ## Огляд

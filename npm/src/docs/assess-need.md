@@ -3,11 +3,8 @@ type: JS Module
 title: assess-need.mjs
 resource: npm/src/assess-need.mjs
 docgen:
-  crc: 02dd5f01
+  crc: 960f8332
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
-  score: 90
-  issues: internal-name:callText,judge:inaccurate:0.98
-  judgeModel: openai-codex/gpt-5.4-mini
 ---
 
 ## Огляд

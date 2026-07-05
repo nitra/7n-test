@@ -6,7 +6,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { callText } from './lib/pi-client.mjs'
+import { callText } from './lib/llm.mjs'
 
 const MAX_CONTENT_BYTES = 6000
 
@@ -36,13 +36,12 @@ const WIRING_RE = /^(import\b|export\s+(?:\{[^}]*\}|\*|type\b|interface\b|enum\b
  * @returns {string}
  */
 function stripComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, '')
+  return src.replaceAll(/\/\*[\s\S]*?\*\//g, ' ').replaceAll(/\/\/[^\n]*/g, '')
 }
 
 /**
  * Fast local classifier — no I/O, no LLM.
  * Returns a result object for obvious cases, or null when ambiguous.
- *
  * @param {string} content file source
  * @returns {{ needsTests: boolean, reason: string } | null}
  */
@@ -109,7 +108,6 @@ async function assessOne(fileInfo, dir, callTextFn) {
  * Assess a list of uncovered files: do they need tests?
  * Obvious cases (re-exports, functions-with-branches) are resolved locally.
  * Only ambiguous files trigger an LLM call.
- *
  * @param {Array<{file: string, pct: number}>} files
  * @param {string} dir project root
  * @param {{ callText?: Function }} [opts]

@@ -16,13 +16,13 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
-import { callText, MEMORY_ERROR_RE } from './lib/pi-client.mjs'
-import { budgetFor } from './lib/prompt-budget.mjs'
+import { callText, MEMORY_ERROR_RE } from './lib/llm.mjs'
+import { env } from 'node:process'
+import { budgetFor } from '@nitra/llm-lib/prompt-budget'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 import { extractExportsWithComplexity } from './classify-exports.mjs'
 import { analyzeModule } from './lib/ast-analyze.mjs'
 import { probeModule, probeFetchCalls, probeTimeVariants, probeHelpers } from './lib/runtime-probe.mjs'
-import { env } from 'node:process'
 
 const MAX_SRC_BYTES = 6000
 

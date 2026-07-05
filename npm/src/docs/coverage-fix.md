@@ -3,11 +3,8 @@ type: JS Module
 title: coverage-fix.mjs
 resource: npm/src/coverage-fix.mjs
 docgen:
-  crc: 8b198273
+  crc: d0a20c67
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
-  score: 100
-  issues: judge:inaccurate:0.98
-  judgeModel: openai-codex/gpt-5.4-mini
 ---
 
 ## Огляд
