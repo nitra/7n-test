@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.2] - 2026-07-05
+
+### Changed
+
+- test(core): інваріантні тести маршрутизації gen-tests (local→cloud fallback, complex→cloud) замість сирих лічильників викликів; переписаний тест n-cursor-adr pi-extension
+
 ## [0.12.1] - 2026-07-04
 
 ### Changed
