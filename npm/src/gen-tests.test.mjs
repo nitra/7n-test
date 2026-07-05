@@ -1,6 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { buildGenTestsPrompt, generateTests, findTestRules } from './gen-tests.mjs'
+import { callText } from './lib/pi-client.mjs'
+import { extractExportsWithComplexity } from './classify-exports.mjs'
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
@@ -19,9 +21,15 @@ vi.mock('node:path', () => ({
     const f = full.split('/').filter(Boolean)
     let common = 0
     while (common < b.length && common < f.length && b[common] === f[common]) common++
-    return [...Array(b.length - common).fill('..'), ...f.slice(common)].join('/')
+    return [...b.slice(common).map(() => '..'), ...f.slice(common)].join('/')
   }),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
+}))
+// runBlock (валідація блоку через vitest) і runtime-probe спавнять реальні
+// сабпроцеси — у юніт-тестах spawnSync замокано: валідація завжди «passed»,
+// probe-и повертають {} (порожній stdout)
+vi.mock('node:child_process', () => ({
+  spawnSync: vi.fn().mockReturnValue({ status: 0, stdout: '', stderr: '' })
 }))
 vi.mock('./lib/pi-client.mjs', async importOriginal => {
   const actual = await importOriginal()
@@ -30,9 +38,6 @@ vi.mock('./lib/pi-client.mjs', async importOriginal => {
 vi.mock('./classify-exports.mjs', () => ({
   extractExportsWithComplexity: vi.fn().mockReturnValue([])
 }))
-
-import { callText } from './lib/pi-client.mjs'
-import { extractExportsWithComplexity } from './classify-exports.mjs'
 
 const mockDir = '/proj'
 const mockFile = 'src/a.js'
@@ -157,9 +162,7 @@ describe('generateTests — single-file mode', () => {
 
   it('prompt includes n-test.mdc rules when found in project', async () => {
     vi.mocked(existsSync).mockReturnValue(true)
-    vi.mocked(readFileSync)
-      .mockReturnValueOnce('const x = 1')
-      .mockReturnValue('## Правила\n- тести у tests/')
+    vi.mocked(readFileSync).mockReturnValueOnce('const x = 1').mockReturnValue('## Правила\n- тести у tests/')
     vi.mocked(callText).mockResolvedValue('')
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir)
     const prompt = vi.mocked(callText).mock.calls[0][0]
@@ -181,9 +184,7 @@ describe('generateTests — per-export mode', () => {
   })
 
   it('generates header via cloud when localModel is set', async () => {
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'simple' }
-    ])
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'simple' }])
     vi.mocked(callText).mockResolvedValue("```js\nimport { vi } from 'vitest'\n```")
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir, {
@@ -199,9 +200,7 @@ describe('generateTests — per-export mode', () => {
   })
 
   it('routes simple exports to local pi model', async () => {
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'simple' }
-    ])
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'simple' }])
     vi.mocked(callText).mockResolvedValue("```js\nimport { vi } from 'vitest'\n```")
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir, {
@@ -217,45 +216,60 @@ describe('generateTests — per-export mode', () => {
   })
 
   it('falls back to cloud when local block is invalid (contains require)', async () => {
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'simple' }
-    ])
-    vi.mocked(callText)
-      .mockResolvedValueOnce("```js\nimport { vi } from 'vitest'\n```") // header (cloud)
-      .mockResolvedValueOnce("```js\nconst x = require('x')\ndescribe('foo', () => {})\n```") // local
-      .mockResolvedValueOnce("```js\ndescribe('foo', () => { it('ok', () => {}) })\n```") // cloud fallback
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'simple' }])
+    const cloudBlock = "describe('foo', () => { it('ok', () => {}) })"
+    vi.mocked(callText).mockImplementation((prompt, opts) => {
+      // local завжди повертає блок із require → isValidBlock відхиляє кожну спробу
+      if (opts?.model === LOCAL_MODEL) return "```js\nconst x = require('x')\ndescribe('foo', () => {})\n```"
+      if (prompt.includes('template header')) return "```js\nimport { vi } from 'vitest'\n```"
+      return '```js\n' + cloudBlock + '\n```' // cloud fallback
+    })
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir, {
       localModel: LOCAL_MODEL
     })
 
     const calls = vi.mocked(callText).mock.calls
-    // header + local attempt + cloud fallback = 3 calls
-    expect(calls).toHaveLength(3)
-    // Third call is cloud fallback (no model option)
-    expect(calls[2][1]?.model).toBeUndefined()
+    // Інваріанти маршрутизації (не сирі лічильники — кількість ретраїв є
+    // деталлю реалізації): local-tier спробував обмежену кількість разів…
+    const localIdx = calls.flatMap(([, opts], i) => (opts?.model === LOCAL_MODEL ? [i] : []))
+    expect(localIdx.length).toBeGreaterThanOrEqual(1)
+    expect(localIdx.length).toBeLessThanOrEqual(3) // ≤ LOCAL_MAX_ATTEMPTS
+    // …а після вичерпання local усі виклики — cloud fallback (без model override)
+    const afterLocal = calls.slice(Math.max(...localIdx) + 1)
+    expect(afterLocal.length).toBeGreaterThanOrEqual(1)
+    expect(afterLocal.every(([, opts]) => opts?.model === undefined)).toBe(true)
+    // у файл записано cloud-блок, невалідний local-код (require) відкинуто
+    const finalWrite = vi.mocked(writeFileSync).mock.calls.find(([p]) => p === '/proj/src/tests/a.test.mjs')
+    expect(finalWrite).toBeDefined()
+    expect(finalWrite[1]).toContain(cloudBlock)
+    expect(finalWrite[1]).not.toContain('require(')
   })
 
   it('routes complex exports directly to cloud without local call', async () => {
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'send', complexity: 'complex' }
-    ])
-    vi.mocked(callText).mockResolvedValue("```js\nimport { vi } from 'vitest'\n```")
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'send', complexity: 'complex' }])
+    vi.mocked(callText).mockImplementation(prompt =>
+      prompt.includes('template header')
+        ? "```js\nimport { vi } from 'vitest'\n```"
+        : "```js\ndescribe('send', () => { it('ok', () => {}) })\n```"
+    )
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir, {
       localModel: LOCAL_MODEL
     })
 
+    // complex-export не торкається local-моделі — усе через cloud
     const calls = vi.mocked(callText).mock.calls
-    // header + 'send' block = 2 calls, neither uses local model
-    expect(calls).toHaveLength(2)
+    expect(calls.length).toBeGreaterThanOrEqual(2) // header + щонайменше один block-виклик
     expect(calls.every(([, opts]) => opts?.model !== LOCAL_MODEL)).toBe(true)
+    // cloud-блок 'send' дійшов до записаного файлу
+    const finalWrite = vi.mocked(writeFileSync).mock.calls.find(([p]) => p === '/proj/src/tests/a.test.mjs')
+    expect(finalWrite).toBeDefined()
+    expect(finalWrite[1]).toContain("describe('send'")
   })
 
   it('writes merged file when header and blocks succeed', async () => {
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'trivial' }
-    ])
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'trivial' }])
     vi.mocked(callText)
       .mockResolvedValueOnce("```js\nimport { vi } from 'vitest'\n```") // header
       .mockResolvedValueOnce("```js\ndescribe('foo', () => { it('ok', () => {}) })\n```") // local block
@@ -264,10 +278,11 @@ describe('generateTests — per-export mode', () => {
       localModel: LOCAL_MODEL
     })
 
-    expect(writeFileSync).toHaveBeenCalledOnce()
-    const written = vi.mocked(writeFileSync).mock.calls[0][1]
-    expect(written).toContain("import { vi }")
-    expect(written).toContain("describe('foo'")
+    // runBlock пише і тимчасовий валідаційний файл — перевіряємо саме фінальний запис
+    const finalWrite = vi.mocked(writeFileSync).mock.calls.find(([p]) => p === '/proj/src/tests/a.test.mjs')
+    expect(finalWrite).toBeDefined()
+    expect(finalWrite[1]).toContain('import { vi }')
+    expect(finalWrite[1]).toContain("describe('foo'")
   })
 
   it('falls back to single-file mode when extractExportsWithComplexity returns empty', async () => {
@@ -285,9 +300,7 @@ describe('generateTests — per-export mode', () => {
 
   it('uses localModel from N_LOCAL_MIN_MODEL env when no opts.localModel', async () => {
     process.env.N_LOCAL_MIN_MODEL = LOCAL_MODEL
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'simple' }
-    ])
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'simple' }])
     vi.mocked(callText).mockResolvedValue("```js\nimport { vi } from 'vitest'\n```")
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir)
@@ -300,9 +313,7 @@ describe('generateTests — per-export mode', () => {
 
   it('opts.localModel = null forces cloud-only even when env is set', async () => {
     process.env.N_LOCAL_MIN_MODEL = LOCAL_MODEL
-    vi.mocked(extractExportsWithComplexity).mockReturnValue([
-      { name: 'foo', complexity: 'simple' }
-    ])
+    vi.mocked(extractExportsWithComplexity).mockReturnValue([{ name: 'foo', complexity: 'simple' }])
     vi.mocked(callText).mockResolvedValue("```js\ntest('a', () => {})\n```")
 
     await generateTests([{ file: mockFile, pct: 0, reason: '' }], mockDir, { localModel: null })

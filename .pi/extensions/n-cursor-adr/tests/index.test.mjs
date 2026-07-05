@@ -1,195 +1,125 @@
-import { vi, describe, it, expect, beforeEach } from "vitest"
-import { join } from "node:path"
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { writeFileSync } from 'node:fs'
+import piExtension from '../index.ts'
 
-// Mock necessary Node.js modules and internal dependencies if they were complex,
-// but here we mock the entire module being tested.
-vi.mock('../index.ts', () => ({
-  default: vi.fn(),
-}))
+vi.mock('node:fs', () => ({ writeFileSync: vi.fn() }))
 
-// Import the default export from the mocked module
-const { default: piExtension } = await import('../index.ts')
+/**
+ * Реєструє extension на fake pi API.
+ * @returns {{pi: object, handler: (event: object, ctx: object) => Promise<void>}} fake pi та agent_end handler
+ */
+function setup() {
+  const pi = {
+    on: vi.fn(),
+    exec: vi.fn().mockResolvedValue({ code: 0, stdout: '', stderr: '' })
+  }
+  piExtension(pi)
+  const handler = pi.on.mock.calls.find(([event]) => event === 'agent_end')[1]
+  return { pi, handler }
+}
 
-describe('piExtension', () => {
-  let mockPi: any
-  let captureHookSpy: vi.Mock
-  let normalizeHookSpy: vi.Mock
+/**
+ * Мінімальний pi-контекст для handler-а.
+ * @param {object} [overrides] поля, що перекривають дефолти
+ * @returns {object} fake ctx
+ */
+function makeCtx(overrides = {}) {
+  return {
+    cwd: '/proj',
+    sessionId: 'sid-1',
+    sessionManager: { getEntries: vi.fn().mockReturnValue([]) },
+    ui: { notify: vi.fn() },
+    ...overrides
+  }
+}
 
-  beforeEach(() => {
-    // Reset mocks before each test
-    vi.clearAllMocks()
+describe('n-cursor-adr pi extension', () => {
+  beforeEach(() => vi.clearAllMocks())
+  afterEach(() => vi.unstubAllEnvs())
 
-    // Set up a mock for pi.dev extension API
-    mockPi = {
-      on: vi.fn(),
+  it('реєструє handler на agent_end', () => {
+    const { pi } = setup()
+    expect(pi.on).toHaveBeenCalledWith('agent_end', expect.any(Function))
+  })
+
+  it.each(['CAPTURE_DECISIONS_RUNNING', 'ADR_NORMALIZE_RUNNING', 'ADR_HOOKS_SKIP'])(
+    'пропускає запуск, коли виставлено %s (recursion/skip guard)',
+    async guard => {
+      vi.stubEnv(guard, '1')
+      const { pi, handler } = setup()
+      const ctx = makeCtx()
+      await handler({ type: 'agent_end' }, ctx)
+      expect(ctx.sessionManager.getEntries).not.toHaveBeenCalled()
+      expect(writeFileSync).not.toHaveBeenCalled()
+      expect(pi.exec).not.toHaveBeenCalled()
     }
+  )
 
-    // Spy on pi.exec to control its behavior during tests
-    mockPi.exec = vi.fn().mockResolvedValue({
-      code: 0,
-      stdout: '',
-      stderr: '',
-    })
-
-    // Simulate event handlers subscription
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-    onCallback({ type: 'agent_end' }, {
-      cwd: '/mock/cwd',
-      sessionId: 'mock-session-id',
-      sessionManager: {
-        getEntries: vi.fn(),
-      },
-      ui: {
-        notify: vi.fn(),
-      },
-      signal: new AbortSignal(),
-    })
-
-    // Capture spies for the internal pi.exec calls (since we mock the module's default export)
-    // We rely on the internal mock setup for pi.exec from the module under test
-    captureHookSpy = mockPi.exec.mock.calls.find(call => call[0] === 'bash' && call[1].includes('.claude/hooks/capture-decisions.sh'))[0]
-    normalizeHookSpy = mockPi.exec.mock.calls.find(call => call[0] === 'bash' && call[1].includes('.claude/hooks/normalize-decisions.sh'))[0]
-  })
-
-  it('should not run if CAPTURE_DECISIONS_RUNNING env var is set', async () => {
-    vi.stubEnv('CAPTURE_DECISIONS_RUNNING', 'true')
-
-    // Re-invoke the event handler logic, simulating environment change detection
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-    await onCallback({ type: 'agent_end' }, {
-      cwd: '/mock/cwd',
-      sessionManager: {
-        getEntries: vi.fn(),
-      },
-      signal: new AbortSignal(),
-    })
-
-    // Since we cannot easily hook into the internal logic based on stubbed envs without
-    // re-implementing the structure, we test the general behavior path assuming env checks run.
-    // In a real test setup, we would ensure pi.exec was NOT called.
-    expect(mockPi.exec).not.toHaveBeenCalled()
-  })
-
-  it('should not run if ADR_NORMALIZE_RUNNING env var is set', async () => {
-    vi.stubEnv('ADR_NORMALIZE_RUNNING', 'true')
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-    await onCallback({ type: 'agent_end' }, {
-      cwd: '/mock/cwd',
-      sessionManager: {
-        getEntries: vi.fn(),
-      },
-      signal: new AbortSignal(),
-    })
-    expect(mockPi.exec).not.toHaveBeenCalled()
-  })
-
-
-  it('should not run if ADR_HOOKS_SKIP is set', async () => {
-    vi.stubEnv('ADR_HOOKS_SKIP', '1')
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-    await onCallback({ type: 'agent_end' }, {
-      cwd: '/mock/cwd',
-      sessionManager: {
-        getEntries: vi.fn(),
-      },
-      signal: new AbortSignal(),
-    })
-    expect(mockPi.exec).not.toHaveBeenCalled()
-  })
-
-  it('should serialize transcript and call hooks when no skip conditions are met', async () => {
-    const mockEntries = [
-      { message: { role: 'user', content: 'Hello' } },
-      { message: { role: 'assistant', content: 'Hi there' } },
+  it('серіалізує лише user/assistant повідомлення у tmp JSONL і спавнить обидва hooks', async () => {
+    const { pi, handler } = setup()
+    const entries = [
+      { message: { role: 'user', content: 'Питання' } },
+      { message: { role: 'system', content: 'ігнорується' } },
+      { message: { role: 'assistant', content: 'Відповідь' } },
+      { notAMessage: true }
     ]
-    const mockSessionId = 'test-session'
-    const mockCwd = '/test/dir'
+    const ctx = makeCtx({ sessionManager: { getEntries: vi.fn().mockReturnValue(entries) } })
 
-    // Setup mock to return expected entries
-    const sessionManagerMock = {
-      getEntries: vi.fn().mockReturnValue(mockEntries),
+    await handler({ type: 'agent_end' }, ctx)
+
+    // transcript: tmp-файл, JSONL лише з user/assistant
+    expect(writeFileSync).toHaveBeenCalledTimes(1)
+    const [jsonlPath, jsonl] = vi.mocked(writeFileSync).mock.calls[0]
+    expect(jsonlPath).toContain('n-cursor-pi-transcript-')
+    const lines = jsonl
+      .trim()
+      .split('\n')
+      .map(l => JSON.parse(l))
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toEqual({ type: 'user', message: { role: 'user', content: 'Питання' } })
+    expect(lines[1].type).toBe('assistant')
+
+    // обидва bash-hooks зі спільним stdin-payload і CLAUDE_PROJECT_DIR
+    expect(pi.exec).toHaveBeenCalledTimes(2)
+    const hookScripts = pi.exec.mock.calls.map(([cmd, args]) => {
+      expect(cmd).toBe('bash')
+      return args[0]
+    })
+    expect(hookScripts).toEqual(['.claude/hooks/capture-decisions.sh', '.claude/hooks/normalize-decisions.sh'])
+    for (const call of pi.exec.mock.calls) {
+      const opts = call[2]
+      expect(opts.cwd).toBe('/proj')
+      expect(opts.env.CLAUDE_PROJECT_DIR).toBe('/proj')
+      const payload = JSON.parse(opts.input)
+      expect(payload.transcript_path).toBe(jsonlPath)
+      expect(payload.session_id).toBe('sid-1')
     }
-
-    // Spy on fs functions used internally (tmpdir, writeFileSync, join are complex to mock entirely)
-    // We rely on mocking the module default export to control execution flow if we couldn't mock fs globally.
-    // Since this is unit test for the adapter logic, we focus on high-level interactions.
-    // We mock Date.now() for deterministic paths.
-    const now = 1678886400000
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(now))
-
-    // Mock crypto for consistent UUID
-    vi.spyOn(require('node:crypto'), 'randomUUID').mockReturnValue('mock-uuid')
-    
-    // We must ensure pi.exec is called twice correctly
-    mockPi.exec.mockImplementation((cmd, args, opts) => {
-        if (args.includes('.claude/hooks/capture-decisions.sh')) {
-            return Promise.resolve({ code: 0, stdout: 'capture_ok', stderr: '' })
-        }
-        if (args.includes('.claude/hooks/normalize-decisions.sh')) {
-            return Promise.resolve({ code: 0, stdout: 'normalize_ok', stderr: '' })
-        }
-        return Promise.reject(new Error('Unexpected call'))
-    })
-
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-
-    // Execute test case
-    await onCallback({ type: 'agent_end' }, {
-      cwd: mockCwd,
-      sessionId: mockSessionId,
-      sessionManager: sessionManagerMock,
-      ui: { notify: vi.fn() },
-      signal: new AbortSignal(),
-    })
-
-    // Assertions
-    expect(sessionManagerMock.getEntries).toHaveBeenCalledTimes(1)
-
-    // Check if pi.exec was called for both hooks
-    expect(mockPi.exec).toHaveBeenCalledTimes(2)
-
-    // Check capture hook call details
-    const captureCallArgs = mockPi.exec.mock.calls.find(call => call[0] === 'bash' && call[1].includes('capture-decisions.sh'))
-    expect(captureCallArgs).toBeDefined()
-    expect(captureCallArgs[2].cwd).toBe(mockCwd)
-    expect(captureCallArgs[2].input).toBeDefined() // Payload must be present
-    expect(captureCallArgs[2].env['CLAUDE_PROJECT_DIR']).toBe(mockCwd)
-
-    // Check normalize hook call details
-    const normalizeCallArgs = mockPi.exec.mock.calls.find(call => call[0] === 'bash' && call[1].includes('normalize-decisions.sh'))
-    expect(normalizeCallArgs).toBeDefined()
-    expect(normalizeCallArgs[2].cwd).toBe(mockCwd)
-
-    vi.useRealTimers()
   })
 
-  it('should notify UI on transcript serialization failure', async () => {
-    const mockCwd = '/test/dir'
-    const sessionManagerMock = {
-      getEntries: vi.fn(() => {
-        throw new Error('FS permission denied')
-      }),
-    }
-    const mockUi = {
-      notify: vi.fn(),
-    }
+  it('генерує session_id, коли ctx.sessionId відсутній', async () => {
+    const { pi, handler } = setup()
+    await handler({ type: 'agent_end' }, makeCtx({ sessionId: undefined }))
+    const payload = JSON.parse(pi.exec.mock.calls[0][2].input)
+    expect(payload.session_id).toBeTruthy()
+  })
 
-    const onCallback = mockPi.on.mock.calls.find(call => call[0] === 'agent_end')[1]
-    await onCallback({ type: 'agent_end' }, {
-      cwd: mockCwd,
-      sessionManager: sessionManagerMock,
-      ui: mockUi,
-      signal: new AbortSignal(),
+  it('нотифікує ui і не запускає hooks, коли серіалізація transcript падає', async () => {
+    const { pi, handler } = setup()
+    const ctx = makeCtx({
+      sessionManager: {
+        getEntries: vi.fn(() => {
+          throw new Error('boom')
+        })
+      }
     })
+    await handler({ type: 'agent_end' }, ctx)
+    expect(ctx.ui.notify).toHaveBeenCalledWith(expect.stringContaining('transcript serialization failed'), 'error')
+    expect(pi.exec).not.toHaveBeenCalled()
+  })
 
-    // Assert notification was called with the error message
-    expect(mockUi.notify).toHaveBeenCalledWith(
-      expect.stringContaining('@nitra/cursor: transcript serialization failed'),
-      'error'
-    )
-
-    // Assert no hooks were called
-    expect(mockPi.exec).not.toHaveBeenCalled()
+  it('не кидає, коли pi.exec падає (hooks відсутні у pi-only консьюмера)', async () => {
+    const { pi, handler } = setup()
+    pi.exec.mockRejectedValue(new Error('ENOENT'))
+    await expect(handler({ type: 'agent_end' }, makeCtx())).resolves.toBeUndefined()
   })
 })
