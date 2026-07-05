@@ -3,7 +3,7 @@ type: JS Module
 title: gen-tests.mjs
 resource: npm/src/gen-tests.mjs
 docgen:
-  crc: 99d3e9b7
+  crc: 03208fbd
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
 ---
 

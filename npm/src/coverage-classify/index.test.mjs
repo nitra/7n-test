@@ -10,6 +10,7 @@ vi.mock('./cache.mjs', () => ({
 
 describe('classify', () => {
   const mockCwd = '/mock/root'
+  const fakeChainFactory = () => ({ nextStep: vi.fn(), note: vi.fn(), headers: () => ({}), traceFields: () => ({}), end: vi.fn() })
   const mockSurvived = [
     {
       file: 'src/test.js',
@@ -33,7 +34,7 @@ describe('classify', () => {
       entries: { mock_key: { verdict: 'ok', confidence: 1, reason: 'Cached' } }
     })
 
-    const results = await classify(mockSurvived, mockCwd, { tier1: '', tier2: '' })
+    const results = await classify(mockSurvived, mockCwd, { tier1: '', tier2: '', startChain: fakeChainFactory })
 
     expect(vi.mocked(deriveCacheKey)).toHaveBeenCalled()
     expect(results[0].verdict.verdict).toBe('ok')
@@ -48,9 +49,9 @@ describe('classify', () => {
     })
     const mockCallModel = vi.fn().mockResolvedValue(validVerdict)
 
-    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
+    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '', startChain: fakeChainFactory })
 
-    expect(mockCallModel).toHaveBeenCalledWith(expect.any(String), '', mockCwd)
+    expect(mockCallModel).toHaveBeenCalledWith(expect.any(String), '', mockCwd, { chain: expect.anything() })
     expect(mockCallModel).toHaveBeenCalledTimes(1)
   })
 
@@ -62,17 +63,17 @@ describe('classify', () => {
     })
     const mockCallModel = vi.fn().mockRejectedValueOnce(new Error('Tier 1 Fail')).mockResolvedValueOnce(validVerdict)
 
-    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
+    await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '', startChain: fakeChainFactory })
 
     expect(mockCallModel).toHaveBeenCalledTimes(2)
-    expect(mockCallModel).toHaveBeenNthCalledWith(1, expect.any(String), '', mockCwd)
-    expect(mockCallModel).toHaveBeenNthCalledWith(2, expect.any(String), '', mockCwd)
+    expect(mockCallModel).toHaveBeenNthCalledWith(1, expect.any(String), '', mockCwd, { chain: expect.anything() })
+    expect(mockCallModel).toHaveBeenNthCalledWith(2, expect.any(String), '', mockCwd, { chain: expect.anything() })
   })
 
   it('should fallback to conservative verdict if both tiers fail', async () => {
     const mockCallModel = vi.fn().mockRejectedValue(new Error('Both Tiers Fail'))
 
-    const results = await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '' })
+    const results = await classify(mockSurvived, mockCwd, { callModel: mockCallModel, tier1: '', tier2: '', startChain: fakeChainFactory })
 
     expect(results[0].verdict.verdict).toBe('worth-testing')
     expect(results[0].verdict.confidence).toBe(0)

@@ -33,6 +33,7 @@ const AGENT_TIMEOUT_MS = 900_000
  * @param {string} [opts.model] provider/model-id (напр. "openai/gpt-5.5"); без значення — default pi
  * @param {number} [opts.maxTokens] стеля відповіді для цього виклику; на
  *   `stopReason: 'length'` виклик повторюється один раз із подвоєною стелею
+ * @param {object} [opts.chain] chain handle (@nitra/llm-lib/chain) — виклик стає кроком ланцюжка
  * @param {object} [opts.deps] інжекти для тестів (прокидаються у runOneShot)
  * @returns {Promise<string>} текстова відповідь моделі
  */
@@ -44,6 +45,7 @@ export async function callText(prompt, opts = {}) {
     timeoutMs: 0,
     cwd: opts.cwd,
     caller: '7n-test:text',
+    chain: opts.chain ?? null,
     deps: opts.deps
   })
   if (r.error) throw new Error(r.error)
@@ -66,6 +68,7 @@ export async function callText(prompt, opts = {}) {
  * @param {string} cwd робоча директорія, куди агент може писати файли
  * @param {object} [opts] додаткові параметри
  * @param {string} [opts.model] provider/model-id або '' для pi-дефолту
+ * @param {object} [opts.chain] chain handle (@nitra/llm-lib/chain) — виклик стає кроком ланцюжка
  * @param {object} [opts.deps] інжекти для тестів (прокидаються у runAgentSkill)
  * @returns {Promise<void>} проміс завершується після виконання агента
  */
@@ -77,6 +80,7 @@ export async function callAgent(prompt, cwd, opts = {}) {
     timeoutMs: AGENT_TIMEOUT_MS,
     maxTokens: 0, // без стелі: агент пише цілі тест-файли (паритет зі старим CLI-шляхом)
     caller: 'agent:7n-test',
+    chain: opts.chain ?? null,
     deps: opts.deps
   })
   if (r.error) throw new Error(r.error)
