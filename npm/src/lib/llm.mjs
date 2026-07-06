@@ -1,5 +1,5 @@
 /**
- * Тонкий адаптер @7n/test над @nitra/llm-lib (Ф3 спеки llm-lib-extraction):
+ * Тонкий адаптер `@7n/test` над `@7n/llm-lib` (Ф3 спеки llm-lib-extraction):
  * зберігає звичний контракт `callText`/`callAgent` для внутрішніх колерів,
  * але транспорт/registry/trace повністю живуть у пакеті.
  *
@@ -10,10 +10,10 @@
  * подвоєння `maxTokens` на обрізаній відповіді (`stopReason: 'length'`):
  * це семантичний повтор без пауз, а не очікування зайнятого сервера.
  */
-import { MEMORY_ERROR_RE, runOneShot } from '@nitra/llm-lib/one-shot'
-import { runAgentSkill } from '@nitra/llm-lib/agent-skill'
+import {  runOneShot } from '@7n/llm-lib/one-shot'
+import { runAgentSkill } from '@7n/llm-lib/agent-skill'
 
-export { MEMORY_ERROR_RE }
+
 
 /**
  * Стеля відповіді моделі для подвоєння на `stopReason: 'length'` — межа
@@ -33,7 +33,7 @@ const AGENT_TIMEOUT_MS = 900_000
  * @param {string} [opts.model] provider/model-id (напр. "openai/gpt-5.5"); без значення — default pi
  * @param {number} [opts.maxTokens] стеля відповіді для цього виклику; на
  *   `stopReason: 'length'` виклик повторюється один раз із подвоєною стелею
- * @param {object} [opts.chain] chain handle (@nitra/llm-lib/chain) — виклик стає кроком ланцюжка
+ * @param {object} [opts.chain] chain handle (`@7n/llm-lib/chain`) — виклик стає кроком ланцюжка
  * @param {object} [opts.deps] інжекти для тестів (прокидаються у runOneShot)
  * @returns {Promise<string>} текстова відповідь моделі
  */
@@ -68,7 +68,7 @@ export async function callText(prompt, opts = {}) {
  * @param {string} cwd робоча директорія, куди агент може писати файли
  * @param {object} [opts] додаткові параметри
  * @param {string} [opts.model] provider/model-id або '' для pi-дефолту
- * @param {object} [opts.chain] chain handle (@nitra/llm-lib/chain) — виклик стає кроком ланцюжка
+ * @param {object} [opts.chain] chain handle (`@7n/llm-lib/chain`) — виклик стає кроком ланцюжка
  * @param {object} [opts.deps] інжекти для тестів (прокидаються у runAgentSkill)
  * @returns {Promise<void>} проміс завершується після виконання агента
  */
@@ -85,3 +85,5 @@ export async function callAgent(prompt, cwd, opts = {}) {
   })
   if (r.error) throw new Error(r.error)
 }
+
+export {MEMORY_ERROR_RE} from '@7n/llm-lib/one-shot'

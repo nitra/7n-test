@@ -9,7 +9,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { env } from 'node:process'
-import { CLOUD_MAX } from '@nitra/llm-lib/model-tiers'
+import { CLOUD_MAX } from '@7n/llm-lib/model-tiers'
 import { callAgent } from './lib/llm.mjs'
 
 const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? CLOUD_MAX
@@ -41,7 +41,7 @@ export async function fixSurvivedMutants(survived, projectRoot, opts = {}) {
 }
 
 /**
- * Викликає агента через @nitra/llm-lib (SDK-embed, live-output до stdout) —
+ * Викликає агента через `@7n/llm-lib` (SDK-embed, live-output до stdout) —
  * заміна колишнього spawnSync pi CLI.
  * @param {string} prompt текст промпта
  * @param {string} model  provider/model-id або '' для pi-дефолту

@@ -3,7 +3,7 @@ type: JS Module
 title: coverage-fix.mjs
 resource: npm/src/coverage-fix.mjs
 docgen:
-  crc: d0a20c67
+  crc: db577cf1
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
 ---
 

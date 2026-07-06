@@ -3,12 +3,12 @@ type: JS Module
 title: llm.mjs
 resource: npm/src/lib/llm.mjs
 docgen:
-  crc: cb7b3d2a
+  crc: b126a1aa
 ---
 
 ## Огляд
 
-Тонкий адаптер @7n/test над пакетом `@nitra/llm-lib` (Ф3 спеки llm-lib-extraction у репо cursor): зберігає звичний контракт `callText`/`callAgent` для внутрішніх колерів (gen-tests, fix-tests, assess-need, coverage-classify, coverage-fix), а транспорт, registry і трасування повністю живуть у пакеті. Замінив колишній `pi-client.mjs` з власним SDK-плюмбінгом, retry/backoff і прямим omlx-HTTP.
+Тонкий адаптер @7n/test над пакетом `@7n/llm-lib` (Ф3 спеки llm-lib-extraction у репо cursor): зберігає звичний контракт `callText`/`callAgent` для внутрішніх колерів (gen-tests, fix-tests, assess-need, coverage-classify, coverage-fix), а транспорт, registry і трасування повністю живуть у пакеті. Замінив колишній `pi-client.mjs` з власним SDK-плюмбінгом, retry/backoff і прямим omlx-HTTP.
 
 ## Поведінка
 
