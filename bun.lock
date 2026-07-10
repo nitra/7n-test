@@ -17,14 +17,14 @@
     },
     "npm": {
       "name": "@7n/test",
-      "version": "0.12.2",
+      "version": "0.13.0",
       "bin": {
         "7n-test": "bin/7n-test.js",
       },
       "dependencies": {
+        "@7n/llm-lib": "^2.0.2",
         "@earendil-works/pi-coding-agent": "^0.80.3",
         "@nitra/check-env": "^4.2.1",
-        "@nitra/llm-lib": "^1.0.0",
         "@vitest/coverage-v8": "^4.1.9",
         "rollup": "^4.62.2",
         "vitest": "^4.1.9",
@@ -33,6 +33,8 @@
     },
   },
   "packages": {
+    "@7n/llm-lib": ["@7n/llm-lib@2.0.2", "", { "peerDependencies": { "@earendil-works/pi-ai": "~0.80.2", "@earendil-works/pi-coding-agent": "~0.80.2" }, "optionalPeers": ["@earendil-works/pi-ai", "@earendil-works/pi-coding-agent"], "bin": { "n-llm-chains-report": "bin/chains-report.mjs" } }, "sha512-lJc9/xebIubQX/8SNuxgOCJcWcokSqYNP0XylSWYMMcvcdccNNI0aJQU50KwGKjoaaYTgnVjeC/HAPRr6qupkQ=="],
+
     "@7n/mt": ["@7n/mt@0.5.1", "", { "optionalDependencies": { "@7n/mt-darwin-arm64": "0.5.1", "@7n/mt-linux-x64": "0.5.1" }, "bin": { "mt": "bin/mt.js" } }, "sha512-fIP75AODAX6ri+Geznpph0BJR0kkOWeCarSNJCibLCPH3vnfbEvHC9/MgTk3zg9cYIGEFAHd1gkCEnOekexIdg=="],
 
     "@7n/mt-darwin-arm64": ["@7n/mt-darwin-arm64@0.5.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-ozofQxbsdrv7cVZJeb9P9MLwzpdNxdqTcmzRQjwSf316TK8ptxzZhU0b24CsoH/Ia98zhbJLBPsdK/ueHWFl4Q=="],
@@ -468,8 +470,6 @@
     "@nitra/eslint-config": ["@nitra/eslint-config@3.10.3", "", { "dependencies": { "@e18e/eslint-plugin": "^0.5.1", "@eslint/compat": "^2.1.0", "@eslint/js": "^10.0.1", "@eslint/markdown": "^8.0.2", "@graphql-eslint/eslint-plugin": "^4.4.0", "@graphql-tools/code-file-loader": "^8.1.32", "@graphql-tools/graphql-tag-pluck": "^8.3.31", "@graphql-tools/utils": "^11.1.0", "@microsoft/eslint-plugin-sdl": "^1.1.0", "eslint": "^10.6.0", "eslint-merge-processors": "^2.0.0", "eslint-plugin-import-x": "^4.17.0", "eslint-plugin-jsdoc": "^63.0.10", "eslint-plugin-jsonc": "^3.2.0", "eslint-plugin-n": "^18.2.1", "eslint-plugin-no-unsanitized": "^4.1.5", "eslint-plugin-oxlint": "^1.71.0", "eslint-plugin-security": "^4.0.1", "eslint-plugin-sonarjs": "^4.1.0", "eslint-plugin-unicorn": "^69.0.0", "eslint-plugin-vue": "^10.9.2", "eslint-plugin-yml": "^3.5.0", "eslint-processor-vue-blocks": "^2.0.0", "globals": "^17.7.0", "graphql": "^16.14.0", "vue-eslint-parser": "^10.4.1" } }, "sha512-QSHs6k6kOFUdq6ZGxjyKsLsNLBllXjAeG4sEt+b0Hw6fg4dVV+5w4omtqtChJRTJdxzPm2vQDkCjtkoY8TxzMw=="],
 
     "@nitra/isenv": ["@nitra/isenv@2.0.1", "", {}, "sha512-MZEOmA36RNe455xWlnA4aHy4WvPur7+cNT8JEKjiS5I2KabBO1SxGqNIJP4/kmMnNyU6sHZj2Ihdf2Qr7QG3yQ=="],
-
-    "@nitra/llm-lib": ["@nitra/llm-lib@1.0.1", "", { "peerDependencies": { "@earendil-works/pi-ai": "~0.80.2", "@earendil-works/pi-coding-agent": "~0.80.2" }, "optionalPeers": ["@earendil-works/pi-ai", "@earendil-works/pi-coding-agent"] }, "sha512-bH3vSiYBdznHCoTW7TWyvNwEidJt7lNNbSoses42MsOW9QckwUDX8GLcBpiY0DxaxDG3NgorOXAW7VRwEWmbNA=="],
 
     "@nitra/pino": ["@nitra/pino@2.12.0", "", { "dependencies": { "@nitra/isenv": "^2.0.1", "colorette": "^2.0.20", "eventid": "^2.0.1", "otlp-logger": "^1.1.13", "pino": "^10.1.1", "pino-pretty": "^13.1.3", "pretty-ms": "^9.3.0", "safe-stable-stringify": "^2.5.0" } }, "sha512-iZ/p4b5qxj+VWvTiooDkB4ix1NTxPBOKuJcXMVjbFogi4Kill9zgLzB8+fPuvkKX8YvW2xe+7jv2YXkOynYsiw=="],
 
