@@ -171,7 +171,7 @@ export function resolveChangedScope(cwd) {
 
 /**
  * Виконує coverage-pipeline: JS-колектор (detect+collect), агрегація, запис COVERAGE.md.
- * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts]
+ * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts] опції прогону
  * @returns {Promise<number>} exit code (0 OK, 1 помилка)
  */
 export async function runCoverageSteps(opts = {}) {
@@ -240,7 +240,7 @@ function lockKey(changed) {
 
 /**
  * CLI entrypoint для `@7n/test coverage [--fix] [--changed]`.
- * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts]
+ * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts] опції CLI-виклику
  * @returns {Promise<number>} exit code
  */
 export async function runCoverageCli(opts = {}) {

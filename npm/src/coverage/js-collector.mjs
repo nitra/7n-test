@@ -14,6 +14,7 @@ import { dirname, isAbsolute, join, relative } from 'node:path'
 
 import { resolveAllJsRoots } from '../lib/resolve-js-root.mjs'
 import { addCoverage, addMutation } from './aggregate.mjs'
+import { hasRunnableTests, isBunNativeRoot } from './bun-native.mjs'
 
 const TEST_BLOCK_START = /^\s*(it|test)\(/
 const FILE_EXTENSION = /\.[^.]+$/
@@ -281,6 +282,17 @@ const defaultRunner = {
     )
     return r.status ?? 1
   },
+  runBunCoverage({ cwd, lcovDir }) {
+    // Bun-native workspace (prod-код імпортує `bun`/`bun:*`): vitest такий модуль не
+    // резолвить, тож coverage ганяємо нативним `bun test`. Bun ремапить
+    // `import ... from 'vitest'` у тест-файлах на `bun:test` — тести лишаються canon.
+    const r = spawnSync('bun', ['test', '--coverage', '--coverage-reporter=lcov', `--coverage-dir=${lcovDir}`], {
+      cwd,
+      stdio: 'inherit',
+      env: process.env
+    })
+    return r.status ?? 1
+  },
   runStryker({ cwd, mutate }) {
     // Plugin-discovery Stryker (`@stryker-mutator/*`) globиться відносно CORE-install-каталогу
     // (`core/dist/src/di/plugin-loader.js` → `../../../../../@stryker-mutator/*`). Тож core
@@ -311,11 +323,15 @@ const defaultRunner = {
  * NoCoverage-мутанти (gate впаде, як і має). Якщо змінено лише тест-файли (нема
  * production-src) — Stryker не запускаємо (мутувати нічого), повертаємо лише coverage.
  *
- * Реальні помилки (vitest exit ≠ 0, відсутній mutation.json попри запуск Stryker)
+ * Bun-native workspace (prod-код імпортує `bun`/`bun:*`): coverage через
+ * `bun test --coverage` (vitest не резолвить модуль `bun`), mutation пропускається
+ * з попередженням — Stryker vitest-runner такий код не виконає.
+ *
+ * Реальні помилки (vitest/bun exit ≠ 0, відсутній mutation.json попри запуск Stryker)
  * кидаються — у multi-root режимі це не маскує справжній збій.
  * @param {string} jsRoot абсолютний шлях до workspace-кореня
  * @param {string} cwd корінь проєкту (для рібейзингу `survived[].file`)
- * @param {{runJsCoverage:Function, runStryker:Function}} runner spawn-ін'єкція
+ * @param {{runJsCoverage:Function, runStryker:Function, runBunCoverage:Function}} runner spawn-ін'єкція
  * @param {{files:string[], base:string|null}|null} [scope] changed-scope (null = full-режим)
  * @returns {Promise<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>} | null>} результати або null коли full-режим і workspace без тестів
  */
@@ -324,11 +340,27 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
   // У changed-режимі production-файли для мутації = змінені JS цього root без тест-файлів.
   const mutateSrc = scope ? scope.files.filter(f => !TEST_FILE.test(f)) : null
 
-  // 1. Coverage через vitest run --passWithNoTests --coverage (+ --changed у changed-режимі)
+  // Bun-native workspace: coverage через `bun test`, mutation пропускається
+  // (Stryker vitest-runner не виконає код з `import ... from 'bun'`).
+  const bunNative = await isBunNativeRoot(jsRoot)
+  if (bunNative && !(await hasRunnableTests(jsRoot))) {
+    // `bun test` без тестів завершується помилкою — graceful skip як vitest --passWithNoTests.
+    return scope
+      ? {
+          coverage: { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } },
+          mutation: { caught: 0, total: 0 },
+          survived: []
+        }
+      : null
+  }
+
+  // 1. Coverage: vitest run --passWithNoTests --coverage (+ --changed) або `bun test --coverage`
   const lcovDir = await mkdtemp(join(tmpdir(), 'js-cov-'))
   let coverage
   try {
-    const code = await runner.runJsCoverage(scope ? { cwd: jsRoot, lcovDir, base: scope.base } : { cwd: jsRoot, lcovDir })
+    const code = bunNative
+      ? await runner.runBunCoverage({ cwd: jsRoot, lcovDir })
+      : await runner.runJsCoverage(scope ? { cwd: jsRoot, lcovDir, base: scope.base } : { cwd: jsRoot, lcovDir })
     if (code !== 0) throw new Error(`JS coverage exit ${code}`)
     const lcovPath = join(lcovDir, 'lcov.info')
     coverage = existsSync(lcovPath)
@@ -336,6 +368,16 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
       : { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } }
   } finally {
     await rm(lcovDir, { recursive: true, force: true })
+  }
+
+  // Bun-native: mutation testing пропускаємо чесно, з попередженням — Stryker
+  // vitest-runner структурно несумісний із bun-native кодом.
+  if (bunNative) {
+    console.error(
+      `⚠ ${wsRel || '.'}: bun-native workspace (import 'bun' у prod-коді) — ` +
+        'mutation testing пропущено (Stryker vitest-runner несумісний), лише line coverage'
+    )
+    return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
   }
 
   // Full-режим: порожній lcov ⇔ vitest не знайшов тестів → пропускаємо workspace,
