@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.1] - 2026-07-11
+
+### Changed
+
+- fix(coverage): самодостатній JS-колектор — без залежності від @nitra/cursor providers
+
 ## [0.14.0] - 2026-07-11
 
 ### Added
