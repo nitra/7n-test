@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.0] - 2026-07-11
+
+### Added
+
+- Ланцюжки (chains) @nitra/llm-lib ^1.1.0: mutant-classify — chain per mutant (tier1/tier2 = кроки, cache hit без chain), test-generate — chain per file (header + local/cloud спроби + vitest/length-retry = кроки), test-fix — chain per прогін (batch-виклики = кроки); адаптер callText/callAgent прокидає opts.chain. Аналітика ланцюжків — n-llm-chains-report і вкладка «Ланцюжки» в myllm.
+
+### Changed
+
+- підняти @7n/llm-lib до ^2.0.2 (rename @nitra/llm-lib → @7n/llm-lib уже застосовано в dacc051; нова мажорна версія без змін API — chains/компресія/body-capture, лише перейменування пакета)
+
 ## [0.13.0] - 2026-07-05
 
 ### Changed
