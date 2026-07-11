@@ -278,5 +278,14 @@ describe('coverage.mjs', () => {
       expect(vi.mocked(withLock)).toHaveBeenCalledTimes(1)
       expect(code).toBe(1)
     })
+
+    it('should use a distinct lock key for --changed vs full mode (no cross-mode dedup)', async () => {
+      const { withLock } = await import('../scripts/utils/with-lock.mjs')
+      vi.mocked(withLock).mockResolvedValue(0)
+      await runCoverageCli({ cwd: '/cwd', changed: true })
+      await runCoverageCli({ cwd: '/cwd', changed: false })
+      const keys = vi.mocked(withLock).mock.calls.map(call => call[0])
+      expect(keys).toEqual(['coverage-changed', 'coverage'])
+    })
   })
 })

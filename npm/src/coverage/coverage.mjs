@@ -227,15 +227,27 @@ export async function runCoverageSteps(opts = {}) {
 }
 
 /**
+ * Ключ локу/дедупу для `withLock`. `--changed` і full-режим виконують принципово різну
+ * роботу (changed ніколи не пише COVERAGE.md) — спільний ключ дозволив би успішному
+ * `--changed`-прогону (exitCode 0, той самий fingerprint дерева) дедуплікувати наступний
+ * full-прогін, і COVERAGE.md ніколи б не записався.
+ * @param {boolean} [changed] чи `--changed`-режим
+ * @returns {string} ключ локу
+ */
+function lockKey(changed) {
+  return changed ? 'coverage-changed' : 'coverage'
+}
+
+/**
  * CLI entrypoint для `@7n/test coverage [--fix] [--changed]`.
  * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts]
  * @returns {Promise<number>} exit code
  */
 export async function runCoverageCli(opts = {}) {
-  const code = await withLock('coverage', () => runCoverageSteps(opts))
+  const code = await withLock(lockKey(opts.changed), () => runCoverageSteps(opts))
   if (code === 0 && opts.fix) {
     console.log('\n♻️  Повторний coverage після агента…\n')
-    return withLock('coverage', () => runCoverageSteps({ cwd: opts.cwd, fix: false, changed: opts.changed }))
+    return withLock(lockKey(opts.changed), () => runCoverageSteps({ cwd: opts.cwd, fix: false, changed: opts.changed }))
   }
   return code
 }
