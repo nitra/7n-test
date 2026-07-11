@@ -1,65 +1,27 @@
 /**
- * Канонічна команда `n coverage`: збирає метрики покриття + мутаційного
- * тестування з усіх провайдерів, чиє правило активне в `.n-cursor.json#rules`,
- * агрегує та записує COVERAGE.md у корінь проєкту.
+ * Канонічна команда `@7n/test coverage`: збирає метрики покриття + мутаційного
+ * тестування через вбудований JS-колектор (`js-collector.mjs`), агрегує та
+ * записує COVERAGE.md у корінь проєкту.
  *
- * Discovery провайдерів — за `.n-cursor.json#rules`: для кожного `ruleId` зі
- * списку шукаємо `<rulesDir>/<ruleId>/coverage/coverage.mjs` і динамічно
- * імпортуємо. Якщо файлу немає — провайдер для цього правила відсутній (skip
- * silently, не помилка).
- *
- * `rulesDir` резолвиться з `node_modules/@nitra/cursor/rules` у cwd проєкту.
- * Override — через `opts.rulesDir` у `runCoverageSteps`.
+ * Самодостатній — не залежить від `@nitra/cursor` (раніше — provider-discovery
+ * за `.n-cursor.json#rules` через `<rulesDir>/<ruleId>/coverage/coverage.mjs`;
+ * provider-підсистема видалена з `@nitra/cursor` 2026-07-10, лишаючи оркестратор
+ * без жодного провайдера). Наразі підтримується лише JS/TS (`js-collector.mjs`);
+ * інші мови (Rust тощо) — не покриті, до появи власного колектора тут.
  *
  * Лок — прямий виклик `withLock('coverage', steps)`.
  */
-import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 
 import { applyVerdicts } from '../coverage-classify/apply.mjs'
 import { classify } from '../coverage-classify/index.mjs'
 import { collectChangedFilesSince, resolveChangedBase } from '../scripts/lib/changed-files.mjs'
-import { readNCursorConfigLite } from '../scripts/lib/read-n-cursor-config-lite.mjs'
 import { withLock } from '../scripts/utils/with-lock.mjs'
+import { addCoverage, addMutation } from './aggregate.mjs'
+import { collect as collectJs, detect as detectJs } from './js-collector.mjs'
 
-/**
- * Знаходить rulesDir @nitra/cursor у node_modules проєкту.
- * @param {string} cwd корінь проєкту
- * @returns {string|null} абсолютний шлях до rules/ або null
- */
-function resolveDefaultRulesDir(cwd) {
-  const localPath = join(cwd, 'node_modules', '@nitra', 'cursor', 'rules')
-  if (existsSync(localPath)) return localPath
-  return null
-}
-
-/**
- * Сума двох coverage-totals.
- * @param {{lines:{covered:number,total:number}, functions:{covered:number,total:number}}} a перший subtotal
- * @param {{lines:{covered:number,total:number}, functions:{covered:number,total:number}}} b другий subtotal
- * @returns {{lines:{covered:number,total:number}, functions:{covered:number,total:number}}} сумарні lines/functions
- */
-export function addCoverage(a, b) {
-  return {
-    lines: { covered: a.lines.covered + b.lines.covered, total: a.lines.total + b.lines.total },
-    functions: {
-      covered: a.functions.covered + b.functions.covered,
-      total: a.functions.total + b.functions.total
-    }
-  }
-}
-
-/**
- * Сума двох mutation-counts.
- * @param {{caught:number,total:number}} a перший subtotal
- * @param {{caught:number,total:number}} b другий subtotal
- * @returns {{caught:number,total:number}} сумарні caught/total
- */
-export function addMutation(a, b) {
-  return { caught: a.caught + b.caught, total: a.total + b.total }
-}
+export { addCoverage, addMutation }
 
 /**
  * Форматує covered/total як `XX.XX% (covered/total)`.
@@ -167,23 +129,6 @@ export function renderMarkdown(rows, allowedGaps = []) {
 }
 
 /**
- * Завантажує provider-модуль з `<rulesDir>/<ruleId>/coverage/coverage.mjs`.
- * Повертає null коли:
- *   - файлу немає (rule без coverage-провайдера),
- *   - файл існує, але не експортує `detect` + `collect` як функції.
- * @param {string} rulesDir корінь rules/ (з @nitra/cursor або override)
- * @param {string} ruleId id правила з `.n-cursor.json#rules`
- * @returns {Promise<{detect:(cwd:string)=>Promise<boolean>, collect:(cwd:string)=>Promise<Array<object>>}|null>} provider-модуль або null
- */
-async function loadProvider(rulesDir, ruleId) {
-  const providerPath = join(rulesDir, ruleId, 'coverage', 'coverage.mjs')
-  if (!existsSync(providerPath)) return null
-  const mod = await import(pathToFileURL(providerPath).href)
-  if (typeof mod.detect !== 'function' || typeof mod.collect !== 'function') return null
-  return mod
-}
-
-/**
  * Будує підсумковий рядок «Разом» через сумування всіх coverage/mutation.
  * @param {Array<{area:string, coverage:object, mutation:object}>} rows рядки провайдерів без totals
  * @returns {{area:string, coverage:object, mutation:{caught:number,total:number}}} агрегований рядок «Разом»
@@ -225,43 +170,24 @@ export function resolveChangedScope(cwd) {
 }
 
 /**
- * Виконує coverage-pipeline: discovery провайдерів за `.n-cursor.json#rules`,
- * detect+collect для кожного, агрегація, запис COVERAGE.md.
- * @param {{cwd?:string, rulesDir?:string, fix?:boolean, changed?:boolean}} [opts]
+ * Виконує coverage-pipeline: JS-колектор (detect+collect), агрегація, запис COVERAGE.md.
+ * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts]
  * @returns {Promise<number>} exit code (0 OK, 1 помилка)
  */
 export async function runCoverageSteps(opts = {}) {
   const cwd = opts.cwd ?? process.cwd()
-  const rulesDir = opts.rulesDir ?? resolveDefaultRulesDir(cwd)
-
-  if (!rulesDir) {
-    console.error(
-      '✗ Не знайдено @nitra/cursor у node_modules. ' +
-        'Встанови @nitra/cursor як devDependency або передай rulesDir через opts.'
-    )
-    return 1
-  }
-
-  const config = await readNCursorConfigLite(cwd)
   const scope = opts.changed ? resolveChangedScope(cwd) : null
   const collectOpts = scope ? { changedFiles: scope.files, base: scope.base } : {}
-  const rows = []
 
-  for (const ruleId of config.rules) {
-    if (config.disableRules.includes(ruleId)) continue
-    const provider = await loadProvider(rulesDir, ruleId)
-    if (!provider) continue
-    if (!(await provider.detect(cwd))) continue
-    console.log(`→ ${ruleId} coverage…`)
-    rows.push(...(await provider.collect(cwd, collectOpts)))
-  }
+  const applicable = await detectJs(cwd)
+  const rows = applicable ? await collectJs(cwd, collectOpts) : []
 
   if (rows.length === 0) {
     if (opts.changed) {
-      console.log('✓ coverage --changed: немає змінених файлів у scope провайдерів — пропускаю')
+      console.log('✓ coverage --changed: немає змінених файлів у scope — пропускаю')
       return 0
     }
-    console.error('✗ Жодного провайдера покриття не знайдено для активних правил у .n-cursor.json#rules')
+    console.error('✗ Coverage: не знайдено тестів (vitest не задекларовано, або жоден workspace не має тестів)')
     return 1
   }
 
@@ -301,15 +227,15 @@ export async function runCoverageSteps(opts = {}) {
 }
 
 /**
- * CLI entrypoint для `n coverage [--fix] [--changed]`.
- * @param {{fix?:boolean, changed?:boolean, rulesDir?:string}} [opts]
+ * CLI entrypoint для `@7n/test coverage [--fix] [--changed]`.
+ * @param {{cwd?:string, fix?:boolean, changed?:boolean}} [opts]
  * @returns {Promise<number>} exit code
  */
 export async function runCoverageCli(opts = {}) {
   const code = await withLock('coverage', () => runCoverageSteps(opts))
   if (code === 0 && opts.fix) {
     console.log('\n♻️  Повторний coverage після агента…\n')
-    return withLock('coverage', () => runCoverageSteps({ fix: false, changed: opts.changed, rulesDir: opts.rulesDir }))
+    return withLock('coverage', () => runCoverageSteps({ cwd: opts.cwd, fix: false, changed: opts.changed }))
   }
   return code
 }

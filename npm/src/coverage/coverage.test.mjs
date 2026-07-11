@@ -12,7 +12,7 @@ import {
 import { applyVerdicts } from '../coverage-classify/apply.mjs'
 import { classify } from '../coverage-classify/index.mjs'
 import { collectChangedFilesSince, resolveChangedBase } from '../scripts/lib/changed-files.mjs'
-import { readNCursorConfigLite } from '../scripts/lib/read-n-cursor-config-lite.mjs'
+import { collect as collectJs, detect as detectJs } from './js-collector.mjs'
 
 vi.mock('../coverage-classify/apply.mjs', () => ({ applyVerdicts: vi.fn() }))
 vi.mock('../coverage-classify/index.mjs', () => ({ classify: vi.fn() }))
@@ -20,36 +20,29 @@ vi.mock('../scripts/lib/changed-files.mjs', () => ({
   collectChangedFilesSince: vi.fn(),
   resolveChangedBase: vi.fn()
 }))
-vi.mock('../scripts/lib/read-n-cursor-config-lite.mjs', () => ({
-  readNCursorConfigLite: vi.fn()
+vi.mock('./js-collector.mjs', () => ({
+  detect: vi.fn(),
+  collect: vi.fn()
 }))
 vi.mock('../scripts/utils/with-lock.mjs', () => ({
   withLock: vi.fn().mockResolvedValue(0)
 }))
-vi.mock('node:fs', () => ({ existsSync: vi.fn() }))
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
   writeFile: vi.fn()
 }))
-vi.mock('node:path', () => ({
-  join: vi.fn((...args) => args.join('/'))
-}))
-vi.mock('node:url', () => ({
-  pathToFileURL: vi.fn(p => ({ href: `file://${p}` }))
-}))
 
-import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 
 describe('coverage.mjs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(existsSync).mockReturnValue(false)
     vi.mocked(readFile).mockResolvedValue('{}')
     vi.mocked(writeFile).mockResolvedValue(undefined)
     vi.mocked(resolveChangedBase).mockReturnValue('HEAD~1')
     vi.mocked(collectChangedFilesSince).mockReturnValue(['src/a.js'])
-    vi.mocked(readNCursorConfigLite).mockResolvedValue({ rules: [], disableRules: [] })
+    vi.mocked(detectJs).mockResolvedValue(true)
+    vi.mocked(collectJs).mockResolvedValue([])
   })
 
   describe('addCoverage', () => {
@@ -226,24 +219,40 @@ describe('coverage.mjs', () => {
   })
 
   describe('runCoverageSteps', () => {
-    it('should return 1 when rulesDir is not found (existsSync returns false)', async () => {
-      vi.mocked(existsSync).mockReturnValue(false)
-      const code = await runCoverageSteps({ cwd: '/cwd', rulesDir: null })
+    it('should return 1 when js-collector is not applicable (detect false)', async () => {
+      vi.mocked(detectJs).mockResolvedValue(false)
+      const code = await runCoverageSteps({ cwd: '/cwd' })
       expect(code).toBe(1)
+      expect(collectJs).not.toHaveBeenCalled()
     })
 
-    it('should return 1 when no providers found (existsSync false skips provider load)', async () => {
-      vi.mocked(existsSync).mockReturnValue(false)
-      vi.mocked(readNCursorConfigLite).mockResolvedValue({ rules: ['rule1'], disableRules: [] })
-      const code = await runCoverageSteps({ cwd: '/cwd', rulesDir: '/rules' })
+    it('should return 1 when collect returns no rows', async () => {
+      vi.mocked(detectJs).mockResolvedValue(true)
+      vi.mocked(collectJs).mockResolvedValue([])
+      const code = await runCoverageSteps({ cwd: '/cwd' })
       expect(code).toBe(1)
     })
 
     it('should return 0 for changed mode with no rows', async () => {
-      vi.mocked(existsSync).mockReturnValue(true)
-      vi.mocked(readNCursorConfigLite).mockResolvedValue({ rules: [], disableRules: [] })
-      const code = await runCoverageSteps({ cwd: '/cwd', rulesDir: '/rules', changed: true })
+      vi.mocked(detectJs).mockResolvedValue(true)
+      vi.mocked(collectJs).mockResolvedValue([])
+      const code = await runCoverageSteps({ cwd: '/cwd', changed: true })
       expect(code).toBe(0)
+    })
+
+    it('should write COVERAGE.md when collect returns rows', async () => {
+      vi.mocked(detectJs).mockResolvedValue(true)
+      vi.mocked(collectJs).mockResolvedValue([
+        {
+          area: 'JS',
+          coverage: { lines: { covered: 5, total: 10 }, functions: { covered: 2, total: 4 } },
+          mutation: { caught: 3, total: 5 },
+          survived: []
+        }
+      ])
+      const code = await runCoverageSteps({ cwd: '/cwd' })
+      expect(code).toBe(0)
+      expect(writeFile).toHaveBeenCalledWith('/cwd/COVERAGE.md', expect.stringContaining('# Coverage'), 'utf8')
     })
   })
 
@@ -251,21 +260,21 @@ describe('coverage.mjs', () => {
     it('should call withLock and return exit code', async () => {
       const { withLock } = await import('../scripts/utils/with-lock.mjs')
       vi.mocked(withLock).mockResolvedValue(1)
-      const code = await runCoverageCli({ cwd: '/cwd', rulesDir: '/rules' })
+      const code = await runCoverageCli({ cwd: '/cwd' })
       expect(code).toBe(1)
     })
 
     it('should call withLock twice when code=0 and fix=true', async () => {
       const { withLock } = await import('../scripts/utils/with-lock.mjs')
       vi.mocked(withLock).mockResolvedValue(0)
-      await runCoverageCli({ cwd: '/cwd', rulesDir: '/rules', fix: true })
+      await runCoverageCli({ cwd: '/cwd', fix: true })
       expect(vi.mocked(withLock)).toHaveBeenCalledTimes(2)
     })
 
     it('should not call withLock twice when code=1 and fix=true', async () => {
       const { withLock } = await import('../scripts/utils/with-lock.mjs')
       vi.mocked(withLock).mockResolvedValue(1)
-      const code = await runCoverageCli({ cwd: '/cwd', rulesDir: '/rules', fix: true })
+      const code = await runCoverageCli({ cwd: '/cwd', fix: true })
       expect(vi.mocked(withLock)).toHaveBeenCalledTimes(1)
       expect(code).toBe(1)
     })
