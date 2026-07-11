@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.3] - 2026-07-11
+
+### Changed
+
+- feat(coverage): bun-native workspace підтримка — coverage через `bun test`
+
 ## [0.14.2] - 2026-07-11
 
 ### Changed
