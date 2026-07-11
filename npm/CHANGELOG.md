@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.2] - 2026-07-11
+
+### Changed
+
+- fix(coverage): окремий lock-ключ для --changed vs full-режиму
+
 ## [0.14.1] - 2026-07-11
 
 ### Changed
