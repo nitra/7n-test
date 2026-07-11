@@ -98,6 +98,22 @@ export async function measureCoveragePerFile(dir) {
   const jsonResultsFile = join(lcovDir, 'test-results.json')
 
   const { bin, configArgs } = resolveVitestRun(dir)
+  // `--coverage.exclude` на CLI ПОВНІСТЮ замінює (не мерджить) масив
+  // `test.coverage.exclude` із target-проєкту vitest.config.js — так влаштований
+  // vitest CLI-override для array-полів. Коли `configArgs` порожній, resolveVitestRun
+  // вже обрав ЛОКАЛЬНИЙ vitest target-проєкту (він сам підхопить свій vitest.config.js) —
+  // додавання CLI-флагу тут тихо затирає власні винятки проєкту (напр. тести, що
+  // структурно можуть виконуватись лише під `bun test`, а не vitest), через що колектор
+  // бачить їх як 0%-покриті й намагається згенерувати для них НОВІ тести, хоча вони вже
+  // покриті. У bundled/shim-режимі (`configArgs` непорожній) конфлікту немає — стороннього
+  // конфіга для затирання нема, а shim (`ensureVitestShim`) вже сам включає `**/*.d.ts`.
+  const coverageExcludeArgs =
+    configArgs.length === 0
+      ? []
+      : [
+          // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
+          '--coverage.exclude=**/*.d.ts'
+        ]
   try {
     spawnSync(
       process.execPath,
@@ -112,8 +128,7 @@ export async function measureCoveragePerFile(dir) {
         '--coverage.reporter=lcov',
         // vitest 4 прибрав coverage.all — явний include, щоб файли без тестів лишались у lcov (0%)
         '--coverage.include=**/*.{js,mjs,ts,vue}',
-        // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
-        '--coverage.exclude=**/*.d.ts',
+        ...coverageExcludeArgs,
         `--coverage.reportsDirectory=${lcovDir}`,
         '--reporter=verbose',
         '--reporter=json',

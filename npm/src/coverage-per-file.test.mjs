@@ -3,17 +3,25 @@ import { existsSync, readFileSync } from 'node:fs'
 import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { measureCoveragePerFile, getUncoveredFiles, findSourceFiles } from './coverage-per-file.mjs'
+import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
 // mkdirSync/writeFileSync: vitest-shim.mjs (імпортується з coverage-per-file.mjs) пише shim-конфіг у tmp
 vi.mock('node:fs', () => ({ existsSync: vi.fn(), readFileSync: vi.fn(), mkdirSync: vi.fn(), writeFileSync: vi.fn() }))
 vi.mock('node:fs/promises', () => ({ mkdtemp: vi.fn(), rm: vi.fn(), readdir: vi.fn() }))
 vi.mock('node:child_process', () => ({ spawnSync: vi.fn() }))
-vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
+vi.mock('node:os', () => ({ tmpdir: () => '/proj/.tmp' }))
 vi.mock('node:path', () => ({
   join: vi.fn((...a) => a.join('/')),
   relative: vi.fn((root, p) => p.replace(root + '/', '')),
   dirname: vi.fn(p => p.split('/').slice(0, -1).join('/'))
 }))
+// Реальний resolveVitestRun у тестовому '/proj' завжди падає в bundled/shim-гілку
+// (немає локального vitest за таким шляхом) — мокаємо, щоб один тест міг явно
+// симулювати local-vitest-гілку (`configArgs: []`).
+vi.mock('./lib/vitest-shim.mjs', async () => {
+  const actual = await vi.importActual('./lib/vitest-shim.mjs')
+  return { ...actual, resolveVitestRun: vi.fn(actual.resolveVitestRun) }
+})
 
 const SAMPLE_LCOV = `TN:
 SF:/proj/src/a.js
@@ -59,7 +67,7 @@ describe('coverage-per-file.mjs', () => {
 
   describe('measureCoveragePerFile', () => {
     it('returns { files, failingTests } from lcov.info and json results', async () => {
-      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockImplementation(p => {
         if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS
@@ -82,8 +90,48 @@ describe('coverage-per-file.mjs', () => {
       expect(result.failingTests).toHaveLength(0)
     })
 
+    it('passes --coverage.exclude=**/*.d.ts in bundled/shim mode (no target vitest.config to clobber)', async () => {
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockReturnValue(true)
+      vi.mocked(readFileSync).mockImplementation(p =>
+        String(p).endsWith('test-results.json') ? SAMPLE_JSON_RESULTS : SAMPLE_LCOV
+      )
+      vi.mocked(rm).mockResolvedValue()
+      vi.mocked(resolveVitestRun).mockReturnValueOnce({
+        bin: '/bundled/vitest.mjs',
+        configArgs: ['--config', '/mock-shim/vitest.config.mjs']
+      })
+
+      await measureCoveragePerFile('/proj')
+
+      const args = vi.mocked(spawnSync).mock.calls[0][1]
+      expect(args).toContain('--coverage.exclude=**/*.d.ts')
+    })
+
+    it('omits --coverage.exclude when target has its own local vitest+config (configArgs empty)', async () => {
+      // CLI `--coverage.exclude` REPLACES (не мерджить) target-проєктний
+      // `test.coverage.exclude` — коли resolveVitestRun обрав локальний vitest
+      // target-проєкту (configArgs: []), не додаємо CLI-флаг, щоб не затирати
+      // власні винятки проєкту (regression test for the silent-clobber bug).
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockReturnValue(true)
+      vi.mocked(readFileSync).mockImplementation(p =>
+        String(p).endsWith('test-results.json') ? SAMPLE_JSON_RESULTS : SAMPLE_LCOV
+      )
+      vi.mocked(rm).mockResolvedValue()
+      vi.mocked(resolveVitestRun).mockReturnValueOnce({ bin: '/proj/node_modules/.bin/vitest.mjs', configArgs: [] })
+
+      await measureCoveragePerFile('/proj')
+
+      const args = vi.mocked(spawnSync).mock.calls[0][1]
+      expect(args).not.toContain('--coverage.exclude=**/*.d.ts')
+      expect(args.some(a => String(a).startsWith('--coverage.exclude'))).toBe(false)
+      // --coverage.include лишається завжди (без нього vitest 4 не покаже файли без тестів як 0%)
+      expect(args).toContain('--coverage.include=**/*.{js,mjs,ts,vue}')
+    })
+
     it('returns failing tests when json reports failures', async () => {
-      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockImplementation(p => {
         if (String(p).endsWith('test-results.json')) return SAMPLE_JSON_RESULTS_FAILING
@@ -99,7 +147,7 @@ describe('coverage-per-file.mjs', () => {
     })
 
     it('returns { files: [], failingTests: [] } when lcov.info is missing and no json', async () => {
-      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(false)
       vi.mocked(rm).mockResolvedValue()
 
@@ -108,7 +156,7 @@ describe('coverage-per-file.mjs', () => {
     })
 
     it('returns failingTests even when lcov.info is missing', async () => {
-      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
       vi.mocked(readFileSync).mockImplementation(() => SAMPLE_JSON_RESULTS_FAILING)
       vi.mocked(rm).mockResolvedValue()
@@ -129,7 +177,7 @@ describe('coverage-per-file.mjs', () => {
           }
         ]
       })
-      vi.mocked(mkdtemp).mockResolvedValue('/tmp/7n-cov-xxx')
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockImplementation(p => String(p).endsWith('test-results.json'))
       vi.mocked(readFileSync).mockImplementation(() => suiteErrorJson)
       vi.mocked(rm).mockResolvedValue()
