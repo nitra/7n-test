@@ -286,11 +286,19 @@ const defaultRunner = {
     // Bun-native workspace (prod-код імпортує `bun`/`bun:*`): vitest такий модуль не
     // резолвить, тож coverage ганяємо нативним `bun test`. Bun ремапить
     // `import ... from 'vitest'` у тест-файлах на `bun:test` — тести лишаються canon.
-    const r = spawnSync('bun', ['test', '--coverage', '--coverage-reporter=lcov', `--coverage-dir=${lcovDir}`], {
-      cwd,
-      stdio: 'inherit',
-      env: process.env
-    })
+    // `--parallel` форкає worker-процес на тестовий файл (ізоляція module-registry):
+    // без нього всі файли ділять один process, і leftover mock-стан
+    // (`mockResolvedValueOnce`, module-level кеш) з одного файлу протікає в наступний,
+    // даючи фантомні падіння. lcov з `--coverage-dir` агрегується коректно з усіх worker-ів.
+    const r = spawnSync(
+      'bun',
+      ['test', '--coverage', '--coverage-reporter=lcov', `--coverage-dir=${lcovDir}`, '--parallel'],
+      {
+        cwd,
+        stdio: 'inherit',
+        env: process.env
+      }
+    )
     return r.status ?? 1
   },
   runStryker({ cwd, mutate }) {
