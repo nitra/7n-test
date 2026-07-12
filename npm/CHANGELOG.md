@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.5] - 2026-07-12
+
+### Fixed
+
+- runBunCoverage: --parallel для ізоляції test-файлів
+
 ## [0.14.4] - 2026-07-11
 
 ### Fixed
