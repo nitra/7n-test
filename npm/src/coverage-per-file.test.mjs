@@ -238,5 +238,15 @@ describe('coverage-per-file.mjs', () => {
       const result = await findSourceFiles('/proj')
       expect(result).toEqual(['src.js'])
     })
+
+    it('excludes *.stories.* files — не production-код, окремий Storybook-вимір', async () => {
+      vi.mocked(readdir).mockResolvedValueOnce([
+        makeEntry('Button.vue'),
+        makeEntry('Button.stories.js'),
+        makeEntry('Card.stories.ts')
+      ])
+      const result = await findSourceFiles('/proj')
+      expect(result).toEqual(['Button.vue'])
+    })
   })
 })

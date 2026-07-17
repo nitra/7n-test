@@ -12,7 +12,7 @@ import { join, relative } from 'node:path'
 import { env } from 'node:process'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
-const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|(?:^|[/\\])tests?[/\\]/
+const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|(?:^|[/\\])tests?[/\\]|\.stories\.[^.]+$/
 const VITEST_UNSUPPORTED_TEST_RE = /bun:test|Cannot find package 'bun/i
 const MAX_ERRORS_PER_FILE = 5
 const MAX_ERROR_LINES = 10
