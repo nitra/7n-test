@@ -16,6 +16,7 @@ import { resolveAllJsRoots } from '../lib/resolve-js-root.mjs'
 import { addCoverage, addMutation } from './aggregate.mjs'
 import { hasRunnableTests, isBunNativeRoot } from './bun-native.mjs'
 import { STORIES_FILE_RE, hasStories, isStorybookRoot } from './storybook.mjs'
+import { parseLcovCoveredLines, runStorybookMutation } from './storybook-mutation.mjs'
 
 const TEST_BLOCK_START = /^\s*(it|test)\(/
 const FILE_EXTENSION = /\.[^.]+$/
@@ -360,6 +361,21 @@ const defaultRunner = {
     )
     return r.status ?? 1
   },
+  runStorybookMutantTest({ cwd, storyFilter, timeoutMs }) {
+    // Один прогін проти мутованого дерева (mutate→run→restore цикл у
+    // storybook-mutation.mjs). storyFilter (сторі-файл компонента) звужує suite до
+    // релевантних тестів — browser-mode прогін коштує секунди, повний suite на кожен
+    // мутант марнотратний. stdio ignore: важливий лише exit code; вивід мутант-прогонів
+    // лише шумів би (десятки прогонів поспіль). null (kill за таймаутом) → Timeout.
+    const r = spawnSync('bunx', ['vitest', 'run', '--project=storybook', ...(storyFilter ? [storyFilter] : [])], {
+      cwd,
+      stdio: 'ignore',
+      env: process.env,
+      timeout: timeoutMs
+    })
+    if (r.signal) return null // убитий таймаутом
+    return r.status ?? 1
+  },
   runStryker({ cwd, mutate }) {
     // Plugin-discovery Stryker (`@stryker-mutator/*`) globиться відносно CORE-install-каталогу
     // (`core/dist/src/di/plugin-loader.js` → `../../../../../@stryker-mutator/*`). Тож core
@@ -523,11 +539,13 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Активується лише коли `isStorybookRoot` (тека `.storybook/` + `@storybook/addon-vitest`
  * у deps) і `hasStories` — інакше `null` (root не бере участі у рядку `Vue (Storybook)`).
  *
- * Mutation testing для Storybook-сторі НЕ виконується (лише line coverage) — Stryker
- * vitest-runner несумісний із browser-mode прогоном, той самий принцип, що й bun-native
- * (чесний skip, не мовчазний нуль).
+ * Mutation testing: у **changed-режимі** виконується власним mutate→run→restore
+ * executor-ом (`storybook-mutation.mjs`) — детерміновані AST-мутанти по змінених
+ * production-файлах, вбиває/милує реальний browser-mode прогін. У **full-режимі**
+ * пропускається з попередженням (повний suite × кожен мутант × Chromium — надто
+ * дорого; той самий принцип чесного skip, що й bun-native).
  *
- * **Уточнення стану підтримки (перевіряй перед покладанням на це в майбутньому — площина
+ * **Чому не Stryker (перевіряй перед покладанням на це в майбутньому — площина
  * активно змінюється з обох боків):** issue stryker-js#4557 ("[vitest] support browser
  * mode") ЗАКРИТИЙ через PR stryker-js#4628 ще у 2023 (v8.0.0) — але це стосувалось
  * раннього browser mode доби vitest@1.0.0-beta, ДО сучасної provider-based архітектури
@@ -537,21 +555,17 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * "Currently, Browser Mode is not supported" — інструментація Stryker передбачає
  * Node.js-виконання, а сучасний browser mode виконує тести у реальному Chromium через
  * Playwright, що структурно несумісно з тим, як Stryker патчить/спостерігає код.
- *
- * Спільнота вже досліджує AI-agent-driven mutation testing як обхід саме для цього
- * випадку (агент замінює мутант, ганяє реальний test-suite, читає pass/fail, відкатує) —
- * див. https://alexop.dev/posts/mutation-testing-ai-agents-vitest-browser-mode/. Автор сам
- * характеризує це як "complementary, not a replacement" і explicitly НЕ для CI/CD (дорого,
- * повільно, не масштабується). `@7n/test` — CI-орієнтований інструмент, тож свідомо НЕ
- * приймає цей підхід для Storybook-виміру: чесний skip кращий за хиткий agent-based
- * замінник у автоматизованому пайплайні.
+ * Власний executor слідує патерну, підтвердженому дослідженням спільноти
+ * (https://alexop.dev/posts/mutation-testing-ai-agents-vitest-browser-mode/, Mutahunter,
+ * Meta ACH): детермінована генерація мутантів + реальний прогін як суддя — без LLM
+ * у контурі виконання.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
  * на боці виклику); інакше `null` (root пропускається повністю для цього виміру).
  * @param {string} jsRoot абсолютний шлях workspace-кореня
- * @param {string} cwd корінь проєкту (не використовується напряму, для симетрії сигнатури з collectOneRoot)
- * @param {{runStorybookCoverage:Function}} runner spawn-ін'єкція
+ * @param {string} cwd корінь проєкту (для рібейзингу `survived[].file`)
+ * @param {{runStorybookCoverage:Function, runStorybookMutantTest?:Function}} runner spawn-ін'єкція
  * @param {{files:string[], base:string|null}|null} [scope] changed-scope (null = full-режим)
  * @returns {Promise<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>} | null>} результат або null коли root не Storybook/без сторі/без relevant-змін
  */
@@ -562,10 +576,14 @@ async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
 
   const lcovDir = await mkdtemp(join(tmpdir(), 'sb-cov-'))
   let coverage
+  let coveredLines = new Map()
+  let baselineMs = 0
   try {
+    const startedAt = Date.now()
     const code = await runner.runStorybookCoverage(
       scope ? { cwd: jsRoot, lcovDir, base: scope.base } : { cwd: jsRoot, lcovDir }
     )
+    baselineMs = Date.now() - startedAt
     if (code !== 0) {
       throw new Error(
         `Storybook coverage exit ${code} — перевір встановлений Playwright Chromium ` +
@@ -573,18 +591,69 @@ async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
       )
     }
     const lcovPath = join(lcovDir, 'lcov.info')
-    coverage = existsSync(lcovPath)
-      ? parseLcov(await readFile(lcovPath, 'utf8'))
-      : { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } }
+    if (existsSync(lcovPath)) {
+      const lcovText = await readFile(lcovPath, 'utf8')
+      coverage = parseLcov(lcovText)
+      coveredLines = parseLcovCoveredLines(lcovText, jsRoot)
+    } else {
+      coverage = { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } }
+    }
   } finally {
     await rm(lcovDir, { recursive: true, force: true })
   }
 
-  console.error(
-    `⚠ ${wsRel || '.'}: Storybook (Vue) — mutation testing пропущено ` +
-      '(Stryker vitest-runner несумісний із browser-mode), лише line coverage'
-  )
-  return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
+  // Full-режим: mutation чесно пропускається (див. JSDoc). Guard на runStorybookMutantTest
+  // тримає сумісність із інжектованими runner-ами без mutation-підтримки.
+  if (!scope || typeof runner.runStorybookMutantTest !== 'function') {
+    console.error(
+      `⚠ ${wsRel || '.'}: Storybook (Vue) — mutation testing пропущено ` +
+        '(у full-режимі надто дорого: повний browser-mode suite на кожен мутант), лише line coverage'
+    )
+    return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
+  }
+
+  // Changed-режим: мутуємо лише змінені production-файли (без сторі/тестів) із покриттям.
+  const mutationTargets = scope.files.filter(f => !STORIES_FILE_RE.test(f) && !TEST_FILE.test(f))
+  const { caught, total, survived } = runStorybookMutation({
+    jsRoot,
+    files: mutationTargets,
+    coveredLines,
+    runMutantTest: args => runner.runStorybookMutantTest(args),
+    resolveStoryFilter: file => findStoryFilter(jsRoot, file),
+    // Мутант-прогін звужено сторі-фільтром і без coverage — baseline (повний coverage-прогін)
+    // з запасом 3× покриває навіть повний suite; мінімум страхує холодний старт Chromium.
+    timeoutMs: Math.max(30_000, 3 * baselineMs)
+  })
+  if (total > 0) {
+    console.log(`✓ ${wsRel || '.'}: Storybook mutation — ${caught}/${total} вбито (changed-scope)`)
+  }
+
+  return {
+    coverage,
+    mutation: { caught, total },
+    survived: survived.map(group => ({
+      ...group,
+      file: wsRel === '' ? group.file : join(wsRel, group.file)
+    }))
+  }
+}
+
+const STORY_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx']
+
+/**
+ * Шукає сторі-файл компонента поряд із ним (`Card.vue` → `Card.stories.{js,ts,...}`)
+ * для звуження мутант-прогону до релевантних тестів.
+ * @param {string} jsRoot абсолютний шлях workspace-кореня
+ * @param {string} file відносний шлях компонента
+ * @returns {string | null} відносний шлях сторі-файлу або null (прогін без фільтра)
+ */
+function findStoryFilter(jsRoot, file) {
+  const base = file.replace(FILE_EXTENSION, '')
+  for (const ext of STORY_EXTENSIONS) {
+    const candidate = `${base}.stories.${ext}`
+    if (existsSync(join(jsRoot, candidate))) return candidate
+  }
+  return null
 }
 
 /**
