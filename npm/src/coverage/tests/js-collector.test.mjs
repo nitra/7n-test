@@ -611,6 +611,12 @@ describe('scopeToRoot', () => {
     const files = ['a.ts', 'b.tsx', 'c.cjs', 'd.mjs', 'e.jsx', 'f.json', 'g.css']
     expect(scopeToRoot(files, cwd, cwd)).toEqual(['a.ts', 'b.tsx', 'c.cjs', 'd.mjs', 'e.jsx'])
   })
+
+  test('розпізнає .vue (Stryker core мутує <script>/<script setup> SFC)', () => {
+    const cwd = '/repo'
+    const files = ['a.vue', 'b.stories.js', 'c.js']
+    expect(scopeToRoot(files, cwd, cwd)).toEqual(['a.vue', 'b.stories.js', 'c.js'])
+  })
 })
 
 describe('js coverage collect() — --changed scope', () => {
@@ -877,19 +883,26 @@ describe('js coverage collect() — Storybook-рядок', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('--changed: Storybook-root, змінено лише .vue → runStorybookCoverage з base, JS-раннер не викликається', async () => {
+  test('--changed: Storybook-root, змінено лише .vue → обидва виміри (JS-мутація SFC + Storybook line coverage)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-changed-'))
     makeStorybookRoot(dir)
     writeFileSync(join(dir, 'src', 'Card.vue'), '<template><div /></template>\n')
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(
+      join(reportDir, 'mutation.json'),
+      JSON.stringify({ files: { 'src/Card.vue': { mutants: [{ status: 'Killed' }, { status: 'Survived' }] } } })
+    )
 
     const calls = []
     const runner = {
-      runJsCoverage() {
-        calls.push('js')
+      runJsCoverage({ cwd, lcovDir, base, excludeStorybookProject }) {
+        calls.push({ kind: 'js', cwd, base, excludeStorybookProject })
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:8\nLH:6\nFNF:2\nFNH:1\n')
         return 0
       },
-      runStryker() {
-        calls.push('stryker')
+      runStryker({ cwd, mutate }) {
+        calls.push({ kind: 'stryker', cwd, mutate })
         return 0
       },
       runStorybookCoverage({ cwd, lcovDir, base }) {
@@ -900,7 +913,14 @@ describe('js coverage collect() — Storybook-рядок', () => {
     }
 
     const rows = await collect(dir, { runner, base: 'BASE_SHA', changedFiles: ['src/Card.vue'] })
+    // .vue тепер матчить JS_FILE → JS-раннер (Stryker мутує <script> блок SFC) І Storybook-раннер
     expect(rows).toEqual([
+      {
+        area: 'JS',
+        coverage: { lines: { covered: 6, total: 8 }, functions: { covered: 1, total: 2 } },
+        mutation: { caught: 1, total: 2 },
+        survived: []
+      },
       {
         area: 'Vue (Storybook)',
         coverage: { lines: { covered: 5, total: 5 }, functions: { covered: 1, total: 1 } },
@@ -908,8 +928,47 @@ describe('js coverage collect() — Storybook-рядок', () => {
         survived: []
       }
     ])
-    // .vue не матчить JS_FILE → JS-раннер для цього root-а не викликається (немає змінених JS)
-    expect(calls).toEqual([{ kind: 'storybook', cwd: dir, base: 'BASE_SHA' }])
+    expect(calls).toEqual([
+      { kind: 'js', cwd: dir, base: 'BASE_SHA', excludeStorybookProject: true },
+      { kind: 'stryker', cwd: dir, mutate: ['src/Card.vue'] },
+      { kind: 'storybook', cwd: dir, base: 'BASE_SHA' }
+    ])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('--changed: не-Storybook root, змінено .vue → JS-раннер БЕЗ excludeStorybookProject', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-vue-nostorybook-'))
+    mkdirSync(join(dir, 'src'), { recursive: true })
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '^2.0.0' } }))
+    writeFileSync(join(dir, 'src', 'Card.vue'), '<template><div /></template>\n')
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(
+      join(reportDir, 'mutation.json'),
+      JSON.stringify({ files: { 'src/Card.vue': { mutants: [{ status: 'Killed' }] } } })
+    )
+
+    const calls = []
+    const runner = {
+      runJsCoverage({ excludeStorybookProject }) {
+        calls.push(excludeStorybookProject)
+        return 0
+      },
+      runStryker() {
+        return 0
+      }
+    }
+
+    const rows = await collect(dir, { runner, base: 'BASE_SHA', changedFiles: ['src/Card.vue'] })
+    expect(rows).toEqual([
+      {
+        area: 'JS',
+        coverage: { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } },
+        mutation: { caught: 1, total: 1 },
+        survived: []
+      }
+    ])
+    expect(calls).toEqual([false])
     rmSync(dir, { recursive: true, force: true })
   })
 

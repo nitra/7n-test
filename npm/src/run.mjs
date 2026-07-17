@@ -20,6 +20,8 @@ import {
 } from './coverage-per-file.mjs'
 import { quickClassify } from './assess-need.mjs'
 import { generateTests } from './gen-tests.mjs'
+import { generateStories } from './gen-stories.mjs'
+import { isStorybookRoot } from './coverage/storybook.mjs'
 import { fixFailingTests } from './fix-tests.mjs'
 import { runCoverageSteps } from './coverage/coverage.mjs'
 import { withLock } from './scripts/utils/with-lock.mjs'
@@ -27,8 +29,107 @@ import { readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+const VUE_FILE_RE = /\.vue$/
+
 const MAX_ITERATIONS = 5
 const COVERAGE_THRESHOLD = 80
+
+/**
+ * Routes uncovered files to the appropriate generator: `.vue` components in a
+ * Storybook-configured root (`.storybook/` + `@storybook/addon-vitest`) get CSF3
+ * stories (fills the `Vue (Storybook)` coverage dimension); everything else — and
+ * `.vue` files when the project has no Storybook set up — gets a regular vitest
+ * unit test, as before.
+ * @param {Array<{file: string, pct: number}>} uncovered files below the coverage threshold
+ * @param {string} dir project root
+ * @returns {Promise<void>} resolves after generation for both buckets completes
+ */
+async function generateForUncovered(uncovered, dir) {
+  const vueFiles = uncovered.filter(f => VUE_FILE_RE.test(f.file))
+  let testFiles = uncovered
+
+  if (vueFiles.length > 0 && (await isStorybookRoot(dir))) {
+    console.log(`\n→ Генерую Storybook stories для ${vueFiles.length} Vue-компонентів:`)
+    for (const f of vueFiles) console.log(`  • ${f.file} (${f.pct.toFixed(1)}%)`)
+    await generateStories(vueFiles, dir)
+    testFiles = uncovered.filter(f => !VUE_FILE_RE.test(f.file))
+  }
+
+  if (testFiles.length === 0) return
+
+  console.log(`\n→ Генерую тести для ${testFiles.length} файлів:`)
+  for (const f of testFiles) {
+    console.log(`  • ${f.file} (${f.pct.toFixed(1)}%)`)
+  }
+  await generateTests(testFiles, dir)
+}
+
+/**
+ * Bootstrap: no tests exist at all — scans source files and locally classifies
+ * which ones warrant an initial test, then generates them.
+ * @param {string} dir project root
+ * @returns {Promise<'stop'|'continue'>} 'stop' — nothing to do or nothing needs tests;
+ *   'continue' — bootstrap tests were generated, loop should re-measure
+ */
+async function runBootstrap(dir) {
+  const sourceFiles = await findSourceFiles(dir)
+  if (sourceFiles.length === 0) {
+    console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
+    return 'stop'
+  }
+  console.log(`\n── Bootstrap: ${sourceFiles.length} джерел — класифікую локально ──\n`)
+
+  const bootstrapFiles = sourceFiles
+    .map(f => {
+      try {
+        const q = quickClassify(readFileSync(join(dir, f), 'utf8'))
+        if (q?.needsTests === false) return null
+      } catch {
+        /* include on read error */
+      }
+      return { file: f, pct: 0 }
+    })
+    .filter(Boolean)
+
+  if (bootstrapFiles.length === 0) {
+    console.log('✓ Жоден файл не потребує unit-тестів (реекспорти/типи).')
+    return 'stop'
+  }
+
+  console.log(`\n→ Bootstrap-тести для (${bootstrapFiles.length}):`)
+  for (const f of bootstrapFiles) console.log(`  • ${f.file}`)
+  await generateTests(bootstrapFiles, dir)
+  return 'continue'
+}
+
+/**
+ * Phase 2: mutation testing + auto-fix (skipped with `--no-mutation`, which instead
+ * writes COVERAGE.md from the last Phase 1 per-file measurement).
+ * @param {string} dir project root
+ * @param {{ noMutation?: boolean }} opts опції запуску
+ * @param {Array<{file: string, pct: number, linesFound: number, linesCovered: number}>} lastFiles останнє per-file вимірювання Phase 1
+ * @returns {Promise<number>} exit code
+ */
+async function runMutationPhase(dir, opts, lastFiles) {
+  if (opts.noMutation) {
+    console.log('\n── Мутаційне тестування пропущено (--no-mutation) ──\n')
+    if (lastFiles.length > 0) {
+      await writeFile(join(dir, 'COVERAGE.md'), renderPerFileMarkdown(lastFiles), 'utf8')
+      console.log('✓ COVERAGE.md (тільки per-file покриття, без мутантів)')
+    } else {
+      console.log('⚠ Немає даних покриття — COVERAGE.md не записано.')
+    }
+    return 0
+  }
+
+  console.log('\n── Мутаційне тестування + автофікс ──\n')
+  const code = await withLock('coverage', () => runCoverageSteps({ fix: true, cwd: dir }))
+  if (code === 0) {
+    console.log('\n♻️  Повторний coverage після агента...\n')
+    return withLock('coverage', () => runCoverageSteps({ fix: false, cwd: dir }))
+  }
+  return code
+}
 
 /**
  * @param {string} dir absolute path to project root
@@ -58,34 +159,8 @@ export async function runAutoTest(dir, opts = {}) {
         console.log('⚠ Тести падають, але coverage все одно порожня — зупиняю цикл.')
         break
       }
-      // Bootstrap: no tests at all — scan source files and generate initial tests
-      const sourceFiles = await findSourceFiles(dir)
-      if (sourceFiles.length === 0) {
-        console.log('⚠ Vitest coverage не повернула даних — перевір налаштування vitest.')
-        break
-      }
-      console.log(`\n── Bootstrap: ${sourceFiles.length} джерел — класифікую локально ──\n`)
-
-      const bootstrapFiles = sourceFiles
-        .map(f => {
-          try {
-            const q = quickClassify(readFileSync(join(dir, f), 'utf8'))
-            if (q?.needsTests === false) return null
-          } catch {
-            /* include on read error */
-          }
-          return { file: f, pct: 0 }
-        })
-        .filter(Boolean)
-
-      if (bootstrapFiles.length === 0) {
-        console.log('✓ Жоден файл не потребує unit-тестів (реекспорти/типи).')
-        break
-      }
-
-      console.log(`\n→ Bootstrap-тести для (${bootstrapFiles.length}):`)
-      for (const f of bootstrapFiles) console.log(`  • ${f.file}`)
-      await generateTests(bootstrapFiles, dir)
+      const outcome = await runBootstrap(dir)
+      if (outcome === 'stop') break
       continue
     }
 
@@ -106,30 +181,8 @@ export async function runAutoTest(dir, opts = {}) {
     }
     prevUncoveredCount = uncovered.length
 
-    console.log(`\n→ Генерую тести для ${uncovered.length} файлів:`)
-    for (const f of uncovered) {
-      console.log(`  • ${f.file} (${f.pct.toFixed(1)}%)`)
-    }
-
-    await generateTests(uncovered, dir)
+    await generateForUncovered(uncovered, dir)
   }
 
-  if (opts.noMutation) {
-    console.log('\n── Мутаційне тестування пропущено (--no-mutation) ──\n')
-    if (lastFiles.length > 0) {
-      await writeFile(join(dir, 'COVERAGE.md'), renderPerFileMarkdown(lastFiles), 'utf8')
-      console.log('✓ COVERAGE.md (тільки per-file покриття, без мутантів)')
-    } else {
-      console.log('⚠ Немає даних покриття — COVERAGE.md не записано.')
-    }
-    return 0
-  }
-
-  console.log('\n── Мутаційне тестування + автофікс ──\n')
-  const code = await withLock('coverage', () => runCoverageSteps({ fix: true, cwd: dir }))
-  if (code === 0) {
-    console.log('\n♻️  Повторний coverage після агента...\n')
-    return withLock('coverage', () => runCoverageSteps({ fix: false, cwd: dir }))
-  }
-  return code
+  return runMutationPhase(dir, opts, lastFiles)
 }
