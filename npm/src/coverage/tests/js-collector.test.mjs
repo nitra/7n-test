@@ -9,11 +9,34 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { collect, detect, extractFirstTestBlock, findExampleTest, parseStrykerReport, scopeToRoot } from '../js-collector.mjs'
+import {
+  collect,
+  detect,
+  extractFirstTestBlock,
+  findExampleTest,
+  parseStrykerReport,
+  scopeToRoot,
+  scopeToStorybookRoot
+} from '../js-collector.mjs'
 
 const JS_COVERAGE_EXIT_RE = /JS coverage.*exit 1/
 const JS_COVERAGE_EXIT2_RE = /JS coverage.*exit 2/
 const MUTATION_JSON_RE = /canonical stryker.config.mjs/
+const STORYBOOK_COVERAGE_EXIT_RE = /Storybook coverage exit 1.*Playwright/s
+
+/**
+ * Fixture workspace з .storybook/, @storybook/addon-vitest у deps, і одним *.stories.* файлом.
+ * @param {string} dir абсолютний шлях workspace-кореня
+ */
+function makeStorybookRoot(dir) {
+  mkdirSync(join(dir, '.storybook'), { recursive: true })
+  mkdirSync(join(dir, 'src'), { recursive: true })
+  writeFileSync(
+    join(dir, 'package.json'),
+    JSON.stringify({ devDependencies: { vitest: '^2.0.0', '@storybook/addon-vitest': '^9.0.0' } })
+  )
+  writeFileSync(join(dir, 'src', 'Card.stories.js'), 'export default {}\n')
+}
 
 /**
  * Тимчасова fixture-директорія з package.json для js coverage-тестів.
@@ -218,7 +241,10 @@ describe('js coverage collect()', () => {
       functions: { covered: 4, total: 8 }
     })
     expect(rows[0].mutation).toEqual({ caught: 2, total: 4 })
-    expect(rows[0].survived.map(g => g.file).sort()).toEqual([join('cf', 'a', 'src', 'a.js'), join('cf', 'b', 'src', 'b.js')])
+    expect(rows[0].survived.map(g => g.file).sort()).toEqual([
+      join('cf', 'a', 'src', 'a.js'),
+      join('cf', 'b', 'src', 'b.js')
+    ])
     expect(cwds.sort()).toEqual([join(dir, 'cf', 'a'), join(dir, 'cf', 'b')])
 
     rmSync(dir, { recursive: true, force: true })
@@ -697,6 +723,246 @@ describe('js coverage collect() — --changed scope', () => {
     expect(rows).toHaveLength(1)
     // змінений src без тестів → NoCoverage-мутанти у total (gate впаде, як і має)
     expect(rows[0].mutation).toEqual({ caught: 0, total: 2 })
+    expect(strykerCalls).toEqual([['src/a.js']])
+    rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('scopeToStorybookRoot', () => {
+  test('лишає лише .vue і .stories.* файли, рібейзить відносно root', () => {
+    const cwd = '/repo'
+    const files = ['src/Card.vue', 'src/Card.stories.ts', 'src/a.js', 'README.md']
+    expect(scopeToStorybookRoot(files, cwd, cwd)).toEqual(['src/Card.vue', 'src/Card.stories.ts'])
+  })
+
+  test('лишає лише файли під workspace-root, рібейзить', () => {
+    const cwd = '/repo'
+    const root = '/repo/cf/app'
+    const files = ['cf/app/src/Card.vue', 'cf/other/Btn.vue', 'top.stories.js']
+    expect(scopeToStorybookRoot(files, cwd, root)).toEqual(['src/Card.vue'])
+  })
+})
+
+describe('js coverage collect() — Storybook-рядок', () => {
+  test('full-режим: JS-root без Storybook-конфігурації — лише рядок JS', async () => {
+    const dir = makeFixture({ devDependencies: { vitest: '^2.0.0' } })
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:10\nLH:8\nFNF:2\nFNH:2\n')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage() {
+        throw new Error('не мало викликатись — root не Storybook')
+      }
+    }
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    const rows = await collect(dir, { runner })
+    expect(rows.map(r => r.area)).toEqual(['JS'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: Storybook-root без vitest-тестів — лише рядок Vue (Storybook), mutation 0/0', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-storybook-'))
+    makeStorybookRoot(dir)
+
+    const calls = []
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        calls.push('js')
+        writeFileSync(join(lcovDir, 'lcov.info'), '') // немає unit-тестів
+        return 0
+      },
+      runStryker() {
+        calls.push('stryker')
+        return 0
+      },
+      runStorybookCoverage({ cwd, lcovDir }) {
+        calls.push('storybook')
+        expect(cwd).toBe(dir)
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:20\nLH:15\nFNF:4\nFNH:3\n')
+        return 0
+      }
+    }
+
+    const rows = await collect(dir, { runner })
+    expect(rows).toEqual([
+      {
+        area: 'Vue (Storybook)',
+        coverage: { lines: { covered: 15, total: 20 }, functions: { covered: 3, total: 4 } },
+        mutation: { caught: 0, total: 0 },
+        survived: []
+      }
+    ])
+    // JS без тестів (порожній lcov) → Stryker не викликається; Storybook — окремий раннер
+    expect(calls).toEqual(['js', 'storybook'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: root з JS-тестами І Storybook-сторі — два рядки, «Разом» рахує buildTotalsRow окремо', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-mixed-sb-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'a.test.js'), 'test("x", () => {})\n')
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:10\nLH:5\nFNF:2\nFNH:1\n')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:20\nLH:20\nFNF:4\nFNH:4\n')
+        return 0
+      }
+    }
+
+    const rows = await collect(dir, { runner })
+    expect(rows.map(r => r.area)).toEqual(['JS', 'Vue (Storybook)'])
+    expect(rows[0].mutation).toEqual({ caught: 0, total: 0 })
+    expect(rows[1].coverage).toEqual({ lines: { covered: 20, total: 20 }, functions: { covered: 4, total: 4 } })
+    expect(rows[1].mutation).toEqual({ caught: 0, total: 0 })
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('Storybook-root без *.stories.* файлів — Storybook-раннер не викликається', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-no-stories-'))
+    mkdirSync(join(dir, '.storybook'), { recursive: true })
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({ devDependencies: { vitest: '^2.0.0', '@storybook/addon-vitest': '^9.0.0' } })
+    )
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage() {
+        throw new Error('не мало викликатись — немає *.stories.* файлів')
+      }
+    }
+    const rows = await collect(dir, { runner })
+    expect(rows).toEqual([])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('Storybook coverage exit ≠ 0 → throw з підказкою про Playwright/named-проєкт', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-fail-'))
+    makeStorybookRoot(dir)
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage() {
+        return 1
+      }
+    }
+    await expect(collect(dir, { runner })).rejects.toThrow(STORYBOOK_COVERAGE_EXIT_RE)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('--changed: Storybook-root, змінено лише .vue → runStorybookCoverage з base, JS-раннер не викликається', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-changed-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'Card.vue'), '<template><div /></template>\n')
+
+    const calls = []
+    const runner = {
+      runJsCoverage() {
+        calls.push('js')
+        return 0
+      },
+      runStryker() {
+        calls.push('stryker')
+        return 0
+      },
+      runStorybookCoverage({ cwd, lcovDir, base }) {
+        calls.push({ kind: 'storybook', cwd, base })
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:5\nLH:5\nFNF:1\nFNH:1\n')
+        return 0
+      }
+    }
+
+    const rows = await collect(dir, { runner, base: 'BASE_SHA', changedFiles: ['src/Card.vue'] })
+    expect(rows).toEqual([
+      {
+        area: 'Vue (Storybook)',
+        coverage: { lines: { covered: 5, total: 5 }, functions: { covered: 1, total: 1 } },
+        mutation: { caught: 0, total: 0 },
+        survived: []
+      }
+    ])
+    // .vue не матчить JS_FILE → JS-раннер для цього root-а не викликається (немає змінених JS)
+    expect(calls).toEqual([{ kind: 'storybook', cwd: dir, base: 'BASE_SHA' }])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('--changed: Storybook-root без relevant (.vue/.stories.*) змін — Storybook-раннер не викликається', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-changed-irrelevant-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'util.js'), 'export const x = 1\n')
+
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:5\nLH:5\nFNF:1\nFNH:1\n')
+        return 0
+      },
+      runStryker({ mutate }) {
+        expect(mutate).toEqual(['src/util.js'])
+        return 0
+      },
+      runStorybookCoverage() {
+        throw new Error('не мало викликатись — .js не relevant для Storybook-scope')
+      }
+    }
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    const rows = await collect(dir, { runner, base: 'B', changedFiles: ['src/util.js'] })
+    expect(rows.map(r => r.area)).toEqual(['JS'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('mutateSrc виключає *.stories.* — Stryker не мутує сторі-файли', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-mutate-excl-stories-'))
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ devDependencies: { vitest: '^2.0.0' } }))
+    mkdirSync(join(dir, 'src'), { recursive: true })
+    writeFileSync(join(dir, 'src', 'a.js'), 'export const x = 1\n')
+    writeFileSync(join(dir, 'src', 'a.stories.js'), 'export default {}\n')
+
+    const strykerCalls = []
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:10\nLH:5\nFNF:2\nFNH:1\n')
+        return 0
+      },
+      runStryker({ mutate }) {
+        strykerCalls.push(mutate)
+        return 0
+      }
+    }
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    await collect(dir, { runner, base: 'B', changedFiles: ['src/a.js', 'src/a.stories.js'] })
     expect(strykerCalls).toEqual([['src/a.js']])
     rmSync(dir, { recursive: true, force: true })
   })

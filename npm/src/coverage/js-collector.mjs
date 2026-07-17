@@ -15,6 +15,7 @@ import { dirname, isAbsolute, join, relative } from 'node:path'
 import { resolveAllJsRoots } from '../lib/resolve-js-root.mjs'
 import { addCoverage, addMutation } from './aggregate.mjs'
 import { hasRunnableTests, isBunNativeRoot } from './bun-native.mjs'
+import { STORIES_FILE_RE, hasStories, isStorybookRoot } from './storybook.mjs'
 
 const TEST_BLOCK_START = /^\s*(it|test)\(/
 const FILE_EXTENSION = /\.[^.]+$/
@@ -22,6 +23,8 @@ const FILE_EXTENSION = /\.[^.]+$/
 const JS_FILE = /\.(c|m)?[jt]sx?$/
 /** Тест-файли (`*.test.*` / `*.spec.*`) — НЕ production-код, не йдуть у Stryker `--mutate`. */
 const TEST_FILE = /\.(test|spec)\.[^.]+$/
+/** `.vue`-компоненти + `*.stories.*` — сигнал для Storybook-змінного scope (не JS-мутації). */
+const VUE_OR_STORIES_FILE = /\.vue$|\.stories\.[^.]+$/
 
 /**
  * Звужує список змінених файлів (relative до cwd) до тих, що лежать під `jsRoot`,
@@ -35,6 +38,27 @@ export function scopeToRoot(changedFiles, cwd, jsRoot) {
   const out = []
   for (const f of changedFiles) {
     if (!JS_FILE.test(f)) continue
+    const rel = relative(jsRoot, join(cwd, f))
+    if (rel.startsWith('..') || isAbsolute(rel)) continue
+    out.push(rel)
+  }
+  return out
+}
+
+/**
+ * Звужує список змінених файлів до тих, що стосуються Storybook-покриття
+ * (`.vue`-компоненти + `*.stories.*`) під `jsRoot`, рібейзить відносно `jsRoot`.
+ * Окремий від `scopeToRoot`: `.vue`/`*.stories.*` НЕ йдуть у Stryker `--mutate`
+ * (JS-мутація для Vue поза скоупом), тож не змішуємо scope-и.
+ * @param {string[]} changedFiles relative-до-cwd шляхи змінених файлів
+ * @param {string} cwd корінь проєкту
+ * @param {string} jsRoot абсолютний шлях workspace-кореня
+ * @returns {string[]} `.vue`/`.stories.*`-файли під jsRoot, шляхи relative до jsRoot
+ */
+export function scopeToStorybookRoot(changedFiles, cwd, jsRoot) {
+  const out = []
+  for (const f of changedFiles) {
+    if (!VUE_OR_STORIES_FILE.test(f)) continue
     const rel = relative(jsRoot, join(cwd, f))
     if (rel.startsWith('..') || isAbsolute(rel)) continue
     out.push(rel)
@@ -301,6 +325,27 @@ const defaultRunner = {
     )
     return r.status ?? 1
   },
+  runStorybookCoverage({ cwd, lcovDir, base }) {
+    // Coverage сторі рахує сам Storybook-vitest-addon (browser mode, Playwright Chromium)
+    // через named vitest-проєкт "storybook" (канонічний vitest.config для Vue-проєктів,
+    // див. npm/docs) — той самий контракт lcov, що й у звичайного vitest run --coverage.
+    const changedArgs = base === undefined ? [] : base === null ? ['--changed'] : ['--changed', base]
+    const r = spawnSync(
+      'bunx',
+      [
+        'vitest',
+        'run',
+        '--project=storybook',
+        '--passWithNoTests',
+        '--coverage',
+        '--coverage.reporter=lcov',
+        `--coverage.reportsDirectory=${lcovDir}`,
+        ...changedArgs
+      ],
+      { cwd, stdio: 'inherit', env: process.env }
+    )
+    return r.status ?? 1
+  },
   runStryker({ cwd, mutate }) {
     // Plugin-discovery Stryker (`@stryker-mutator/*`) globиться відносно CORE-install-каталогу
     // (`core/dist/src/di/plugin-loader.js` → `../../../../../@stryker-mutator/*`). Тож core
@@ -345,8 +390,9 @@ const defaultRunner = {
  */
 async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
   const wsRel = relative(cwd, jsRoot)
-  // У changed-режимі production-файли для мутації = змінені JS цього root без тест-файлів.
-  const mutateSrc = scope ? scope.files.filter(f => !TEST_FILE.test(f)) : null
+  // У changed-режимі production-файли для мутації = змінені JS цього root без тест-файлів
+  // і без *.stories.* (сторі — не production-код, окремий Storybook-вимір, не JS-мутація).
+  const mutateSrc = scope ? scope.files.filter(f => !TEST_FILE.test(f) && !STORIES_FILE_RE.test(f)) : null
 
   // Bun-native workspace: coverage через `bun test`, mutation пропускається
   // (Stryker vitest-runner не виконає код з `import ... from 'bun'`).
@@ -430,51 +476,62 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
 }
 
 /**
- * Збирає JS-метрики покриття + мутаційного тестування. У monorepo ітерує усі
- * JS-roots з `resolveAllJsRoots()` (включно з glob-патернами `cf/*`), запускає
- * vitest+Stryker у кожному та сумує lcov/mutation через `addCoverage`/`addMutation`.
- * Workspaces без тестів пропускаються (див. `collectOneRoot`).
- * Якщо тестів немає у жодному workspace — повертає `[]`.
- * Шляхи у `survived` рібейзяться відносно `cwd`, щоб `coverage-fix.mjs`
- * знаходив джерела через `join(projectRoot, file)`.
+ * Збирає Storybook-покриття (Vue/React/... компоненти зі сторі) для **одного** JS-root.
+ * Активується лише коли `isStorybookRoot` (тека `.storybook/` + `@storybook/addon-vitest`
+ * у deps) і `hasStories` — інакше `null` (root не бере участі у рядку `Vue (Storybook)`).
  *
- * Changed-режим (`opts.changedFiles` задано): кожен root отримує лише свої змінені
- * JS-файли (`scopeToRoot`); roots без змінених JS пропускаються повністю (ні vitest,
- * ні Stryker). Якщо змін нема ніде — повертає `[]` без error-логу (оркестратор
- * трактує порожній changed-scope як pass).
- * @param {string} cwd корінь проєкту
- * @param {{runner?: typeof defaultRunner, changedFiles?: string[], base?: string|null}} [opts] runner-ін'єкція + changed-scope
- * @returns {Promise<Array<{area:string, coverage:object, mutation:{caught:number,total:number}, survived:Array<object>}>>} рядок `JS` або `[]` коли тестів/змін нема ніде
+ * Mutation testing для Storybook-сторі НЕ виконується: Stryker vitest-runner несумісний
+ * із browser-mode прогоном (той самий принцип, що й bun-native — чесний skip,
+ * не мовчазний нуль). Лише line coverage.
+ *
+ * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
+ * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
+ * на боці виклику); інакше `null` (root пропускається повністю для цього виміру).
+ * @param {string} jsRoot абсолютний шлях workspace-кореня
+ * @param {string} cwd корінь проєкту (не використовується напряму, для симетрії сигнатури з collectOneRoot)
+ * @param {{runStorybookCoverage:Function}} runner spawn-ін'єкція
+ * @param {{files:string[], base:string|null}|null} [scope] changed-scope (null = full-режим)
+ * @returns {Promise<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>} | null>} результат або null коли root не Storybook/без сторі/без relevant-змін
  */
-export async function collect(cwd, opts = {}) {
-  const runner = opts.runner ?? defaultRunner
-  const changed = Array.isArray(opts.changedFiles)
-  const jsRoots = await resolveAllJsRoots(cwd)
-  if (jsRoots.length === 0) throw new Error('js coverage: package.json не знайдено')
+async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
+  const wsRel = relative(cwd, jsRoot)
+  if (!(await isStorybookRoot(jsRoot))) return null
+  if (!(await hasStories(jsRoot))) return null
 
-  const results = []
-  for (const jsRoot of jsRoots) {
-    let scope = null
-    if (changed) {
-      const files = scopeToRoot(opts.changedFiles, cwd, jsRoot)
-      if (files.length === 0) continue // root без змінених JS — пропускаємо
-      scope = { files, base: opts.base ?? null }
-    }
-    const r = await collectOneRoot(jsRoot, cwd, runner, scope)
-    if (r !== null) results.push(r)
-  }
-
-  if (results.length === 0) {
-    // Changed-режим: нема змінених JS у жодному root → тихо порожньо (це pass, не помилка).
-    if (changed) return []
-    console.error(
-      'js coverage: жоден workspace не має тестів ' +
-        '(`*.test.{js,mjs}` у `tests/` або поряд із джерелом) — ' +
-        'додай тести або запусти `npx @7n/test` для генерації'
+  const lcovDir = await mkdtemp(join(tmpdir(), 'sb-cov-'))
+  let coverage
+  try {
+    const code = await runner.runStorybookCoverage(
+      scope ? { cwd: jsRoot, lcovDir, base: scope.base } : { cwd: jsRoot, lcovDir }
     )
-    return []
+    if (code !== 0) {
+      throw new Error(
+        `Storybook coverage exit ${code} — перевір встановлений Playwright Chromium ` +
+          '(`npx playwright install chromium`) і named vitest-проєкт "storybook" (canonical config)'
+      )
+    }
+    const lcovPath = join(lcovDir, 'lcov.info')
+    coverage = existsSync(lcovPath)
+      ? parseLcov(await readFile(lcovPath, 'utf8'))
+      : { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } }
+  } finally {
+    await rm(lcovDir, { recursive: true, force: true })
   }
 
+  console.error(
+    `⚠ ${wsRel || '.'}: Storybook (Vue) — mutation testing пропущено ` +
+      '(Stryker vitest-runner несумісний із browser-mode), лише line coverage'
+  )
+  return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
+}
+
+/**
+ * Будує підсумковий рядок з масиву per-root результатів через сумування coverage/mutation.
+ * @param {string} area назва рядка (`JS`, `Vue (Storybook)`)
+ * @param {Array<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>}>} results per-root результати
+ * @returns {{area:string, coverage:object, mutation:{caught:number,total:number}, survived:Array<object>}} агрегований рядок
+ */
+function buildAreaRow(area, results) {
   let coverage = { lines: { covered: 0, total: 0 }, functions: { covered: 0, total: 0 } }
   let mutation = { caught: 0, total: 0 }
   const survived = []
@@ -483,5 +540,74 @@ export async function collect(cwd, opts = {}) {
     mutation = addMutation(mutation, r.mutation)
     survived.push(...r.survived)
   }
-  return [{ area: 'JS', coverage, mutation, survived }]
+  return { area, coverage, mutation, survived }
+}
+
+/**
+ * Збирає JS-метрики покриття + мутаційного тестування, і окремо — Storybook-покриття
+ * (Vue/React/... компоненти зі сторі, `collectStorybookForRoot`). У monorepo ітерує усі
+ * JS-roots з `resolveAllJsRoots()` (включно з glob-патернами `cf/*`), для кожного root-а
+ * запускає обидва виміри незалежно й сумує lcov/mutation окремо через `buildAreaRow`.
+ * Workspaces без тестів (JS) або без Storybook-конфігурації/сторі пропускаються по
+ * кожному виміру окремо (root може дати лише JS-рядок, лише Storybook-рядок, обидва
+ * або жодного). Якщо і JS, і Storybook відсутні всюди — повертає `[]`.
+ * Шляхи у `survived` рібейзяться відносно `cwd`, щоб `coverage-fix.mjs`
+ * знаходив джерела через `join(projectRoot, file)`.
+ *
+ * Changed-режим (`opts.changedFiles` задано): JS-вимір отримує лише змінені JS-файли
+ * root-а (`scopeToRoot`), Storybook-вимір — лише змінені `.vue`/`*.stories.*`
+ * (`scopeToStorybookRoot`); кожен вимір пропускається незалежно, якщо relevant-змін
+ * нема. Якщо змін нема ніде — повертає `[]` без error-логу (оркестратор трактує
+ * порожній changed-scope як pass).
+ * @param {string} cwd корінь проєкту
+ * @param {{runner?: typeof defaultRunner, changedFiles?: string[], base?: string|null}} [opts] runner-ін'єкція + changed-scope
+ * @returns {Promise<Array<{area:string, coverage:object, mutation:{caught:number,total:number}, survived:Array<object>}>>} рядки `JS`/`Vue (Storybook)` — лише ті, де є дані
+ */
+export async function collect(cwd, opts = {}) {
+  const runner = opts.runner ?? defaultRunner
+  const changed = Array.isArray(opts.changedFiles)
+  const jsRoots = await resolveAllJsRoots(cwd)
+  if (jsRoots.length === 0) throw new Error('js coverage: package.json не знайдено')
+
+  const jsResults = []
+  const storybookResults = []
+  for (const jsRoot of jsRoots) {
+    if (changed) {
+      const jsFiles = scopeToRoot(opts.changedFiles, cwd, jsRoot)
+      if (jsFiles.length > 0) {
+        const scope = { files: jsFiles, base: opts.base ?? null }
+        const r = await collectOneRoot(jsRoot, cwd, runner, scope)
+        if (r !== null) jsResults.push(r)
+      }
+
+      const sbFiles = scopeToStorybookRoot(opts.changedFiles, cwd, jsRoot)
+      if (sbFiles.length > 0) {
+        const sbScope = { files: sbFiles, base: opts.base ?? null }
+        const sb = await collectStorybookForRoot(jsRoot, cwd, runner, sbScope)
+        if (sb !== null) storybookResults.push(sb)
+      }
+      continue
+    }
+
+    const r = await collectOneRoot(jsRoot, cwd, runner, null)
+    if (r !== null) jsResults.push(r)
+
+    const sb = await collectStorybookForRoot(jsRoot, cwd, runner, null)
+    if (sb !== null) storybookResults.push(sb)
+  }
+
+  const rows = []
+  if (jsResults.length > 0) {
+    rows.push(buildAreaRow('JS', jsResults))
+  } else if (!changed) {
+    console.error(
+      'js coverage: жоден workspace не має тестів ' +
+        '(`*.test.{js,mjs}` у `tests/` або поряд із джерелом) — ' +
+        'додай тести або запусти `npx @7n/test` для генерації'
+    )
+  }
+  if (storybookResults.length > 0) {
+    rows.push(buildAreaRow('Vue (Storybook)', storybookResults))
+  }
+  return rows
 }

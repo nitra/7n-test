@@ -3,7 +3,7 @@ type: JS Module
 title: llm.mjs
 resource: npm/src/lib/llm.mjs
 docgen:
-  crc: b126a1aa
+  crc: ed7d0b9f
 ---
 
 ## Огляд
