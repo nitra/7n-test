@@ -5,7 +5,7 @@
  * lcov і mutation.json — тестується з ін'єктованим runner-ом.
  */
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -933,6 +933,97 @@ describe('js coverage collect() — Storybook-рядок', () => {
       { kind: 'stryker', cwd: dir, mutate: ['src/Card.vue'] },
       { kind: 'storybook', cwd: dir, base: 'BASE_SHA' }
     ])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('--changed: Storybook mutation executor — mutate→run→restore, survived у рядку Vue (Storybook)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-mutation-'))
+    makeStorybookRoot(dir)
+    // рядок 3 — мутабельний script-код (tier1 `<`→`<=`, tier2 `&&`→`||`)
+    const vueSrc = '<template><div /></template>\n<script setup>\nconst ok = a < b && c\n</script>\n'
+    writeFileSync(join(dir, 'src', 'Card.vue'), vueSrc)
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(
+      join(reportDir, 'mutation.json'),
+      JSON.stringify({ files: { 'src/Card.vue': { mutants: [{ status: 'Killed' }] } } })
+    )
+
+    const mutantRuns = []
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:1\nLH:1\nFNF:0\nFNH:0\n')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(
+          join(lcovDir, 'lcov.info'),
+          [`SF:${join(dir, 'src', 'Card.vue')}`, 'DA:3,1', 'LF:1', 'LH:1', 'FNF:0', 'FNH:0', 'end_of_record', ''].join(
+            '\n'
+          )
+        )
+        return 0
+      },
+      runStorybookMutantTest({ cwd, storyFilter, timeoutMs }) {
+        // під час прогону файл мутований, після — відновлюється (перевірка нижче)
+        mutantRuns.push({ storyFilter, timeoutMs, mutated: readFileSync(join(cwd, 'src', 'Card.vue'), 'utf8') })
+        return mutantRuns.length === 1 ? 1 : 0 // перший killed, другий survived
+      }
+    }
+
+    const rows = await collect(dir, { runner, base: 'B', changedFiles: ['src/Card.vue'] })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+
+    expect(mutantRuns).toHaveLength(2)
+    // сторі-фільтр знайдено (makeStorybookRoot кладе src/Card.stories.js), таймаут ≥ мінімуму
+    expect(mutantRuns[0].storyFilter).toBe('src/Card.stories.js')
+    expect(mutantRuns[0].timeoutMs).toBeGreaterThanOrEqual(30_000)
+    // кожен прогін бачив мутований файл
+    expect(mutantRuns.every(r => r.mutated !== vueSrc)).toBe(true)
+    // а після прогону файл відновлено
+    expect(readFileSync(join(dir, 'src', 'Card.vue'), 'utf8')).toBe(vueSrc)
+
+    expect(sbRow.mutation).toEqual({ caught: 1, total: 2 })
+    expect(sbRow.survived).toEqual([
+      {
+        file: 'src/Card.vue',
+        mutants: [{ line: 3, col: 17, mutantType: 'LogicalOperator', original: '&&', replacement: '||' }],
+        exampleTest: null,
+        recommendationText: null
+      }
+    ])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: mutation НЕ запускається навіть з runStorybookMutantTest у runner', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'Card.vue'), '<script setup>\nconst ok = a < b\n</script>\n')
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(
+          join(lcovDir, 'lcov.info'),
+          [`SF:${join(dir, 'src', 'Card.vue')}`, 'DA:2,1', 'LF:1', 'LH:1', 'end_of_record', ''].join('\n')
+        )
+        return 0
+      },
+      runStorybookMutantTest() {
+        throw new Error('не мало викликатись у full-режимі')
+      }
+    }
+    const rows = await collect(dir, { runner })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+    expect(sbRow.mutation).toEqual({ caught: 0, total: 0 })
     rmSync(dir, { recursive: true, force: true })
   })
 
