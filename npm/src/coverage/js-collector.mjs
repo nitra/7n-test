@@ -17,6 +17,7 @@ import { addCoverage, addMutation } from './aggregate.mjs'
 import { hasRunnableTests, isBunNativeRoot } from './bun-native.mjs'
 import { STORIES_FILE_RE, hasStories, isStorybookRoot } from './storybook.mjs'
 import { parseLcovCoveredLines, runStorybookMutation } from './storybook-mutation.mjs'
+import { proposeLlmMutants } from './storybook-mutation-llm.mjs'
 
 const TEST_BLOCK_START = /^\s*(it|test)\(/
 const FILE_EXTENSION = /\.[^.]+$/
@@ -376,6 +377,21 @@ const defaultRunner = {
     if (r.signal) return null // убитий таймаутом
     return r.status ?? 1
   },
+  async proposeStorybookLlmMutants({ file, source, coveredLines, cwd }) {
+    // Друге джерело мутантів (Mutahunter/ACH-патерн): LLM пропонує bug-like мутанти,
+    // судить так само лише реальний прогін. Graceful degradation: будь-яка помилка
+    // (нема API-ключа, мережа) → [] з одноразовим попередженням — детерміновані
+    // мутанти працюють далі. Opt-out: N_7N_TEST_NO_LLM_MUTANTS=1.
+    try {
+      return await proposeLlmMutants({ file, source, coveredLines, cwd })
+    } catch (error) {
+      if (!defaultRunner._llmMutantsWarned) {
+        console.error(`⚠ LLM-мутанти недоступні (${String(error.message ?? error).slice(0, 120)}) — лише детерміновані`)
+        defaultRunner._llmMutantsWarned = true
+      }
+      return []
+    }
+  },
   runStryker({ cwd, mutate }) {
     // Plugin-discovery Stryker (`@stryker-mutator/*`) globиться відносно CORE-install-каталогу
     // (`core/dist/src/di/plugin-loader.js` → `../../../../../@stryker-mutator/*`). Тож core
@@ -577,7 +593,7 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * на боці виклику); інакше `null` (root пропускається повністю для цього виміру).
  * @param {string} jsRoot абсолютний шлях workspace-кореня
  * @param {string} cwd корінь проєкту (для рібейзингу `survived[].file`)
- * @param {{runStorybookCoverage:Function, runStorybookMutantTest?:Function}} runner spawn-ін'єкція
+ * @param {{runStorybookCoverage:Function, runStorybookMutantTest?:Function, proposeStorybookLlmMutants?:Function}} runner spawn-ін'єкція
  * @param {{files:string[], base:string|null}|null} [scope] changed-scope (null = full-режим)
  * @returns {Promise<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>} | null>} результат або null коли root не Storybook/без сторі/без relevant-змін
  */
@@ -625,13 +641,20 @@ async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
   }
 
   // Changed-режим: мутуємо лише змінені production-файли (без сторі/тестів) із покриттям.
+  // proposeStorybookLlmMutants (опційний у runner) — друге, LLM-джерело мутантів поверх
+  // детермінованих; інжектовані runner-и без нього отримують лише детерміновані.
   const mutationTargets = scope.files.filter(f => !STORIES_FILE_RE.test(f) && !TEST_FILE.test(f))
-  const { caught, total, survived } = runStorybookMutation({
+  const proposeExtra =
+    typeof runner.proposeStorybookLlmMutants === 'function'
+      ? (file, source, lines) => runner.proposeStorybookLlmMutants({ file, source, coveredLines: lines, cwd: jsRoot })
+      : null
+  const { caught, total, survived } = await runStorybookMutation({
     jsRoot,
     files: mutationTargets,
     coveredLines,
     runMutantTest: args => runner.runStorybookMutantTest(args),
     resolveStoryFilter: file => findStoryFilter(jsRoot, file),
+    proposeExtraMutants: proposeExtra,
     // Мутант-прогін звужено сторі-фільтром і без coverage — baseline (повний coverage-прогін)
     // з запасом 3× покриває навіть повний suite; мінімум страхує холодний старт Chromium.
     timeoutMs: Math.max(30_000, 3 * baselineMs)
