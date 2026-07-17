@@ -560,6 +560,18 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Meta ACH): детермінована генерація мутантів + реальний прогін як суддя — без LLM
  * у контурі виконання.
  *
+ * **Валідована альтернатива (спайк 2026-07):** Stryker **command runner** (не
+ * vitest-runner) + browser mode ПРАЦЮЄ — але лише з обов'язковим
+ * `define: { 'process.env.__STRYKER_ACTIVE_MUTANT__': JSON.stringify(process.env.__STRYKER_ACTIVE_MUTANT__ ?? '') }`
+ * у vite-конфізі browser-проєкту (vitest browser mode ставить define як runtime-глобал
+ * у Chromium — саме той шлях, що читає інструментація Stryker). Без define — тихий
+ * провал: 0% killed, усі мутанти "виживають" (контрольний експеримент підтвердив).
+ * ~1.2s/мутант, sandbox без проблем (symlinked node_modules). Не прийнято зараз:
+ * потребує змін конфігів target-проєкту (define + stryker command-config) і має
+ * silent-0% failure mode, якщо Storybook-ів config merge загубить define; власний
+ * executor мутує файл на диску — активація не залежить від env-пропагації взагалі.
+ * Кандидат на майбутнє для full-режиму (richer operator set + incremental mode).
+ *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
  * на боці виклику); інакше `null` (root пропускається повністю для цього виміру).
