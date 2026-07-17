@@ -23,8 +23,8 @@ const FILE_EXTENSION = /\.[^.]+$/
  * JS/TS/Vue-розширення — файли, які мутує Stryker і покриває vitest. `.vue` включено:
  * Stryker core мутує `<script>`/`<script setup>` блок SFC без окремого плагіна (з версії 7+).
  * Мутувати можна лише те, що покрите НЕ-browser-mode тестами (`@vue/test-utils`+happy-dom
- * тощо) — Stryker vitest-runner офіційно НЕ підтримує vitest browser mode, тож Storybook-сторі
- * (`@storybook/addon-vitest`) мутаційне покриття дати не можуть (див. collectStorybookForRoot).
+ * тощо), НЕ Storybook-сторі (`@storybook/addon-vitest`, browser mode) — детальніше про чому
+ * див. коментар над `collectStorybookForRoot` нижче.
  */
 const JS_FILE = /\.(c|m)?[jt]sx?$|\.vue$/
 /** Тест-файли (`*.test.*` / `*.spec.*`) — НЕ production-код, не йдуть у Stryker `--mutate`. */
@@ -396,9 +396,10 @@ const defaultRunner = {
  *
  * `.vue`-мутація: Stryker core мутує `<script>`/`<script setup>` SFC без окремого плагіна.
  * Storybook root (`isStorybookRoot`) → `runJsCoverage` отримує `excludeStorybookProject:
- * true` (`--project=!storybook`), щоб не зачепити browser-mode проєкт, який vitest-runner
- * офіційно не підтримує (stryker-js#4557) — інакше цей самий JS-прогін спробував би й
- * browser-mode тести теж, якщо вони живуть у тому ж vitest.config.mjs.
+ * true` (`--project=!storybook`), щоб не зачепити browser-mode проєкт (докладніше про стан
+ * підтримки browser mode у Stryker — коментар над `collectStorybookForRoot` нижче) —
+ * інакше цей самий JS-прогін спробував би й browser-mode тести теж, якщо вони живуть
+ * у тому ж vitest.config.mjs.
  *
  * Реальні помилки (vitest/bun exit ≠ 0, відсутній mutation.json попри запуск Stryker)
  * кидаються — у multi-root режимі це не маскує справжній збій.
@@ -479,11 +480,12 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
   await runner.runStryker(scope ? { cwd: jsRoot, mutate: mutateSrc } : { cwd: jsRoot })
   const mutationPath = join(jsRoot, 'reports', 'stryker', 'mutation.json')
   if (!existsSync(mutationPath)) {
-    // Stryker vitest-runner офіційно НЕ підтримує vitest browser mode (issue stryker-js#4557):
-    // якщо стрикер-фейсінг vitest.config.mjs (на який вказує stryker.config.mjs#vitest.configFile)
-    // містить named-проєкт "storybook", Stryker намагається виконати і його — і падає без mutation.json.
-    // Виправлення на боці target-проєкту: винести Storybook-проєкт в окремий vitest-конфіг,
-    // якого Stryker НЕ бачить (не reused той самий configFile).
+    // Stryker vitest-runner не підтримує сучасний (Playwright-based) vitest browser mode
+    // (докладніше — коментар над collectStorybookForRoot): якщо стрикер-фейсінг vitest.config.mjs
+    // (на який вказує stryker.config.mjs#vitest.configFile) містить named-проєкт "storybook",
+    // Stryker намагається виконати і його — і падає без mutation.json. Виправлення на боці
+    // target-проєкту: винести Storybook-проєкт в окремий vitest-конфіг, якого Stryker НЕ бачить
+    // (не reused той самий configFile).
     const storybookHint = excludeStorybookProject
       ? ' Root має Storybook (.storybook/ + @storybook/addon-vitest) — якщо vitest.config.mjs, ' +
         'на який вказує stryker.config.mjs#vitest.configFile, містить named-проєкт "storybook" ' +
@@ -521,9 +523,28 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Активується лише коли `isStorybookRoot` (тека `.storybook/` + `@storybook/addon-vitest`
  * у deps) і `hasStories` — інакше `null` (root не бере участі у рядку `Vue (Storybook)`).
  *
- * Mutation testing для Storybook-сторі НЕ виконується: Stryker vitest-runner несумісний
- * із browser-mode прогоном (той самий принцип, що й bun-native — чесний skip,
- * не мовчазний нуль). Лише line coverage.
+ * Mutation testing для Storybook-сторі НЕ виконується (лише line coverage) — Stryker
+ * vitest-runner несумісний із browser-mode прогоном, той самий принцип, що й bun-native
+ * (чесний skip, не мовчазний нуль).
+ *
+ * **Уточнення стану підтримки (перевіряй перед покладанням на це в майбутньому — площина
+ * активно змінюється з обох боків):** issue stryker-js#4557 ("[vitest] support browser
+ * mode") ЗАКРИТИЙ через PR stryker-js#4628 ще у 2023 (v8.0.0) — але це стосувалось
+ * раннього browser mode доби vitest@1.0.0-beta, ДО сучасної provider-based архітектури
+ * (`@vitest/browser-playwright` тощо, стабілізованої у Vitest 4, 2025-12). Той старий фікс
+ * НЕ покриває сучасний Playwright-based browser mode, яким користується
+ * `@storybook/addon-vitest`: чинна документація Stryker vitest-runner прямо каже
+ * "Currently, Browser Mode is not supported" — інструментація Stryker передбачає
+ * Node.js-виконання, а сучасний browser mode виконує тести у реальному Chromium через
+ * Playwright, що структурно несумісно з тим, як Stryker патчить/спостерігає код.
+ *
+ * Спільнота вже досліджує AI-agent-driven mutation testing як обхід саме для цього
+ * випадку (агент замінює мутант, ганяє реальний test-suite, читає pass/fail, відкатує) —
+ * див. https://alexop.dev/posts/mutation-testing-ai-agents-vitest-browser-mode/. Автор сам
+ * характеризує це як "complementary, not a replacement" і explicitly НЕ для CI/CD (дорого,
+ * повільно, не масштабується). `@7n/test` — CI-орієнтований інструмент, тож свідомо НЕ
+ * приймає цей підхід для Storybook-виміру: чесний skip кращий за хиткий agent-based
+ * замінник у автоматизованому пайплайні.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
