@@ -645,9 +645,12 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * ВИПРАВЛЕНО через `docgen: false` у `.storybook/main.js#framework.options`;
  * (2) окремий, підтверджений upstream-баг Vitest browser mode
  * (https://github.com/vitest-dev/vitest/issues/9509, детерміновано відтворено
- * 3/3 спроб навіть після фіксу (1), не флейкі, прогрів vite-кешу не допоміг) —
- * НЕ виправна на нашому боці. Той самий `vitest run --project=storybook`
- * бездоганно працює через ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor).
+ * 11/11 спроб навіть після фіксу (1), не флейкі; прогрів vite-кешу і
+ * `optimizeDeps.include` з коректними bare-специфікаторами `@storybook/addon-vitest`
+ * (той самий resolve-шлях, що й сам storybookTest()-плагін використовує для
+ * setup-file) — обидва випробувані й не допомогли) — НЕ виправна на нашому
+ * боці. Той самий `vitest run --project=storybook` бездоганно працює через
+ * ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor).
  * Висновок: full-режим лишається задокументованим напрямком, чекає на фікс у
  * Vitest; `--changed`-executor (нижче) — єдиний перевірений на реальному
  * проєкті шлях отримати справжній mutation score для Storybook-коду.
