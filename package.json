@@ -20,7 +20,7 @@
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "^4.1.9",
     "vitest": "^4.1.9",
-    "@7n/rules": "^1.15.0"
+    "@7n/rules": "^1.19.0"
   },
   "engines": {
     "bun": ">=1.3",

@@ -631,36 +631,35 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * у контурі виконання.
  *
  * **Full-режим — Stryker command runner (`runStorybookStrykerFull`, опційний у
- * runner-і), АЛЕ з відомим невирішеним обмеженням (перевіряй перед покладанням —
- * секція «Обмеження» в `npm/docs/stryker-storybook-config.md`):**
+ * runner-і), ПРАЦЮЄ на реальному проєкті за двох обов'язкових умов (перевіряй
+ * перед покладанням — секція «Обмеження» в `npm/docs/stryker-storybook-config.md`):**
  * Spike на синтетичному JS-репо (2026-07-17) підтвердив саму МЕХАНІКУ — command
  * runner + browser mode ПРАЦЮЄ з обов'язковим
  * `define: { 'process.env.__STRYKER_ACTIVE_MUTANT__': JSON.stringify(process.env.__STRYKER_ACTIVE_MUTANT__ ?? '') }`
  * у vite-конфізі (без define — тихий провал, 0% killed). Живий прогін на
  * РЕАЛЬНОМУ `storybook init`-скаффолді (2026-07-18) виявив ДВІ незалежні
- * причини провалу dry-run (`Failed to fetch dynamically imported module`):
+ * причини провалу dry-run (`Failed to fetch dynamically imported module`),
+ * обидві тепер виправлені конфігом:
  * (1) Stryker-інструментація ламає `vue-docgen-api`-парсер `@storybook/vue3-vite`
  * — root cause підтверджено (інструментований вміст, витягнутий з sandbox і
  * підставлений напряму, відтворює ту саму помилку БЕЗ участі Stryker) і
  * ВИПРАВЛЕНО через `docgen: false` у `.storybook/main.js#framework.options`;
- * (2) процес-специфічний до Stryker-оркестрації провал (fetch-помилка ЗАВЖДИ
- * на `setup-file.js` — найперший файл графа модулів, до будь-якого компонента
- * чи сторі), 11/11 детерміновано, НЕ виправна конфігом. Схожий на закритий
- * https://github.com/vitest-dev/vitest/issues/9509 ("fixed by upgrading and
- * finding the right combination of required deps in optimizeDeps.include"),
- * але той фікс (широкий `optimizeDeps.include` для всього Vue-стеку — `vue`,
- * `@vue/reactivity`, `@storybook/vue3` тощо) для нашого кейсу НЕ спрацював.
- * Вирішальний ізоляційний тест: `mutate`-glob без жодного файлу
- * (`Instrumented 0 source file(s)`) дає ТУ САМУ помилку — виключає вміст
- * файлів/інструментацію повністю; штучна затримка (`sleep 3 &&` перед
- * командою) теж не допомогла — виключає й timing/resource-race на старті.
- * Специфічно про сам факт спавну ЯК ДОЧІРНЬОГО ПРОЦЕСУ Stryker-а (мінімальний
- * `child_process.exec()`-репро поза Stryker-процесом працює бездоганно).
- * Той самий `vitest run --project=storybook` бездоганно працює через
- * ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor).
- * Висновок: full-режим лишається задокументованим напрямком, чекає на фікс у
- * Vitest; `--changed`-executor (нижче) — єдиний перевірений на реальному
- * проєкті шлях отримати справжній mutation score для Storybook-коду.
+ * (2) Stryker sandbox symlink-ає `node_modules` у тимчасову `.stryker-tmp/sandbox-*`
+ * теку (дефолт), а `@storybook/addon-vitest` резолвить абсолютний шлях свого
+ * `setup-file.js` через РЕАЛЬНИЙ (symlink-target) шлях, а не sandbox-корінь —
+ * Vite dev server відмовляється віддавати файл поза власним root. Підтверджено
+ * прямим експериментом: `vitest run` (БЕЗ Stryker) із `node_modules`, вручну
+ * зробленим symlink-ом з іншої директорії, відтворює ту саму помилку 1:1;
+ * той самий `node_modules`, СКОПІЙОВАНИЙ (не symlink) — працює без помилок.
+ * `resolve.preserveSymlinks` (Vite) і `NODE_OPTIONS=--preserve-symlinks` (Node)
+ * НЕ допомагають (шлях резолвиться всередині коду самого addon-vitest, не
+ * через Vite-резолвер). ВИПРАВЛЕНО через `inPlace: true` у
+ * `stryker.storybook.config.mjs` — Stryker мутує файли без sandbox-копії,
+ * symlink просто не задіяний.
+ * Висновок: з обома фіксами (`docgen: false` + `inPlace: true`) full-режим
+ * дає справжній mutation score на реальному Storybook-проєкті;
+ * `--changed`-executor (нижче) лишається окремим шляхом для звичайного
+ * PR-прогону по змінених файлах.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
@@ -717,8 +716,9 @@ async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
       if (code !== 0 && !existsSync(reportPath)) {
         throw new Error(
           `Storybook Stryker (command runner) exit ${code} — перевір ${STORYBOOK_STRYKER_CONFIG} ` +
-            '(testRunner: "command", commandRunner.command, jsonReporter.fileName) ' +
-            'і define __STRYKER_ACTIVE_MUTANT__ у vite-конфізі browser-проєкту'
+            '(testRunner: "command", commandRunner.command, jsonReporter.fileName, inPlace: true), ' +
+            'define __STRYKER_ACTIVE_MUTANT__ у vite-конфізі browser-проєкту ' +
+            'і docgen: false у .storybook/main.js#framework.options (див. npm/docs/stryker-storybook-config.md)'
         )
       }
       if (existsSync(reportPath)) {
