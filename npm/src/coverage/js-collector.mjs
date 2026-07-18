@@ -636,16 +636,21 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Spike на синтетичному JS-репо (2026-07-17) підтвердив саму МЕХАНІКУ — command
  * runner + browser mode ПРАЦЮЄ з обов'язковим
  * `define: { 'process.env.__STRYKER_ACTIVE_MUTANT__': JSON.stringify(process.env.__STRYKER_ACTIVE_MUTANT__ ?? '') }`
- * у vite-конфізі (без define — тихий провал, 0% killed). Але живий прогін на
- * РЕАЛЬНОМУ `storybook init`-скаффолді (2026-07-18) показав: dry-run падає з
- * `Failed to fetch dynamically imported module` для `*.stories.js`, і ЖОДНА з
- * перевірених гіпотез (symlink sandbox, `inPlace: true`, vue-docgen-plugin,
- * concurrency) не root-cause. Той самий `vitest run --project=storybook`
- * бездоганно працює через ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor) —
- * проблема специфічна саме до того, як Stryker spawn-ить/оточує процес.
- * Висновок: full-режим лишається задокументованим напрямком, не підтвердженим
- * робочим рішенням; `--changed`-executor (нижче) — єдиний перевірений на
- * реальному проєкті шлях отримати справжній mutation score для Storybook-коду.
+ * у vite-конфізі (без define — тихий провал, 0% killed). Живий прогін на
+ * РЕАЛЬНОМУ `storybook init`-скаффолді (2026-07-18) виявив ДВІ незалежні
+ * причини провалу dry-run (`Failed to fetch dynamically imported module`):
+ * (1) Stryker-інструментація ламає `vue-docgen-api`-парсер `@storybook/vue3-vite`
+ * — root cause підтверджено (інструментований вміст, витягнутий з sandbox і
+ * підставлений напряму, відтворює ту саму помилку БЕЗ участі Stryker) і
+ * ВИПРАВЛЕНО через `docgen: false` у `.storybook/main.js#framework.options`;
+ * (2) окремий, підтверджений upstream-баг Vitest browser mode
+ * (https://github.com/vitest-dev/vitest/issues/9509, детерміновано відтворено
+ * 3/3 спроб навіть після фіксу (1), не флейкі, прогрів vite-кешу не допоміг) —
+ * НЕ виправна на нашому боці. Той самий `vitest run --project=storybook`
+ * бездоганно працює через ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor).
+ * Висновок: full-режим лишається задокументованим напрямком, чекає на фікс у
+ * Vitest; `--changed`-executor (нижче) — єдиний перевірений на реальному
+ * проєкті шлях отримати справжній mutation score для Storybook-коду.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
