@@ -77,6 +77,11 @@ export function scopeToStorybookRoot(changedFiles, cwd, jsRoot) {
 const VITEST_HINT =
   'js coverage: vitest відсутній у package.json — додай `vitest`, `@vitest/coverage-v8` та `@stryker-mutator/vitest-runner` у devDependencies (див. test.mdc)'
 
+/** Canonical config-файл для full-режиму Storybook-мутації через Stryker command runner. */
+const STORYBOOK_STRYKER_CONFIG = 'stryker.storybook.config.mjs'
+/** Шлях mutation.json того ж прогону (окремий від `reports/stryker/` JS-виміру). */
+const STORYBOOK_STRYKER_REPORT = join('reports', 'stryker-storybook', 'mutation.json')
+
 /**
  * Чи у пакеті встановлено vitest (через dependencies або devDependencies).
  * @param {{dependencies?: Record<string,string>, devDependencies?: Record<string,string>}} pkg package.json
@@ -406,6 +411,21 @@ const defaultRunner = {
       ? spawnSync(strykerBin, ['run', ...mutateArgs], { cwd, stdio: 'inherit', env: process.env })
       : spawnSync('npx', ['@stryker-mutator/core', 'run', ...mutateArgs], { cwd, stdio: 'inherit', env: process.env })
     return r.status ?? 1
+  },
+  runStorybookStrykerFull({ cwd }) {
+    // Full-режим Storybook-мутація через canonical `stryker.storybook.config.mjs`
+    // (окремий Stryker-прогін, testRunner:'command' — vitest-runner browser mode не
+    // підтримує, див. коментар над collectStorybookForRoot). Спайк 2026-07 підтвердив:
+    // command runner + vitest browser mode ПРАЦЮЄ з `define` для
+    // __STRYKER_ACTIVE_MUTANT__ у vite-конфізі browser-проєкту — канонічний контракт
+    // конфіга задокументовано в npm/docs/stryker-storybook-config.md. Той самий
+    // резолвінг local-bin, що й runStryker (plugin-discovery відносно install-каталогу).
+    const strykerBin = resolveLocalStrykerBin()
+    const args = ['run', '--configFile', STORYBOOK_STRYKER_CONFIG]
+    const r = strykerBin
+      ? spawnSync(strykerBin, args, { cwd, stdio: 'inherit', env: process.env })
+      : spawnSync('npx', ['@stryker-mutator/core', ...args], { cwd, stdio: 'inherit', env: process.env })
+    return r.status ?? 1
   }
 }
 
@@ -558,8 +578,10 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Mutation testing: у **changed-режимі** виконується власним mutate→run→restore
  * executor-ом (`storybook-mutation.mjs`) — детерміновані AST-мутанти по змінених
  * production-файлах, вбиває/милує реальний browser-mode прогін. У **full-режимі**
- * пропускається з попередженням (повний suite × кожен мутант × Chromium — надто
- * дорого; той самий принцип чесного skip, що й bun-native).
+ * власний executor надто дорогий (усі production-файли, не лише змінені) — тут шлях
+ * лише через canonical Stryker command-runner (`STORYBOOK_STRYKER_CONFIG`, див. нижче
+ * і `npm/docs/stryker-storybook-config.md`), якщо target-проєкт його налаштував;
+ * інакше чесний skip з попередженням (той самий принцип, що й bun-native).
  *
  * **Чому не Stryker (перевіряй перед покладанням на це в майбутньому — площина
  * активно змінюється з обох боків):** issue stryker-js#4557 ("[vitest] support browser
@@ -586,14 +608,18 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * потребує змін конфігів target-проєкту (define + stryker command-config) і має
  * silent-0% failure mode, якщо Storybook-ів config merge загубить define; власний
  * executor мутує файл на диску — активація не залежить від env-пропагації взагалі.
- * Кандидат на майбутнє для full-режиму (richer operator set + incremental mode).
+ * Тому в **full-режимі** прийнято саме цей шлях (`runStorybookStrykerFull`, опційний
+ * у runner-і) — там власний executor вибуває через вартість, а не через технічні
+ * обмеження, тож ризик command-runner-а прийнятний. У **changed-режимі** лишається
+ * власний executor: дешевший на кількох файлах, і активація не залежить від
+ * env-пропагації взагалі.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
  * на боці виклику); інакше `null` (root пропускається повністю для цього виміру).
  * @param {string} jsRoot абсолютний шлях workspace-кореня
  * @param {string} cwd корінь проєкту (для рібейзингу `survived[].file`)
- * @param {{runStorybookCoverage:Function, runStorybookMutantTest?:Function, proposeStorybookLlmMutants?:Function}} runner spawn-ін'єкція
+ * @param {{runStorybookCoverage:Function, runStorybookMutantTest?:Function, proposeStorybookLlmMutants?:Function, runStorybookStrykerFull?:Function}} runner spawn-ін'єкція
  * @param {{files:string[], base:string|null}|null} [scope] changed-scope (null = full-режим)
  * @returns {Promise<{coverage:object, mutation:{caught:number,total:number}, survived:Array<object>} | null>} результат або null коли root не Storybook/без сторі/без relevant-змін
  */
@@ -630,12 +656,51 @@ async function collectStorybookForRoot(jsRoot, cwd, runner, scope = null) {
     await rm(lcovDir, { recursive: true, force: true })
   }
 
-  // Full-режим: mutation чесно пропускається (див. JSDoc). Guard на runStorybookMutantTest
-  // тримає сумісність із інжектованими runner-ами без mutation-підтримки.
-  if (!scope || typeof runner.runStorybookMutantTest !== 'function') {
+  // Full-режим: власний executor надто дорогий (повний suite × кожен мутант ×
+  // Chromium на ВСІХ production-файлах, не лише змінених) — тут шлях лише через
+  // canonical Stryker command-runner (STORYBOOK_STRYKER_CONFIG), якщо target-проєкт
+  // його налаштував (див. npm/docs/stryker-storybook-config.md). Без canonical
+  // конфіга або без runStorybookStrykerFull у runner-і — чесний skip, як і раніше.
+  if (!scope) {
+    const hasCanonicalConfig = existsSync(join(jsRoot, STORYBOOK_STRYKER_CONFIG))
+    if (hasCanonicalConfig && typeof runner.runStorybookStrykerFull === 'function') {
+      const code = await runner.runStorybookStrykerFull({ cwd: jsRoot })
+      const reportPath = join(jsRoot, STORYBOOK_STRYKER_REPORT)
+      if (code !== 0 && !existsSync(reportPath)) {
+        throw new Error(
+          `Storybook Stryker (command runner) exit ${code} — перевір ${STORYBOOK_STRYKER_CONFIG} ` +
+            '(testRunner: "command", commandRunner.command, jsonReporter.fileName) ' +
+            'і define __STRYKER_ACTIVE_MUTANT__ у vite-конфізі browser-проєкту'
+        )
+      }
+      if (existsSync(reportPath)) {
+        const report = JSON.parse(await readFile(reportPath, 'utf8'))
+        const parsed = parseStrykerReport(report, jsRoot)
+        console.log(
+          `✓ ${wsRel || '.'}: Storybook mutation (Stryker command runner) — ${parsed.caught}/${parsed.total} вбито`
+        )
+        return {
+          coverage,
+          mutation: { caught: parsed.caught, total: parsed.total },
+          survived: parsed.survived.map(group => ({
+            ...group,
+            file: wsRel === '' ? group.file : join(wsRel, group.file)
+          }))
+        }
+      }
+    }
     console.error(
       `⚠ ${wsRel || '.'}: Storybook (Vue) — mutation testing пропущено ` +
-        '(у full-режимі надто дорого: повний browser-mode suite на кожен мутант), лише line coverage'
+        `(${hasCanonicalConfig ? 'runner без runStorybookStrykerFull' : `нема ${STORYBOOK_STRYKER_CONFIG}`}), лише line coverage`
+    )
+    return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
+  }
+
+  // Changed-режим: guard на runStorybookMutantTest тримає сумісність із
+  // інжектованими runner-ами без mutation-підтримки (лише line coverage).
+  if (typeof runner.runStorybookMutantTest !== 'function') {
+    console.error(
+      `⚠ ${wsRel || '.'}: Storybook (Vue) — mutation testing пропущено (runner без runStorybookMutantTest), лише line coverage`
     )
     return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
   }
