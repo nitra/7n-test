@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.1] - 2026-07-18
+
+### Fixed
+
+- coverage: три реальні баги, знайдені живою перевіркою на справжньому Storybook 10 + Vue 3 проєкті (storybook init-скаффолд) — (1) --project=!storybook падав з 'No projects matched the filter' для проєктів без окремого JS unit-test vitest-проєкту (типовий default-скаффолд), тепер трактується як passWithNoTests; (2) .vue на Storybook-root виключено з JS-виміру Stryker-мутації — vitest-runner структурно не може прогнати dry-run, коли єдиний vitest-проєкт це browser-mode 'storybook', раніше це валило ВЕСЬ прогін; (3) Stryker CLI configFile — позиційний аргумент, не --configFile. Задокументовано нове невирішене обмеження full-режиму command runner на реальних проєктах (npm/docs/stryker-storybook-config.md) — --changed-executor лишається єдиним підтвердженим робочим шляхом
+
 ## [0.16.0] - 2026-07-18
 
 ### Added
