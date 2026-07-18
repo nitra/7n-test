@@ -24,9 +24,11 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, relative } from 'node:path'
 import { parseAst } from 'rollup/parseAst'
 
-/** Дефолтна стеля мутантів на файл (тіри з нижчих номерів мають пріоритет). */
+/** Дефолтна стеля детермінованих мутантів на файл (тіри з нижчих номерів мають пріоритет). */
 const DEFAULT_MAX_PER_FILE = 8
-/** Дефолтна стеля мутантів на весь прогін. */
+/** Дефолтна стеля додаткових (LLM-запропонованих) мутантів на файл — поверх детермінованої. */
+const DEFAULT_MAX_EXTRA_PER_FILE = 3
+/** Дефолтна стеля мутантів на весь прогін (спільна для обох джерел). */
 const DEFAULT_MAX_TOTAL = 32
 /** Мінімальний таймаут одного мутант-прогону (браузер холодний старт). */
 const MIN_TIMEOUT_MS = 30_000
@@ -85,12 +87,13 @@ export function parseLcovCoveredLines(text, baseDir) {
 
 /**
  * Витягує JS-вміст для мутації: для `.vue` — перший `<script>`-блок (без TS),
- * для решти — увесь файл.
+ * для решти — увесь файл. Експортовано для LLM-джерела мутантів
+ * (storybook-mutation-llm.mjs) — той самий скоуп і синтакс-валідація.
  * @param {string} file відносний шлях файлу
  * @param {string} source повний вміст файлу
  * @returns {{code: string, offset: number} | null} код і зсув початку в повному файлі, або null (TS-скрипт / нема script-блоку)
  */
-function extractMutableCode(file, source) {
+export function extractMutableCode(file, source) {
   if (!VUE_FILE_RE.test(file)) return { code: source, offset: 0 }
   if (SCRIPT_LANG_TS_RE.test(source)) return null
   const m = SCRIPT_BLOCK_RE.exec(source)
@@ -238,6 +241,24 @@ export function generateMutants(file, source, coveredLines) {
 }
 
 /**
+ * Об'єднує детерміновані мутанти з додатковими (LLM-запропонованими), відкидаючи
+ * лише ТОЧНІ дублі (той самий [start, end) і та сама заміна). Перетин діапазонів —
+ * не дубль: мутація `5` всередині `return x < 5` і заміна всього аргументу на `null`
+ * — різні мутанти, обидва цінні.
+ * @param {Array<{start: number, end: number, text: string}>} deterministic детерміновані мутанти (пріоритет)
+ * @param {Array<{start: number, end: number, text: string}>} extra додаткові мутанти
+ * @returns {Array<object>} deterministic + недубльовані extra
+ */
+function mergeMutants(deterministic, extra) {
+  const merged = [...deterministic]
+  for (const e of extra) {
+    const duplicate = deterministic.some(d => d.start === e.start && d.end === e.end && d.text === e.text)
+    if (!duplicate) merged.push(e)
+  }
+  return merged
+}
+
+/**
  * Виконує mutate→run→restore цикл для набору файлів одного Storybook-root.
  *
  * Гарантія відновлення: оригінальний вміст тримається в пам'яті і записується назад
@@ -247,26 +268,36 @@ export function generateMutants(file, source, coveredLines) {
  *
  * Класифікація: exit 0 → survived; exit ≠ 0 → killed; null status (kill за
  * таймаутом spawnSync) → timeout, рахується як caught (мутант завісив виконання).
+ *
+ * `proposeExtraMutants` (опційно) — друге джерело мутантів (LLM, Mutahunter/ACH-патерн):
+ * ПРОПОНУЄ додаткові bug-like мутанти, але вбиває/милує так само лише реальний прогін.
+ * Додаткові мутанти мають ВЛАСНУ стелю (`maxExtraPerFile`) поверх детермінованої і
+ * дедуплікуються проти детермінованих за діапазоном; помилки хука (нема API-ключа
+ * тощо) — відповідальність самого хука (тут не ловляться).
  * @param {object} opts опції прогону
  * @param {string} opts.jsRoot абсолютний шлях workspace-кореня
  * @param {string[]} opts.files відносні (до jsRoot) шляхи production-файлів для мутації
  * @param {Map<string, Set<number>>} opts.coveredLines файл → покриті рядки (parseLcovCoveredLines)
  * @param {(args: {cwd: string, storyFilter: string|null, timeoutMs: number}) => number|null} opts.runMutantTest прогін тестів проти мутованого дерева; повертає exit code або null при таймауті
  * @param {(file: string) => string|null} [opts.resolveStoryFilter] відносний шлях сторі-файлу компонента для звуження прогону (null = увесь storybook-проєкт)
+ * @param {(file: string, source: string, coveredLines: Set<number>) => Promise<Array<object>>} [opts.proposeExtraMutants] друге джерело мутантів у тому ж shape, що generateMutants
  * @param {number} [opts.timeoutMs] таймаут одного мутант-прогону
- * @param {number} [opts.maxPerFile] стеля мутантів на файл
- * @param {number} [opts.maxTotal] стеля мутантів на прогін
- * @returns {{caught: number, total: number, survived: Array<{file: string, mutants: Array<{line: number, col: number, mutantType: string, original: string, replacement: string}>, exampleTest: null, recommendationText: null}>}} результат у shape parseStrykerReport
+ * @param {number} [opts.maxPerFile] стеля детермінованих мутантів на файл
+ * @param {number} [opts.maxExtraPerFile] стеля додаткових (LLM) мутантів на файл
+ * @param {number} [opts.maxTotal] стеля мутантів на прогін (спільна для обох джерел)
+ * @returns {Promise<{caught: number, total: number, survived: Array<{file: string, mutants: Array<{line: number, col: number, mutantType: string, original: string, replacement: string}>, exampleTest: null, recommendationText: null}>}>} результат у shape parseStrykerReport
  */
-export function runStorybookMutation(opts) {
+export async function runStorybookMutation(opts) {
   const {
     jsRoot,
     files,
     coveredLines,
     runMutantTest,
     resolveStoryFilter = () => null,
+    proposeExtraMutants = null,
     timeoutMs = MIN_TIMEOUT_MS,
     maxPerFile = DEFAULT_MAX_PER_FILE,
+    maxExtraPerFile = DEFAULT_MAX_EXTRA_PER_FILE,
     maxTotal = DEFAULT_MAX_TOTAL
   } = opts
 
@@ -288,7 +319,9 @@ export function runStorybookMutation(opts) {
       continue
     }
 
-    const mutants = generateMutants(file, source, lines).slice(0, Math.min(maxPerFile, budget))
+    const deterministic = generateMutants(file, source, lines).slice(0, maxPerFile)
+    const proposed = proposeExtraMutants ? await proposeExtraMutants(file, source, lines) : []
+    const mutants = mergeMutants(deterministic, proposed.slice(0, maxExtraPerFile)).slice(0, budget)
     if (mutants.length === 0) continue
     budget -= mutants.length
 

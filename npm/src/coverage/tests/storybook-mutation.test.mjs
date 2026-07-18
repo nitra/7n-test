@@ -142,10 +142,10 @@ describe('generateMutants — оператори по тірах', () => {
 describe('runStorybookMutation — mutate→run→restore', () => {
   const SRC = 'export function f(x) {\n  return x < 5\n}\n'
 
-  test('killed (exit ≠ 0) і survived (exit 0) рахуються; файл відновлено', () => {
+  test('killed (exit ≠ 0) і survived (exit 0) рахуються; файл відновлено', async () => {
     const dir = makeRoot('src/a.js', SRC)
     const seen = []
-    const result = runStorybookMutation({
+    const result = await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js'],
       coveredLines: new Map([['src/a.js', new Set([2])]]),
@@ -165,9 +165,9 @@ describe('runStorybookMutation — mutate→run→restore', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('timeout (status null) рахується як caught, не survived', () => {
+  test('timeout (status null) рахується як caught, не survived', async () => {
     const dir = makeRoot('src/a.js', SRC)
-    const result = runStorybookMutation({
+    const result = await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js'],
       coveredLines: new Map([['src/a.js', new Set([2])]]),
@@ -178,9 +178,9 @@ describe('runStorybookMutation — mutate→run→restore', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('файл відновлюється навіть коли runMutantTest кидає', () => {
+  test('файл відновлюється навіть коли runMutantTest кидає', async () => {
     const dir = makeRoot('src/a.js', SRC)
-    expect(() =>
+    await expect(
       runStorybookMutation({
         jsRoot: dir,
         files: ['src/a.js'],
@@ -189,17 +189,17 @@ describe('runStorybookMutation — mutate→run→restore', () => {
           throw new Error('boom')
         }
       })
-    ).toThrow('boom')
+    ).rejects.toThrow('boom')
     expect(readFileSync(join(dir, 'src/a.js'), 'utf8')).toBe(SRC)
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('maxPerFile і maxTotal обмежують кількість прогонів', () => {
+  test('maxPerFile і maxTotal обмежують кількість прогонів', async () => {
     // 4 boundary-мутанти на покритих рядках
     const src = 'export const a = w < 1\nexport const b = x < 2\nexport const c = y < 3\nexport const d = z < 4\n'
     const dir = makeRoot('src/a.js', src)
     let runs = 0
-    const result = runStorybookMutation({
+    const result = await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js'],
       coveredLines: new Map([['src/a.js', new Set([1, 2, 3, 4])]]),
@@ -215,13 +215,13 @@ describe('runStorybookMutation — mutate→run→restore', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('maxTotal ділиться між файлами (другий файл отримує залишок)', () => {
+  test('maxTotal ділиться між файлами (другий файл отримує залишок)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'sb-mut-multi-'))
     mkdirSync(join(dir, 'src'), { recursive: true })
     writeFileSync(join(dir, 'src', 'a.js'), 'export const a = x < 1\nexport const b = y < 2\n')
     writeFileSync(join(dir, 'src', 'b.js'), 'export const c = z < 3\nexport const d = q < 4\n')
     let runs = 0
-    runStorybookMutation({
+    await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js', 'src/b.js'],
       coveredLines: new Map([
@@ -239,10 +239,10 @@ describe('runStorybookMutation — mutate→run→restore', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('файли без покриття/без мутантів пропускаються без прогонів', () => {
+  test('файли без покриття/без мутантів пропускаються без прогонів', async () => {
     const dir = makeRoot('src/a.js', 'export const a = 1\n') // нема мутабельних вузлів
     let runs = 0
-    const result = runStorybookMutation({
+    const result = await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js', 'src/missing.js'],
       coveredLines: new Map([['src/a.js', new Set([1])]]),
@@ -256,10 +256,10 @@ describe('runStorybookMutation — mutate→run→restore', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  test('resolveStoryFilter прокидається у runMutantTest', () => {
+  test('resolveStoryFilter прокидається у runMutantTest', async () => {
     const dir = makeRoot('src/a.js', SRC)
     const filters = []
-    runStorybookMutation({
+    await runStorybookMutation({
       jsRoot: dir,
       files: ['src/a.js'],
       coveredLines: new Map([['src/a.js', new Set([2])]]),
@@ -270,6 +270,107 @@ describe('runStorybookMutation — mutate→run→restore', () => {
       resolveStoryFilter: () => 'src/a.stories.js'
     })
     expect(filters.every(f => f === 'src/a.stories.js')).toBe(true)
+    rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('runStorybookMutation — proposeExtraMutants (LLM-джерело)', () => {
+  // `return x < 5` (рядок 2): детермінований tier1 `<`→`<=` на offset 32..33
+  const SRC = 'export function f(x) {\n  return x < 5\n}\n'
+
+  /**
+   * Додатковий мутант із валідним range у SRC.
+   * @param {number} start абсолютний offset початку
+   * @param {number} end абсолютний offset кінця
+   * @param {string} text заміна
+   * @returns {object} мутант у shape generateMutants
+   */
+  function extraMutant(start, end, text) {
+    return {
+      line: 2,
+      col: start - 23,
+      mutantType: 'llm:test',
+      original: SRC.slice(start, end),
+      replacement: text,
+      start,
+      end,
+      text,
+      tier: 6
+    }
+  }
+
+  test('додаткові мутанти проганяються поверх детермінованих', async () => {
+    const dir = makeRoot('src/a.js', SRC)
+    const mutatedSeen = []
+    // `5` (offset 36..37) → `50` — не перетинається з детермінованими
+    const result = await runStorybookMutation({
+      jsRoot: dir,
+      files: ['src/a.js'],
+      coveredLines: new Map([['src/a.js', new Set([2])]]),
+      runMutantTest: ({ cwd }) => {
+        mutatedSeen.push(readFileSync(join(cwd, 'src/a.js'), 'utf8'))
+        return 1
+      },
+      proposeExtraMutants: () => Promise.resolve([extraMutant(36, 37, '50')])
+    })
+    // 2 детерміновані (tier1 `<`→`<=`, tier4 return→null) + 1 LLM
+    expect(result.total).toBe(3)
+    expect(mutatedSeen.some(s => s.includes('x < 50'))).toBe(true)
+    expect(readFileSync(join(dir, 'src/a.js'), 'utf8')).toBe(SRC)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('точний дубль детермінованого мутанта дедуплікується (перетин — не дубль)', async () => {
+    const dir = makeRoot('src/a.js', SRC)
+    let runs = 0
+    // `<` (offset 34..35) — точно range детермінованого tier1-мутанта
+    const result = await runStorybookMutation({
+      jsRoot: dir,
+      files: ['src/a.js'],
+      coveredLines: new Map([['src/a.js', new Set([2])]]),
+      runMutantTest: () => {
+        runs++
+        return 1
+      },
+      proposeExtraMutants: () => Promise.resolve([extraMutant(34, 35, '<=')])
+    })
+    expect(result.total).toBe(runs)
+    // лише детерміновані (2) — дубль відкинуто
+    expect(result.total).toBe(2)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('maxExtraPerFile обмежує додаткові мутанти окремо від детермінованих', async () => {
+    const dir = makeRoot('src/a.js', SRC)
+    let runs = 0
+    const extras = [extraMutant(36, 37, '50'), extraMutant(36, 37, '500'), extraMutant(36, 37, '5000')]
+    const result = await runStorybookMutation({
+      jsRoot: dir,
+      files: ['src/a.js'],
+      coveredLines: new Map([['src/a.js', new Set([2])]]),
+      runMutantTest: () => {
+        runs++
+        return 1
+      },
+      proposeExtraMutants: () => Promise.resolve(extras),
+      maxExtraPerFile: 1
+    })
+    expect(runs).toBe(result.total)
+    expect(result.total).toBe(3) // 2 детерміновані + 1 extra (стеля)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('survived LLM-мутант потрапляє у звіт зі своїм mutantType', async () => {
+    const dir = makeRoot('src/a.js', SRC)
+    const result = await runStorybookMutation({
+      jsRoot: dir,
+      files: ['src/a.js'],
+      coveredLines: new Map([['src/a.js', new Set([2])]]),
+      runMutantTest: () => 0, // все survived
+      proposeExtraMutants: () => Promise.resolve([extraMutant(36, 37, '50')])
+    })
+    const types = result.survived[0].mutants.map(m => m.mutantType)
+    expect(types).toContain('llm:test')
     rmSync(dir, { recursive: true, force: true })
   })
 })

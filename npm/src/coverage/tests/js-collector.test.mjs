@@ -998,6 +998,68 @@ describe('js coverage collect() — Storybook-рядок', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  test('--changed: proposeStorybookLlmMutants (LLM-джерело) додає мутанти поверх детермінованих', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-llm-'))
+    makeStorybookRoot(dir)
+    const vueSrc = '<template><div /></template>\n<script setup>\nconst ok = a < b\n</script>\n'
+    writeFileSync(join(dir, 'src', 'Card.vue'), vueSrc)
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    const llmCalls = []
+    let mutantRuns = 0
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(
+          join(lcovDir, 'lcov.info'),
+          [`SF:${join(dir, 'src', 'Card.vue')}`, 'DA:3,1', 'LF:1', 'LH:1', 'end_of_record', ''].join('\n')
+        )
+        return 0
+      },
+      runStorybookMutantTest() {
+        mutantRuns++
+        return 1 // все killed
+      },
+      proposeStorybookLlmMutants({ file, source, coveredLines, cwd }) {
+        llmCalls.push({ file, cwd, covered: [...coveredLines] })
+        // валідний LLM-мутант: `b` (кінець рядка 3) → `b ?? 0`
+        const start = source.indexOf('a < b') + 4
+        return Promise.resolve([
+          {
+            line: 3,
+            col: 15,
+            mutantType: 'llm:fallback',
+            original: 'b',
+            replacement: 'b ?? 0',
+            start,
+            end: start + 1,
+            text: 'b ?? 0',
+            tier: 6
+          }
+        ])
+      }
+    }
+
+    const rows = await collect(dir, { runner, base: 'B', changedFiles: ['src/Card.vue'] })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+
+    expect(llmCalls).toEqual([{ file: 'src/Card.vue', cwd: dir, covered: [3] }])
+    // 1 детермінований (`<`→`<=`) + 1 LLM
+    expect(sbRow.mutation).toEqual({ caught: 2, total: 2 })
+    expect(mutantRuns).toBe(2)
+    // файл відновлено
+    expect(readFileSync(join(dir, 'src', 'Card.vue'), 'utf8')).toBe(vueSrc)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   test('full-режим: mutation НЕ запускається навіть з runStorybookMutantTest у runner', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-'))
     makeStorybookRoot(dir)
