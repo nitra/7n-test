@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0] - 2026-07-18
+
+### Added
+
+- coverage: окремий рядок «Vue (Storybook)» — Storybook-покриття через vitest browser mode (@storybook/addon-vitest), незалежно від JS/mutation-виміру
+- Mutation testing тепер мутує `.vue` SFC (`<script>`/`<script setup>`) поряд зі звичайним JS/TS — Stryker core підтримує це нативно, обмеження лише на browser-mode тести (Storybook). `run` (без `--no-mutation`) генерує Storybook CSF3 `.stories.*` для непокритих Vue-компонентів у Storybook-проєктах замість звичайних unit-тестів (`gen-stories.mjs`), з валідацією через реальний `vitest run --project=storybook`.
+- coverage: mutation testing для Storybook-покритого коду (vitest browser mode) — власний mutate→run→restore executor у --changed-режимі: детерміновані AST-мутанти (rollup parseAst, 5 тірів операторів) по змінених production-файлах і покритих сторі рядках (lcov DA), вбиває/милує реальний browser-mode прогін зі сторі-фільтром і бюджетами (8/файл, 32/прогін); survived мутанти йдуть у наявний ланцюг classify/fix
+- coverage: LLM-джерело мутантів для Storybook mutation executor-а (Mutahunter/Meta-ACH-патерн) — LLM пропонує context-aware bug-like мутанти (off-by-one, підмінені fallback, переплутані аргументи) поверх детермінованих, вбиває/милує так само лише реальний browser-mode прогін; жорстка валідація пропозицій (точний підрядок, покритий рядок, parseAst-синтакс-перевірка), власна стеля 3/файл, graceful degradation без API-ключа, opt-out N_7N_TEST_NO_LLM_MUTANTS=1
+
+### Fixed
+
+- deps: оновити @7n/llm-lib ^2.0.2 → ^2.7.6 — виправляє помилкову класифікацію unresolved-model викликів (порожній modelSpec) як cloud у chain-телеметрії; тепер фактично резолвлена pi-модель (напр. локальний omlx) прокидається в chain.note() коректно, окремий бакет unknownCalls замість неявного cloud
+
 ## [0.14.5] - 2026-07-12
 
 ### Fixed
