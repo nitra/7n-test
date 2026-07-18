@@ -643,13 +643,20 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * — root cause підтверджено (інструментований вміст, витягнутий з sandbox і
  * підставлений напряму, відтворює ту саму помилку БЕЗ участі Stryker) і
  * ВИПРАВЛЕНО через `docgen: false` у `.storybook/main.js#framework.options`;
- * (2) окремий, підтверджений upstream-баг Vitest browser mode
- * (https://github.com/vitest-dev/vitest/issues/9509, детерміновано відтворено
- * 11/11 спроб навіть після фіксу (1), не флейкі; прогрів vite-кешу і
- * `optimizeDeps.include` з коректними bare-специфікаторами `@storybook/addon-vitest`
- * (той самий resolve-шлях, що й сам storybookTest()-плагін використовує для
- * setup-file) — обидва випробувані й не допомогли) — НЕ виправна на нашому
- * боці. Той самий `vitest run --project=storybook` бездоганно працює через
+ * (2) процес-специфічний до Stryker-оркестрації провал (fetch-помилка ЗАВЖДИ
+ * на `setup-file.js` — найперший файл графа модулів, до будь-якого компонента
+ * чи сторі), 11/11 детерміновано, НЕ виправна конфігом. Схожий на закритий
+ * https://github.com/vitest-dev/vitest/issues/9509 ("fixed by upgrading and
+ * finding the right combination of required deps in optimizeDeps.include"),
+ * але той фікс (широкий `optimizeDeps.include` для всього Vue-стеку — `vue`,
+ * `@vue/reactivity`, `@storybook/vue3` тощо) для нашого кейсу НЕ спрацював.
+ * Вирішальний ізоляційний тест: `mutate`-glob без жодного файлу
+ * (`Instrumented 0 source file(s)`) дає ТУ САМУ помилку — виключає вміст
+ * файлів/інструментацію повністю; штучна затримка (`sleep 3 &&` перед
+ * командою) теж не допомогла — виключає й timing/resource-race на старті.
+ * Специфічно про сам факт спавну ЯК ДОЧІРНЬОГО ПРОЦЕСУ Stryker-а (мінімальний
+ * `child_process.exec()`-репро поза Stryker-процесом працює бездоганно).
+ * Той самий `vitest run --project=storybook` бездоганно працює через
  * ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor).
  * Висновок: full-режим лишається задокументованим напрямком, чекає на фікс у
  * Vitest; `--changed`-executor (нижче) — єдиний перевірений на реальному
