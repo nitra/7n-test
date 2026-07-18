@@ -39,9 +39,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@7n/llm-lib": "^2.7.6",
     "@earendil-works/pi-coding-agent": "^0.80.3",
     "@nitra/check-env": "^4.2.1",
-    "@7n/llm-lib": "^2.0.2",
     "@vitest/coverage-v8": "^4.1.9",
     "rollup": "^4.62.2",
     "vitest": "^4.1.9",
