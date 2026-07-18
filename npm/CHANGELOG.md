@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.0] - 2026-07-18
+
+### Added
+
+- coverage: full-режим mutation testing для Storybook через Stryker command runner — canonical stryker.storybook.config.mjs (testRunner:'command', jsonReporter → reports/stryker-storybook/mutation.json), спайк-валідований define-трюк для __STRYKER_ACTIVE_MUTANT__ у browser-mode vite-конфізі; без canonical конфіга — чесний skip, як і раніше. Задокументовано контракт у npm/docs/stryker-storybook-config.md
+
 ## [0.15.0] - 2026-07-18
 
 ### Added
