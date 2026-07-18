@@ -8,8 +8,10 @@
 > `.storybook/main.js#framework.options`; (2) окремий, підтверджений upstream-баг
 > Vitest browser mode (`Failed to fetch dynamically imported module` на
 > холодному старті dev-сервера, [vitest#9509](https://github.com/vitest-dev/vitest/issues/9509))
-> — **НЕ виправна** на нашому боці, детерміновано відтворена 3/3 спроб навіть
-> після фіксу (1). Для реальної mutation-мутації Storybook-коду використовуй
+> — **НЕ виправна** на нашому боці, детерміновано відтворена 11/11 спроб навіть
+> після фіксу (1), включно з випробуваними й відкинутими обхідними шляхами
+> (`optimizeDeps.include` з правильними bare-специфікаторами пакета). Для
+> реальної mutation-мутації Storybook-коду використовуй
 > **`--changed`-режим** (власний mutate→run→restore executor,
 > `storybook-mutation.mjs`) — той шлях **перевірено й підтверджено робочим** на
 > реальному Storybook 10 + Vue 3 скаффолді, включно з LLM-мутантами. Full-режим
@@ -151,26 +153,51 @@ vue-docgen вбудований у сам framework preset `@storybook/vue3-vite
 — підтверджено (vue-docgen-повідомлення зникають з логів).
 
 **Причина 2 — окремий, підтверджений upstream-баг Vitest browser mode
-(НЕ виправна на нашому боці).** Після фіксу причини 1 fetch-помилка НЕ зникла,
-а перемістилась на **інший файл** — `node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js`
-(не мутований Stryker-ом узагалі — поза `mutate`-glob). Три послідовні
-`--dryRunOnly`-спроби (з чистим `.stryker-tmp` між ними) дали **ідентичну
-помилку 3/3 рази** — не флейкі. Прогрів `node_modules/.vite`-кешу окремим
-успішним `vitest run` перед Stryker-прогоном (щоб виключити race холодного
-dep-optimizer) теж не допоміг. Це відповідає відомому й досі відкритому issue
+(НЕ виправна на нашому боці; розслідувано детально, з механізмом резолву
+включно).** Після фіксу причини 1 fetch-помилка НЕ зникла, а перемістилась
+на **інший файл** — `node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js`
+(не мутований Stryker-ом узагалі — поза `mutate`-glob). **11 послідовних
+`--dryRunOnly`-спроб** (з чистим `.stryker-tmp`/`node_modules/.vite` між
+кожною) дали **ідентичну помилку 11/11 разів** — не флейкі в цьому середовищі,
+детерміновано.
+
+Простежено точний механізм резолву цього файлу: `storybookTest()`-плагін
+(`@storybook/addon-vitest/dist/vitest-plugin/index.js`) реєструє його НЕ
+файловим шляхом, а bare-специфікатором `@storybook/addon-vitest/internal/setup-file`
+— субшлях `exports`-мапи пакета (`package.json#exports`), яка резолвить
+його у `./dist/vitest-plugin/setup-file.js`; окремо для vitest-мажора 4
+підмішується ще й специфічний для версії `.../internal/setup-file.browser.4`
+(`./dist/vitest-plugin/setup-file.browser.4.js`) — легітимний, задокументований
+шлях пакета, не помилка версійної детекції.
+
+Випробувані й **відкинуті** додаткові гіпотези-обходи:
+
+- `optimizeDeps.include` з буквальним `dist`-шляхом (`@storybook/addon-vitest/dist/vitest-plugin/setup-file.js`)
+  — дає **іншу, нову** помилку: `"./dist/vitest-plugin/setup-file.js" is not
+exported under the conditions [...] (see exports field in package.json)` —
+  Vite намагається резолвити буквальний шлях крізь `exports`-мапу пакета і
+  отримує відмову (файл навмисно прихований пакетом, доступний лише через
+  `./internal/*`-субшляхи).
+- `optimizeDeps.include` з ПРАВИЛЬНИМИ bare-специфікаторами
+  (`@storybook/addon-vitest/internal/setup-file` і `.../internal/setup-file.browser.4`,
+  той самий шлях резолву, що й сам плагін використовує) — синтаксично коректно
+  (нема exports-помилки), але **не усуває fetch-провал** — та сама вихідна
+  помилка.
+
+Це відповідає відомому й досі відкритому issue
 [vitest-dev/vitest#9509](https://github.com/vitest-dev/vitest/issues/9509)
 ("Flaky 'Failed to fetch dynamically imported module'... in CI") — фіксується
-не в `@7n/test`, а вище за течією у Vitest.
-
-Той самий `npx vitest run --project=storybook` (та сама команда, той самий
-проєкт) працює **бездоганно**, коли його запускає наш власний `--changed`-
-executor (`spawnSync` напряму, без участі Stryker) — 8/8 тестів проходять,
-реальні мутанти реально вбиваються/виживають. Причина 2 відтворюється лише в
-контексті "свіжий/sandboxed spawn" Stryker-а (і, за issue #9509, у CI-подібних
-середовищах загалом), не в звичайному прямому виклику.
+не в `@7n/test`, а вище за течією у Vitest. Той самий `npx vitest run
+--project=storybook` (та сама команда, той самий проєкт) працює **бездоганно**,
+коли його запускає наш власний `--changed`-executor (`spawnSync` напряму, без
+участі Stryker) — 8/8 тестів проходять, реальні мутанти реально
+вбиваються/виживають. Причина 2 відтворюється лише в контексті "свіжий/sandboxed
+spawn" Stryker-а (і, за issue #9509, у CI-подібних середовищах загалом), не в
+звичайному прямому виклику.
 
 **Висновок:** до фіксу вище за течією у Vitest — не покладайся на full-режим для
-реальних Storybook-проєктів, навіть з `docgen: false`. `--changed`-режим
+реальних Storybook-проєктів, навіть з `docgen: false` і навіть з ручним
+прогрівом залежностей через `optimizeDeps.include`. `--changed`-режим
 (`storybook-mutation.mjs`) лишається єдиним підтвердженим шляхом отримати
 реальний mutation score для Storybook-коду.
 
