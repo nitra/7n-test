@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.3] - 2026-07-18
+
+### Fixed
+
+- Full-режим Storybook mutation testing: mutate-glob має виключати *.stories.* і *.mdx — інакше Stryker-інструментація ламає CSF-індексацію Storybook (виявлено при наскрізній перевірці через @7n/test coverage, підтверджено реальним mutation score 15/59 на Button/Header/Page.vue)
+
 ## [0.16.2] - 2026-07-18
 
 ### Fixed
