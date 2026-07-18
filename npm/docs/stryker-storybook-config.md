@@ -2,8 +2,10 @@
 
 > [!WARNING]
 > **Full-режим (цей документ) — перевірено як робочий на реальному Storybook 10 +
-> Vue 3 проєкті (2026-07-18, докладніше — секція «Обмеження» внизу), АЛЕ лише за
-> двох обов'язкових умов.** Знайдено ДВІ незалежні причини провалу dry-run:
+> Vue 3 проєкті наскрізь, через сам `@7n/test coverage` (не лише сирий
+> `stryker run`) (2026-07-18, докладніше — секція «Обмеження» внизу), АЛЕ лише за
+> ТРЬОХ обов'язкових умов.** Знайдено дві незалежні причини провалу dry-run і
+> одну причину провалу вже ПІСЛЯ dry-run (на реальних мутантах):
 > (1) Stryker-інструментація ламає `vue-docgen-api` парсер `@storybook/vue3-vite`
 > — виправна через `docgen: false` у `.storybook/main.js#framework.options`;
 > (2) `node_modules` у sandbox-копії Stryker (`.stryker-tmp/sandbox-*`) —
@@ -12,9 +14,14 @@
 > а не через шлях sandbox-кореня — Vite dev server відмовляється віддавати файл
 > поза власним root, браузер бачить це як `Failed to fetch dynamically imported
 > module`. Виправна через **`inPlace: true`** у цьому конфізі (Stryker мутує
-> файли на місці, без sandbox-копії — symlink-проблема просто не виникає).
-> Обидві причини — **виправні конфігом**, обидва фікси нижче обов'язкові.
-> `--changed`-режим (власний mutate→run→restore executor,
+> файли на місці, без sandbox-копії — symlink-проблема просто не виникає);
+> (3) Stryker інструментує самі `*.stories.js` файли, якщо `mutate`-glob їх не
+> виключає — ламає CSF-індексацію Storybook (`export default` перестає бути
+> літеральним об'єктом). Виправна виключенням `!src/**/*.stories.*` і
+> `!src/**/*.mdx` з `mutate`. Усі ТРИ причини — **виправні конфігом**, усі три
+> фікси нижче обов'язкові. Наскрізний прогін з усіма трьома фіксами дав
+> реальний mutation score (15/59 вбито) на реальних `Button.vue`/`Header.vue`/
+> `Page.vue`. `--changed`-режим (власний mutate→run→restore executor,
 > `storybook-mutation.mjs`) лишається окремим, незалежно перевіреним шляхом
 > (детерміновані AST-мутанти + LLM-мутанти) — обирай його для звичайного
 > PR-прогону по змінених файлах, full-режим — для рідшого (nightly/weekly)
@@ -44,7 +51,7 @@ export default {
   commandRunner: {
     command: 'bunx vitest run --project=storybook'
   },
-  mutate: ['src/**/*.{js,ts,vue}'],
+  mutate: ['src/**/*.{js,ts,vue}', '!src/**/*.stories.*', '!src/**/*.mdx'],
   reporters: ['json'],
   jsonReporter: {
     fileName: 'reports/stryker-storybook/mutation.json'
@@ -64,6 +71,15 @@ export default {
 - **`inPlace: true` — ОБОВ'ЯЗКОВЕ**, див. секцію нижче — без нього dry-run
   падає детерміновано (100% відтворень) через symlinked `node_modules` у
   Stryker sandbox-копії.
+- **`!src/**/*.stories.*` і `!src/**/*.mdx` у `mutate` — ОБОВ'ЯЗКОВІ виключення.**
+  Без них Stryker інструментує самі `*.stories.js` файли (обгортає
+  `export default { ... }` у `stryMutAct_*`/`stryCov_*`-wrapper-функції ще на
+  dry-run) — Storybook-індексатор історій вимагає, щоб `default export` був
+  ЛІТЕРАЛЬНИМ об'єктом, і падає з `CSF: default export must be an object`,
+  що каскадно ламає весь dry-run (`AggregateError: Failed to initialize
+  projects`). Перевірено на реальному проєкті: без цих виключень `@7n/test
+  coverage` падає ще до першого мутанта; з ними — 15/59 мутантів коректно
+  вбито на реальних `Button.vue`/`Header.vue`/`Page.vue`.
 
 ## Обов'язково: `inPlace: true` (обхід symlinked `node_modules` у sandbox)
 
@@ -215,10 +231,28 @@ server відмовляється віддавати файл поза влас�
 вище) обходить проблему повністю, мутуючи файли без sandbox-копії — symlink
 просто не задіяний.
 
-**Висновок:** з обома фіксами (`docgen: false` + `inPlace: true`) full-режим
-працює на реальному Storybook-проєкті. `--changed`-режим
-(`storybook-mutation.mjs`) лишається окремим, незалежно перевіреним шляхом
-для звичайного PR-прогону по змінених файлах.
+**Причина 3 — Stryker інструментує самі `*.stories.js` файли, якщо `mutate`
+їх не виключає (виправлено, `!src/**/*.stories.*` / `!src/**/*.mdx`).**
+Виявлено вже ПІСЛЯ фіксу причин 1 і 2, при наскрізному прогоні через сам
+`@7n/test coverage` (не сирий `stryker run`) з реалістичним `mutate`-glob
+(`src/**/*.{js,ts,vue}`, без виключень) — dry-run падав з
+`AggregateError: Failed to initialize projects` → `CSF: default export must
+be an object` для КОЖНОГО `*.stories.js`. Stryker огортає `export default {
+...}` у `stryMutAct_*`-wrapper ще на dry-run (той самий механізм, що й
+причина 1), а Storybook-індексатор історій вимагає літеральний об'єкт у
+`default export` — обгорнутий вираз більше не проходить статичний аналіз.
+Виправлено додаванням `!src/**/*.stories.*` і `!src/**/*.mdx` до `mutate`
+(секція «Обов'язкові поля» вище) — мутувати самі `*.stories.js` файли й так
+немає сенсу, вони не production-логіка.
+
+**Висновок:** з усіма трьома фіксами (`docgen: false` + `inPlace: true` +
+виключення `*.stories.*`/`*.mdx` з `mutate`) full-режим ПОВНІСТЮ працює на
+реальному Storybook-проєкті — перевірено наскрізно через сам `@7n/test
+coverage` (не лише сирий `stryker run`): реальний mutation score 15/59
+вбито на `Button.vue`/`Header.vue`/`Page.vue`/`main.js`, `COVERAGE.md`
+згенеровано коректно. `--changed`-режим (`storybook-mutation.mjs`)
+лишається окремим, незалежно перевіреним шляхом для звичайного PR-прогону
+по змінених файлах.
 
 ### Інші (не пов'язані з основною проблемою, лишаються чинними для command runner загалом)
 
