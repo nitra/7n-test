@@ -23,6 +23,7 @@ const JS_COVERAGE_EXIT_RE = /JS coverage.*exit 1/
 const JS_COVERAGE_EXIT2_RE = /JS coverage.*exit 2/
 const MUTATION_JSON_RE = /canonical stryker.config.mjs/
 const STORYBOOK_COVERAGE_EXIT_RE = /Storybook coverage exit 1.*Playwright/s
+const STORYBOOK_STRYKER_FULL_EXIT_RE = /Storybook Stryker \(command runner\) exit 1/
 
 /**
  * Fixture workspace з .storybook/, @storybook/addon-vitest у deps, і одним *.stories.* файлом.
@@ -1081,6 +1082,138 @@ describe('js coverage collect() — Storybook-рядок', () => {
       },
       runStorybookMutantTest() {
         throw new Error('не мало викликатись у full-режимі')
+      }
+    }
+    const rows = await collect(dir, { runner })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+    expect(sbRow.mutation).toEqual({ caught: 0, total: 0 })
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: canonical stryker.storybook.config.mjs + runStorybookStrykerFull → mutation з mutation.json', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-canonical-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'stryker.storybook.config.mjs'), 'export default {}\n')
+    writeFileSync(join(dir, 'src', 'Card.vue'), '<script setup>\nconst ok = a < b\n</script>\n')
+    const reportDir = join(dir, 'reports', 'stryker-storybook')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(
+      join(reportDir, 'mutation.json'),
+      JSON.stringify({
+        files: {
+          'src/Card.vue': {
+            mutants: [
+              { status: 'Killed' },
+              {
+                status: 'Survived',
+                mutatorName: 'ConditionalExpression',
+                replacement: 'false',
+                location: { start: { line: 2, column: 11 }, end: { line: 2, column: 16 } }
+              }
+            ]
+          }
+        }
+      })
+    )
+
+    const calls = []
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStorybookStrykerFull({ cwd }) {
+        calls.push(cwd)
+        return 0
+      }
+    }
+
+    const rows = await collect(dir, { runner })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+    expect(calls).toEqual([dir])
+    expect(sbRow.mutation).toEqual({ caught: 1, total: 2 })
+    expect(sbRow.survived).toEqual([
+      {
+        file: 'src/Card.vue',
+        mutants: [{ line: 2, col: 11, mutantType: 'ConditionalExpression', original: 'a < b', replacement: 'false' }],
+        exampleTest: null,
+        recommendationText: null
+      }
+    ])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: canonical config є, командний прогін падає БЕЗ mutation.json → throw', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-fail-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'stryker.storybook.config.mjs'), 'export default {}\n')
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStorybookStrykerFull() {
+        return 1
+      }
+    }
+    await expect(collect(dir, { runner })).rejects.toThrow(STORYBOOK_STRYKER_FULL_EXIT_RE)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: canonical config відсутній → skip з попередженням, runStorybookStrykerFull НЕ викликається', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-no-config-'))
+    makeStorybookRoot(dir)
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStorybookStrykerFull() {
+        throw new Error('не мало викликатись — нема canonical config')
+      }
+    }
+    const rows = await collect(dir, { runner })
+    const sbRow = rows.find(r => r.area === 'Vue (Storybook)')
+    expect(sbRow.mutation).toEqual({ caught: 0, total: 0 })
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('full-режим: canonical config є, але runner без runStorybookStrykerFull → skip (DI-сумісність)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-full-no-runner-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'stryker.storybook.config.mjs'), 'export default {}\n')
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      },
+      runStryker() {
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
       }
     }
     const rows = await collect(dir, { runner })
