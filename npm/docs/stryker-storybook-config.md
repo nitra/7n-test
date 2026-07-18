@@ -1,5 +1,17 @@
 # `stryker.storybook.config.mjs` — canonical config для full-режиму Storybook-мутації
 
+> [!WARNING]
+> **Full-режим (цей документ) — НЕ перевірено як робочий на реальному Storybook 10 +
+> Vue 3 проєкті (2026-07-18, докладніше — секція «Обмеження» внизу).** Command
+> runner падає з `Failed to fetch dynamically imported module` для `*.stories.js`
+> ще на dry-run, root cause не встановлено (не symlink/sandbox, не concurrency, не
+> `@storybook/addon-docs`/vue-docgen — усе перевірено й відкинуто). Для реальної
+> mutation-мутації Storybook-коду використовуй **`--changed`-режим** (власний
+> mutate→run→restore executor, `storybook-mutation.mjs`) — той шлях **перевірено
+> й підтверджено робочим** на реальному Storybook 10 + Vue 3 скаффолді, включно з
+> LLM-мутантами. Full-режим лишається задокументованим як напрямок для майбутньої
+> роботи, не як готовий до використання зараз.
+
 Ручна (не auto-generated) довідка для мейнтейнерів target-проєктів. Без цього
 файлу `@7n/test coverage` (full-режим, без `--changed`) для рядка
 `Vue (Storybook)` дає лише line coverage — mutation testing свідомо
@@ -72,7 +84,8 @@ Command runner рахує будь-який ненульовий exit code як 
 конфіг у sandbox-копії (Stryker копіює проєкт у `.stryker-tmp/sandbox-*`) дає
 хибний ~100% score. Перед тим як покладатись на результат:
 
-1. Прогони `npx stryker run --configFile stryker.storybook.config.mjs` на
+1. Прогони `npx stryker run stryker.storybook.config.mjs` (`configFile` —
+   позиційний аргумент, НЕ `--configFile`; `stryker run [options] [configFile]`) на
    свідомо малому `mutate`-scope (1-2 файли).
 2. Переконайся, що є хоча б один **survived** мутант — 100% killed на
    нетривіальному файлі є підозрілим сигналом (найімовірніше, `define` не
@@ -81,15 +94,58 @@ Command runner рахує будь-який ненульовий exit code як 
 3. Якщо Storybook-конфіг мерджить `vite.config`/`.storybook/main.js` з інших
    джерел — перевір, що `define` не губиться при мерджі (той самий 100%-сигнал).
 
-## Обмеження (на 2026-07)
+## Обмеження (на 2026-07-18)
 
-- Не перевірено на реальному Vue+Storybook+Stryker+Playwright проєкті — лише
-  на синтетичному spike-репо (Vitest 4, `@vitest/browser-playwright`,
-  Stryker `9.6.1`). Перед прийняттям у CI — прогони на власному проєкті.
-- `node_modules` у sandbox-копії — symlinked (дефолт Stryker), тому Playwright
-  browser cache (`~/Library/Caches/ms-playwright` тощо) і залежності
-  резолвяться коректно без додаткових налаштувань.
+### Full-режим (command runner) — відомо непрацездатний на реальному проєкті
+
+Перевірено на реальному `storybook init`-скаффолді (Storybook 10.5.2, Vue 3.5,
+Vitest 4.1.10, `@vitest/browser-playwright`, Stryker `9.6.1`) — на відміну від
+синтетичного spike-репо з попередньої ітерації (плейн JS, без Storybook-плагінів).
+Результат: `npx stryker run stryker.storybook.config.mjs --dryRunOnly` падає
+на самому dry-run (ДО будь-якої мутації) з:
+
+```
+Error: Failed to import test file .../src/stories/Button.stories.js
+Caused by: TypeError: Failed to fetch dynamically imported module: http://localhost:PORT/.../Button.stories.js?import&browserv=...
+```
+
+Перевірені й **відкинуті** гіпотези root cause (кожна емпірично протестована):
+
+- **Symlink sandbox** — Stryker за замовчуванням symlink-ає `node_modules` у
+  `.stryker-tmp/sandbox-*`; Vite theoretically могла б блокувати fs-доступ до
+  symlink-цілі поза sandbox-root (`server.fs.allow`). Спростовано: `inPlace: true`
+  (без sandbox, без symlink, прогін напряму в оригінальній директорії) дає
+  **ту саму помилку**.
+- **`@storybook/addon-docs`/`vue-docgen-plugin`** — dry-run логи показували
+  `No suitable component definition found on Button.vue` від
+  `storybook:vue-docgen-plugin` ПЕРЕД fetch-помилкою, що виглядало як
+  Stryker-інструментація ламає vue-docgen-api парсер. Спростовано: видалення
+  `@storybook/addon-docs` з `.storybook/main.js#addons` не усуває fetch-помилку
+  (хоча й прибирає vue-docgen-повідомлення — отже це окремий, не пов'язаний
+  побічний симптом).
+- **Concurrency/port-конфлікт** — `concurrency: 2` могла давати два Chromium-
+  воркери на той самий порт. Спростовано: `concurrency: 1` — та сама помилка.
+
+Той самий `npx vitest run --project=storybook` (та сама команда, той самий
+проєкт) працює **бездоганно**, коли його запускає наш власний `--changed`-
+executor (`spawnSync` напряму, без участі Stryker) — 8/8 тестів проходять,
+реальні мутанти реально вбиваються/виживають. Тобто проблема специфічна саме
+для того, як Stryker command runner спавнить/оточує цей процес — не в самому
+проєкті чи в команді. Root cause **не встановлено**; кандидати для подальшого
+розслідування: різниця env-змінних, які Stryker додає при spawn (`CI`,
+`NODE_ENV` тощо), різниця в тому, як Stryker перехоплює stdio/exit-коди
+дочірнього процесу, або щось специфічне до async dry-run координації Stryker
+з довгоживучим Vite dev-server процесом (на відміну від нашого executor-а,
+де кожен виклик — самостійний короткий `spawnSync`).
+
+**Висновок:** до подальшого розслідування — не покладайся на full-режим для
+реальних Storybook-проєктів. `--changed`-режим (`storybook-mutation.mjs`)
+лишається єдиним підтвердженим шляхом отримати реальний mutation score для
+Storybook-коду.
+
+### Інші (не пов'язані з основною проблемою, лишаються чинними для command runner загалом)
+
+- `node_modules` у sandbox-копії — symlinked (дефолт Stryker); Playwright
+  browser cache (`~/Library/Caches/ms-playwright` тощо) резолвиться коректно.
 - Відносні шляхи у Storybook/vite-конфізі переживають копіювання в sandbox;
-  **абсолютні шляхи (`__dirname`-anchored aliases) — ні** — якщо конфіг такі
-  має, розглянь `inPlace: true` у `stryker.storybook.config.mjs` (мутує реальні
-  файли з бекапом/відновленням замість sandbox-копії).
+  абсолютні шляхи (`__dirname`-anchored aliases) — ні.

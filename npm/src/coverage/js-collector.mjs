@@ -33,6 +33,7 @@ const JS_FILE = /\.(c|m)?[jt]sx?$|\.vue$/
 const TEST_FILE = /\.(test|spec)\.[^.]+$/
 /** `.vue`-компоненти + `*.stories.*` — сигнал для Storybook-змінного scope (line coverage). */
 const VUE_OR_STORIES_FILE = /\.vue$|\.stories\.[^.]+$/
+const VUE_FILE_RE = /\.vue$/
 
 /**
  * Звужує список змінених файлів (relative до cwd) до тих, що лежать під `jsRoot`,
@@ -81,6 +82,8 @@ const VITEST_HINT =
 const STORYBOOK_STRYKER_CONFIG = 'stryker.storybook.config.mjs'
 /** Шлях mutation.json того ж прогону (окремий від `reports/stryker/` JS-виміру). */
 const STORYBOOK_STRYKER_REPORT = join('reports', 'stryker-storybook', 'mutation.json')
+/** vitest hard-fail коли `--project=!storybook` не залишає жодного проєкту (не test-порожньо). */
+const NO_PROJECTS_MATCHED_RE = /No projects matched the filter/
 
 /**
  * Чи у пакеті встановлено vitest (через dependencies або devDependencies).
@@ -311,20 +314,36 @@ const defaultRunner = {
     // зайве дублювання з collectStorybookForRoot і ризик втягнути Playwright-залежність
     // у звичайний coverage-прогін.
     const projectArgs = excludeStorybookProject ? ['--project=!storybook'] : []
-    const r = spawnSync(
-      'bunx',
-      [
-        'vitest',
-        'run',
-        '--passWithNoTests',
-        '--coverage',
-        '--coverage.reporter=lcov',
-        `--coverage.reportsDirectory=${lcovDir}`,
-        ...projectArgs,
-        ...changedArgs
-      ],
-      { cwd, stdio: 'inherit', env: process.env }
-    )
+    const args = [
+      'vitest',
+      'run',
+      '--passWithNoTests',
+      '--coverage',
+      '--coverage.reporter=lcov',
+      `--coverage.reportsDirectory=${lcovDir}`,
+      ...projectArgs,
+      ...changedArgs
+    ]
+
+    if (!excludeStorybookProject) {
+      const r = spawnSync('bunx', args, { cwd, stdio: 'inherit', env: process.env })
+      return r.status ?? 1
+    }
+
+    // excludeStorybookProject-гілка захоплює stdout/stderr (не stdio:'inherit'), бо треба
+    // програмно розрізнити "--project=!storybook не залишив ЖОДНОГО проєкту" (типовий
+    // canonical @storybook/addon-vitest setup БЕЗ окремого unit-test проєкту — Storybook-root
+    // з єдиним named-проєктом "storybook") від реальної помилки. vitest у цьому кейсі кидає
+    // hard "No projects matched the filter" і завершується exit≠0 ДО будь-якого запуску тестів
+    // (`--passWithNoTests` цей кейс не покриває — той стосується тестів усередині вже
+    // знайдених проєктів, не відсутності самих проєктів). Підтверджено емпірично на
+    // реальному `storybook init` (Storybook 10 + Vue3, 2026-07): весь `test.projects` — лише
+    // "storybook", без окремого JS unit-test проєкту.
+    const r = spawnSync('bunx', args, { cwd, encoding: 'utf8', env: process.env })
+    const out = (r.stdout ?? '') + (r.stderr ?? '')
+    process.stdout.write(r.stdout ?? '')
+    process.stderr.write(r.stderr ?? '')
+    if (r.status !== 0 && NO_PROJECTS_MATCHED_RE.test(out)) return 0
     return r.status ?? 1
   },
   runBunCoverage({ cwd, lcovDir }) {
@@ -421,7 +440,10 @@ const defaultRunner = {
     // конфіга задокументовано в npm/docs/stryker-storybook-config.md. Той самий
     // резолвінг local-bin, що й runStryker (plugin-discovery відносно install-каталогу).
     const strykerBin = resolveLocalStrykerBin()
-    const args = ['run', '--configFile', STORYBOOK_STRYKER_CONFIG]
+    // `configFile` — позиційний аргумент Stryker CLI (`stryker run [options] [configFile]`),
+    // НЕ `--configFile` — емпірично підтверджено (реальний прогін, 2026-07): `--configFile`
+    // дає `error: unknown option '--configFile'`.
+    const args = ['run', STORYBOOK_STRYKER_CONFIG]
     const r = strykerBin
       ? spawnSync(strykerBin, args, { cwd, stdio: 'inherit', env: process.env })
       : spawnSync('npx', ['@stryker-mutator/core', ...args], { cwd, stdio: 'inherit', env: process.env })
@@ -463,18 +485,28 @@ const defaultRunner = {
  */
 async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
   const wsRel = relative(cwd, jsRoot)
-  // У changed-режимі production-файли для мутації = змінені JS/Vue цього root без
-  // тест-файлів і без *.stories.* (сторі — не production-код, окремий Storybook-вимір).
-  // `.vue` тут ЗАЛИШАЄТЬСЯ — Stryker core мутує <script>/<script setup> SFC (з v7+),
-  // допоки покриття дають НЕ-browser-mode тести (@vue/test-utils тощо, не Storybook-сторі).
-  const mutateSrc = scope ? scope.files.filter(f => !TEST_FILE.test(f) && !STORIES_FILE_RE.test(f)) : null
 
   // Bun-native workspace: coverage через `bun test`, mutation пропускається
   // (Stryker vitest-runner не виконає код з `import ... from 'bun'`).
   const bunNative = await isBunNativeRoot(jsRoot)
   // Storybook root: named vitest-проєкт "storybook" (browser mode) типово ділить один
   // vitest.config.mjs зі звичайним suite — виключаємо його з JS-прогону (див. runJsCoverage).
-  const excludeStorybookProject = !bunNative && (await isStorybookRoot(jsRoot))
+  const isStorybook = !bunNative && (await isStorybookRoot(jsRoot))
+  const excludeStorybookProject = isStorybook
+
+  // У changed-режимі production-файли для мутації = змінені JS/Vue цього root без
+  // тест-файлів і без *.stories.* (сторі — не production-код, окремий Storybook-вимір).
+  // `.vue` на Storybook-root ТЕЖ виключено: якщо root — Storybook-only (типовий
+  // `storybook init`-скаффолд, ЄДИНИЙ vitest-проєкт — "storybook"), Stryker vitest-runner
+  // структурно не може прогнати dry-run (немає non-browser проєкту для виконання) —
+  // емпірично підтверджено (2026-07, реальний Storybook 10 + Vue3 скаффолд): dry-run
+  // валиться, `collectOneRoot` кидає, і це ламає ВЕСЬ прогін (обидва виміри), не лише
+  // JS-рядок. `.vue`-мутація на Storybook-root — виключно відповідальність
+  // `collectStorybookForRoot` (own executor / command-runner), яка вже покриває SFC
+  // повністю; дублювання через JS-вимір там і зайве, і структурно ламке.
+  const mutateSrc = scope
+    ? scope.files.filter(f => !TEST_FILE.test(f) && !STORIES_FILE_RE.test(f) && !(isStorybook && VUE_FILE_RE.test(f)))
+    : null
   if (bunNative && !(await hasRunnableTests(jsRoot))) {
     // `bun test` без тестів завершується помилкою — graceful skip як vitest --passWithNoTests.
     return scope
@@ -598,21 +630,22 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
  * Meta ACH): детермінована генерація мутантів + реальний прогін як суддя — без LLM
  * у контурі виконання.
  *
- * **Валідована альтернатива (спайк 2026-07):** Stryker **command runner** (не
- * vitest-runner) + browser mode ПРАЦЮЄ — але лише з обов'язковим
+ * **Full-режим — Stryker command runner (`runStorybookStrykerFull`, опційний у
+ * runner-і), АЛЕ з відомим невирішеним обмеженням (перевіряй перед покладанням —
+ * секція «Обмеження» в `npm/docs/stryker-storybook-config.md`):**
+ * Spike на синтетичному JS-репо (2026-07-17) підтвердив саму МЕХАНІКУ — command
+ * runner + browser mode ПРАЦЮЄ з обов'язковим
  * `define: { 'process.env.__STRYKER_ACTIVE_MUTANT__': JSON.stringify(process.env.__STRYKER_ACTIVE_MUTANT__ ?? '') }`
- * у vite-конфізі browser-проєкту (vitest browser mode ставить define як runtime-глобал
- * у Chromium — саме той шлях, що читає інструментація Stryker). Без define — тихий
- * провал: 0% killed, усі мутанти "виживають" (контрольний експеримент підтвердив).
- * ~1.2s/мутант, sandbox без проблем (symlinked node_modules). Не прийнято зараз:
- * потребує змін конфігів target-проєкту (define + stryker command-config) і має
- * silent-0% failure mode, якщо Storybook-ів config merge загубить define; власний
- * executor мутує файл на диску — активація не залежить від env-пропагації взагалі.
- * Тому в **full-режимі** прийнято саме цей шлях (`runStorybookStrykerFull`, опційний
- * у runner-і) — там власний executor вибуває через вартість, а не через технічні
- * обмеження, тож ризик command-runner-а прийнятний. У **changed-режимі** лишається
- * власний executor: дешевший на кількох файлах, і активація не залежить від
- * env-пропагації взагалі.
+ * у vite-конфізі (без define — тихий провал, 0% killed). Але живий прогін на
+ * РЕАЛЬНОМУ `storybook init`-скаффолді (2026-07-18) показав: dry-run падає з
+ * `Failed to fetch dynamically imported module` для `*.stories.js`, і ЖОДНА з
+ * перевірених гіпотез (symlink sandbox, `inPlace: true`, vue-docgen-plugin,
+ * concurrency) не root-cause. Той самий `vitest run --project=storybook`
+ * бездоганно працює через ЗВИЧАЙНИЙ `spawnSync` (наш `--changed`-executor) —
+ * проблема специфічна саме до того, як Stryker spawn-ить/оточує процес.
+ * Висновок: full-режим лишається задокументованим напрямком, не підтвердженим
+ * робочим рішенням; `--changed`-executor (нижче) — єдиний перевірений на
+ * реальному проєкті шлях отримати справжній mutation score для Storybook-коду.
  *
  * Changed-режим: запускається тільки якщо серед змінених файлів root-а є хоча б
  * один `.vue`/`*.stories.*` (`scope.files` — вже звужений через `scopeToStorybookRoot`
