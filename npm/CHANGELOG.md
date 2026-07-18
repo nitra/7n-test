@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.2] - 2026-07-18
+
+### Fixed
+
+- coverage: точний root cause провалу full-режиму Storybook mutation testing — дві незалежні причини замість 'невідомо'. (1) Stryker-інструментація ламає vue-docgen-api парсер @storybook/vue3-vite (framework-вбудований, не залежить від addon-docs) — виправлено через docgen:false у .storybook/main.js#framework.options, root cause підтверджено відтворенням поза Stryker-процесом. (2) окремий, підтверджений upstream Vitest browser mode баг (vitest#9509) — детерміновано (3/3), не флейкі, прогрів кешу не допомагає, не виправна на нашому боці. Full-режим лишається задокументованим напрямком до фіксу у Vitest
+- coverage: подальше розслідування upstream Vitest browser-mode бага (vitest#9509) у full-режимі Storybook mutation testing — 11/11 детермінованих відтворень (було 3/3), простежено точний механізм резолву setup-file.js (bare-специфікатор через package.json#exports, версієзалежний .../internal/setup-file.browser.4), випробувано й відкинуто optimizeDeps.include з буквальним dist-шляхом (дає окрему exports-помилку) і з коректними bare-специфікаторами (синтаксично вірно, але не усуває fetch-провал). Висновок незмінний — --changed-executor лишається єдиним підтвердженим робочим шляхом
+- coverage: vitest#9509 закритий upstream, але його фікс (optimizeDeps.include з повним runtime-стеком) не переноситься на наш кейс — ізоляційний тест з mutate:[] (0 інструментованих файлів) дає ту саму fetch-помилку на setup-file.js, виключаючи вміст файлів; штучна затримка перед стартом vitest теж не допомогла, виключаючи startup-race. Провал специфічний до факту спавну як дочірнього процесу Stryker — ймовірно окремий, ще не задокументований баг зі схожим симптомом. Висновок незмінний: --changed-executor лишається єдиним підтвердженим шляхом
+- Full-режим Storybook mutation testing (Stryker command runner) тепер працює на реальних проєктах: root cause "Failed to fetch dynamically imported module" — symlinked node_modules у Stryker sandbox-копії, обхід через inPlace: true в stryker.storybook.config.mjs
+
 ## [0.16.1] - 2026-07-18
 
 ### Fixed
