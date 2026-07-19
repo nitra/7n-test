@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.4] - 2026-07-19
+
+### Fixed
+
+- Оновлено @7n/llm-lib до 2.8.2 і @earendil-works/pi-coding-agent до ^0.80.10 — фіксить getRegistry() для нового auth-API pi (nitra/7n-rules#139), розблоковує gpt-5.6-* моделі для callText/callAgent (LLM-мутанти, класифікатор survived-мутантів, coverage --fix агент)
+
 ## [0.16.3] - 2026-07-18
 
 ### Fixed
