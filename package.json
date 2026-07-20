@@ -7,10 +7,10 @@
   ],
   "type": "module",
   "scripts": {
-    "coverage": "n-cursor coverage",
+    "coverage": "npx @7n/test coverage",
     "oxfmt": "oxfmt .",
     "start": "bun ./npm/bin/n.js",
-    "test": "vitest run"
+    "test": "bun run --bun vitest run"
   },
   "devDependencies": {
     "@7n/rules": "^1.17.1",

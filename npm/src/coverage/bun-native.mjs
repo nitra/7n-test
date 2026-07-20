@@ -6,8 +6,9 @@
  * тож coverage для таких workspace-ів збирається через `bun test --coverage`
  * (Bun автоматично ремапить `import ... from 'vitest'` у тест-файлах на `bun:test`).
  */
-import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { readFile } from 'node:fs/promises'
+
+import { walk } from './fs-walk.mjs'
 
 /** import/require/dynamic-import специфікатора `bun` або `bun:*` (крім `bun:test`). */
 const BUN_NATIVE_IMPORT_RE = /(?:from|import\s*\(|require\s*\()\s*(['"])bun(?::(?!test)[\w.-]+)?\1/u
@@ -18,32 +19,6 @@ const JS_SOURCE_RE = /\.(c|m)?[jt]sx?$/
 const TEST_FILE_RE = /\.(test|spec)\.[^.]+$/
 /** Тест-файли, які запускає `bun test` (для пре-скану «чи є що ганяти»). */
 const RUNNABLE_TEST_RE = /\.test\.(m?js|ts)$/
-
-const IGNORE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', '.git', 'coverage', 'reports', 'docs', 'types'])
-
-/**
- * Рекурсивний обхід каталогу з відсіюванням службових директорій.
- * @param {string} dir абсолютний шлях
- * @param {(absPath: string) => void} onFile колбек для кожного файлу
- * @returns {Promise<void>}
- */
-async function walk(dir, onFile) {
-  let entries
-  try {
-    entries = await readdir(dir, { withFileTypes: true })
-  } catch {
-    return
-  }
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
-    const abs = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      if (!IGNORE_DIRS.has(entry.name)) await walk(abs, onFile)
-    } else if (entry.isFile()) {
-      onFile(abs)
-    }
-  }
-}
 
 /**
  * Чи workspace bun-native: хоч один prod JS/TS-файл імпортує `bun`/`bun:*` (крім `bun:test`).

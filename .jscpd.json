@@ -3,5 +3,12 @@
   "exitCode": 1,
   "reporters": ["console"],
   "minLines": 25,
-  "ignore": [".claude/worktrees/**", "**/dist/**", "**/CHANGELOG.md"]
+  "ignore": [
+    ".claude/worktrees/**",
+    "**/dist/**",
+    "**/CHANGELOG.md",
+    ".cursor/skills/n-adr-normalize/SKILL.md",
+    ".cursor/skills/n-taze/SKILL.md",
+    ".cursor/skills/n-llm-patch/SKILL.md"
+  ]
 }

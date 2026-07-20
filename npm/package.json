@@ -41,7 +41,6 @@
   "dependencies": {
     "@7n/llm-lib": "^2.8.2",
     "@earendil-works/pi-coding-agent": "^0.80.10",
-    "@nitra/check-env": "^4.2.1",
     "@vitest/coverage-v8": "^4.1.9",
     "rollup": "^4.62.2",
     "vitest": "^4.1.9",

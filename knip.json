@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "project": ["**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}"],
   "ignore": ["**/__fixtures__/**", "coverage/**"],
-  "ignoreDependencies": ["@nitra/cspell-dict", "/@cspell\\/dict-.+/", "globals", "graphql", "@nitra/stylelint-config", "@stryker-mutator/vitest-runner", "@vitest/coverage-v8", "rollup"],
+  "ignoreDependencies": ["@nitra/cspell-dict", "/@cspell\\/dict-.+/", "globals", "graphql", "@nitra/stylelint-config", "@stryker-mutator/vitest-runner", "@vitest/coverage-v8", "rollup", "@7n/rules-ci-github"],
   "ignoreBinaries": [
     "actionlint",
     "cspell",
@@ -29,6 +29,7 @@
         ".markdownlint-cli2.{jsonc,cjs,mjs}",
         "commitlint.config.{js,cjs,mjs}",
         ".pi/extensions/**/index.ts",
+        ".pi/extensions/*.ts",
         "js/*.mjs"
       ]
     },
