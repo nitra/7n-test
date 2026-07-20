@@ -15,29 +15,105 @@ import { callAgent } from './lib/llm.mjs'
 const MODEL = env.N_CURSOR_COVERAGE_FIX_MODEL ?? CLOUD_MAX
 
 /**
+ * Дефолтна стеля мутантів на один batch (один агентний виклик зі своїм `AGENT_TIMEOUT_MS`
+ * вікном). Один величезний промпт на весь проєкт (сотні мутантів) впирався у 15-хвилинний
+ * timeout `callAgent` — поділ на батчі тримає кожен виклик у розумних часових межах і дозволяє
+ * прогресу бути інкрементальним: провал одного batch не блокує решту файлів.
+ * Override: `N_CURSOR_COVERAGE_FIX_BATCH_MUTANTS`.
+ */
+const DEFAULT_BATCH_MUTANT_BUDGET = 40
+
+/**
  * @typedef {{line:number, col:number, mutantType:string, original:string, replacement:string}} MutantDetail
  * @typedef {{file:string, mutants:MutantDetail[], exampleTest:{testFile:string,code:string|null}|null, recommendationText:string|null}} SurvivedFileGroup
  */
 
 /**
- * Запускає pi-агента для написання тестів по вцілілих мутантах.
+ * Читає стелю мутантів на batch з env (з дефолтом), для CLI-конфігурації на великих проєктах.
+ * @returns {number} стеля мутантів на один batch
+ */
+function resolveBatchBudget() {
+  const n = Number(env.N_CURSOR_COVERAGE_FIX_BATCH_MUTANTS)
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_BATCH_MUTANT_BUDGET
+}
+
+/**
+ * Ділить групи вцілілих мутантів на batches, кожен у межах `budget` мутантів сумарно —
+ * жадібне пакування у порядку вхідного масиву. Файл ніколи не ріжеться навпіл (мутанти
+ * одного файлу завжди в одному batch, навіть якщо сам файл перевищує budget) — узгодженість
+ * контексту для агента важливіша за точне дотримання стелі.
+ * @param {SurvivedFileGroup[]} survived вцілілі мутанти, згруповані по файлах
+ * @param {number} budget стеля мутантів на batch
+ * @returns {SurvivedFileGroup[][]} batches (кожен — підмножина `survived`)
+ */
+export function batchSurvived(survived, budget) {
+  const batches = []
+  let current = []
+  let currentCount = 0
+  for (const group of survived) {
+    if (current.length > 0 && currentCount + group.mutants.length > budget) {
+      batches.push(current)
+      current = []
+      currentCount = 0
+    }
+    current.push(group)
+    currentCount += group.mutants.length
+  }
+  if (current.length > 0) batches.push(current)
+  return batches
+}
+
+/**
+ * Запускає pi-агента для написання тестів по вцілілих мутантах — по batches, кожен
+ * своїм агентним викликом. Помилка одного batch (напр. timeout) не зупиняє решту:
+ * ловиться, логується з переліком файлів batch (можливий частковий прогрес на диску —
+ * агент пише файли напряму, до кидання помилки), і прогін продовжується наступним batch.
  * @param {SurvivedFileGroup[]} survived вцілілі мутанти, згруповані по файлах
  * @param {string} projectRoot абсолютний шлях до кореня проєкту
  * @param {{ callPi?: (prompt: string, model: string, opts: { cwd: string }) => Promise<void> }} [opts] ін'єкції для тестів
- * @returns {Promise<void>}
+ * @returns {Promise<{fixed: string[], failed: {files: string[], error: string}[]}>} файли за batches, що завершились успішно/помилкою
  */
 export async function fixSurvivedMutants(survived, projectRoot, opts = {}) {
   const totalMutants = survived.reduce((s, g) => s + g.mutants.length, 0)
   if (totalMutants === 0) {
     console.log('✓ Всі мутанти вбиті — доповнення тестів не потрібне')
-    return
+    return { fixed: [], failed: [] }
   }
 
-  const prompt = await buildFixPrompt(survived, projectRoot)
-  console.log(`\n🤖 coverage --fix: запускаю агента для ${totalMutants} вцілілих мутантів...\n`)
-
+  const batches = batchSurvived(survived, resolveBatchBudget())
   const callPiFn = opts.callPi ?? callPi
-  await callPiFn(prompt, MODEL, { cwd: projectRoot })
+  console.log(
+    `\n🤖 coverage --fix: ${totalMutants} вцілілих мутантів, ${survived.length} файл(ів) → ${batches.length} batch(ів)...\n`
+  )
+
+  const fixed = []
+  const failed = []
+  for (const [i, batch] of batches.entries()) {
+    const files = batch.map(g => g.file)
+    const batchMutants = batch.reduce((s, g) => s + g.mutants.length, 0)
+    console.log(
+      `\n🤖 batch ${i + 1}/${batches.length}: ${files.length} файл(ів), ${batchMutants} мутантів — ${files.join(', ')}\n`
+    )
+
+    const prompt = await buildFixPrompt(batch, projectRoot)
+    try {
+      await callPiFn(prompt, MODEL, { cwd: projectRoot })
+      fixed.push(...files)
+    } catch (error) {
+      console.error(`✗ batch ${i + 1}/${batches.length} не завершився: ${error.message}`)
+      console.error(`  Файли batch (можливий частковий прогрес на диску — перевір git status): ${files.join(', ')}`)
+      failed.push({ files, error: error.message })
+    }
+  }
+
+  if (failed.length > 0) {
+    console.log(`\n⚠️  coverage --fix: ${fixed.length} файл(ів) успішно, ${failed.length} batch(ів) з помилкою:`)
+    for (const f of failed) console.log(`  ✗ ${f.files.join(', ')} — ${f.error}`)
+  } else {
+    console.log(`\n✓ coverage --fix: усі ${batches.length} batch(ів) завершено (${fixed.length} файл(ів)).`)
+  }
+
+  return { fixed, failed }
 }
 
 /**

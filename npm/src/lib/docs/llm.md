@@ -3,7 +3,7 @@ type: JS Module
 title: llm.mjs
 resource: npm/src/lib/llm.mjs
 docgen:
-  crc: ed7d0b9f
+  crc: d2b02e9a
 ---
 
 ## Огляд
@@ -13,7 +13,7 @@ docgen:
 ## Поведінка
 
 callText — одноразовий text-виклик без tools через `runOneShot`: повертає текст відповіді; кидає Error на будь-якій помилці виклику (fail-fast, без retry/backoff). Єдина локальна політика — одноразове подвоєння `maxTokens` (до стелі 32768) при обрізаній відповіді (`stopReason: 'length'`), без пауз.
-callAgent — агентний виклик через `runAgentSkill` з повним tool-set (read/write/edit/bash/grep/find/ls): агент пише файли напряму, текст стрімиться у stdout; таймаут 900с (паритет зі старим spawnSync pi CLI); без стелі відповіді (`maxTokens: 0`). Кидає Error на помилці.
+callAgent — агентний виклик через `runAgentSkill` з повним tool-set (read/write/edit/bash/grep/find/ls): агент пише файли напряму, текст стрімиться у stdout; таймаут 900с за замовчуванням (паритет зі старим spawnSync pi CLI), override — `N_CURSOR_AGENT_TIMEOUT_MS`; без стелі відповіді (`maxTokens: 0`). Кидає Error на помилці.
 MEMORY_ERROR_RE — реекспорт з пакета: колери класифікують memory-guard помилку локального model-сервера (пробити нагору й завершити процес, а не ковтати як per-file помилку).
 
 ## Гарантії поведінки

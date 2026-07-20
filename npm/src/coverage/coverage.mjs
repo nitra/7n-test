@@ -220,7 +220,11 @@ export async function runCoverageSteps(opts = {}) {
 
   if (opts.fix) {
     const { fixSurvivedMutants } = await import(new URL('../coverage-fix.mjs', import.meta.url).href)
-    await fixSurvivedMutants(allSurvived, cwd)
+    const { fixed, failed } = await fixSurvivedMutants(allSurvived, cwd)
+    // Повна невдача (жоден batch не пройшов) — сигналимо помилкою і пропускаємо
+    // марний re-run coverage; часткова невдача (≥1 batch пройшов) — не total failure,
+    // re-run coverage нижче покаже реальний прогрес.
+    if (failed.length > 0 && fixed.length === 0) return 1
   }
 
   return 0

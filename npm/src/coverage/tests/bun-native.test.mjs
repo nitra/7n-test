@@ -42,7 +42,10 @@ describe('isBunNativeRoot', () => {
   })
 
   test("false: лише 'bun:test' (його криє lint no-bun-test-import)", async () => {
-    const dir = makeFixture({ 'src/helper.js': `import { test } from 'bun:test'\n` })
+    // Fixture-рядок навмисно не пишеться як буквальний `from 'bun:test'` (текстовий,
+    // не AST-aware detector `test/no-bun-test-import` інакше сприйняв би цей рядок
+    // fixture-даних за справжній import і переписав його на 'vitest' — зламавши тест).
+    const dir = makeFixture({ 'src/helper.js': `import { test } from '${'bun:test'}'\n` })
     expect(await isBunNativeRoot(dir)).toBe(false)
     rmSync(dir, { recursive: true, force: true })
   })

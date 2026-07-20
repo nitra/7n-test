@@ -10,10 +10,9 @@
  * подвоєння `maxTokens` на обрізаній відповіді (`stopReason: 'length'`):
  * це семантичний повтор без пауз, а не очікування зайнятого сервера.
  */
-import {  runOneShot } from '@7n/llm-lib/one-shot'
+import { env } from 'node:process'
+import { runOneShot } from '@7n/llm-lib/one-shot'
 import { runAgentSkill } from '@7n/llm-lib/agent-skill'
-
-
 
 /**
  * Стеля відповіді моделі для подвоєння на `stopReason: 'length'` — межа
@@ -21,8 +20,12 @@ import { runAgentSkill } from '@7n/llm-lib/agent-skill'
  */
 const MAX_TOKENS_CEILING = 32_768
 
-/** Таймаут агентного виклику (паритет зі старим spawnSync pi CLI). */
-const AGENT_TIMEOUT_MS = 900_000
+/**
+ * Таймаут агентного виклику (паритет зі старим spawnSync pi CLI). Override:
+ * `N_CURSOR_AGENT_TIMEOUT_MS` — для великих проєктів, де навіть один batch
+ * (див. `coverage-fix.mjs#fixSurvivedMutants`) потребує більше часу.
+ */
+const AGENT_TIMEOUT_MS = Number(env.N_CURSOR_AGENT_TIMEOUT_MS) || 900_000
 
 /**
  * Одноразовий text-виклик (без tools). Кидає Error на будь-якій помилці
@@ -38,26 +41,34 @@ const AGENT_TIMEOUT_MS = 900_000
  * @returns {Promise<string>} текстова відповідь моделі
  */
 export async function callText(prompt, opts = {}) {
-  const r = await runOneShot({
-    messages: [{ role: 'user', content: prompt }],
-    modelSpec: opts.model ?? '',
-    maxTokens: opts.maxTokens,
-    timeoutMs: 0,
-    cwd: opts.cwd,
-    caller: '7n-test:text',
-    chain: opts.chain ?? null,
-    deps: opts.deps
-  })
-  if (r.error) throw new Error(r.error)
+  let maxTokens = opts.maxTokens
+  let lengthRetried = Boolean(opts._lengthRetried)
 
-  // Обрізана генерація зі зниженою стелею — не палимо retry-цикли колера
-  // на «invalid block», а один раз повторюємо з подвоєною стелею.
-  if (r.stopReason === 'length' && opts.maxTokens && opts.maxTokens < MAX_TOKENS_CEILING && !opts._lengthRetried) {
-    const doubled = Math.min(opts.maxTokens * 2, MAX_TOKENS_CEILING)
-    console.log(`  ⚠ відповідь обрізана (stopReason: length) — повтор із maxTokens ${opts.maxTokens} → ${doubled}`)
-    return callText(prompt, { ...opts, maxTokens: doubled, _lengthRetried: true })
+  while (true) {
+    const r = await runOneShot({
+      messages: [{ role: 'user', content: prompt }],
+      modelSpec: opts.model ?? '',
+      maxTokens,
+      timeoutMs: 0,
+      cwd: opts.cwd,
+      caller: '7n-test:text',
+      chain: opts.chain ?? null,
+      deps: opts.deps
+    })
+    if (r.error) throw new Error(r.error)
+
+    // Обрізана генерація зі зниженою стелею — не палимо retry-цикли колера
+    // на «invalid block», а один раз повторюємо з подвоєною стелею.
+    if (r.stopReason === 'length' && maxTokens && maxTokens < MAX_TOKENS_CEILING && !lengthRetried) {
+      const doubled = Math.min(maxTokens * 2, MAX_TOKENS_CEILING)
+      console.log(`  ⚠ відповідь обрізана (stopReason: length) — повтор із maxTokens ${maxTokens} → ${doubled}`)
+      maxTokens = doubled
+      lengthRetried = true
+      continue
+    }
+
+    return r.content
   }
-  return r.content
 }
 
 /**
@@ -86,4 +97,4 @@ export async function callAgent(prompt, cwd, opts = {}) {
   if (r.error) throw new Error(r.error)
 }
 
-export {MEMORY_ERROR_RE} from '@7n/llm-lib/one-shot'
+export { MEMORY_ERROR_RE } from '@7n/llm-lib/one-shot'
