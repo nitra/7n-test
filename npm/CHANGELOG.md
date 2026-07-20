@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.6] - 2026-07-20
+
+### Changed
+
+- Прибрано мертвий код (`resolveJsRoot`), винесено спільний `walk()`-хелпер (`bun-native.mjs`/`storybook.mjs` → `fs-walk.mjs`), прибрано невикористану залежність `@nitra/check-env`; виправлено дублювання кроків у `.github/workflows/{lint-js,lint-style,npm-publish}.yml` (canonical `bunx n-rules …`), синхронізовано `.vscode/settings.json`/`extensions.json` і кореневий `package.json#scripts` (`coverage`/`test`) з політиками `@7n/rules`.
+
 ## [0.16.5] - 2026-07-20
 
 ### Fixed
