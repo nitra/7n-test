@@ -9,10 +9,11 @@ import {
   runCoverageSteps,
   runCoverageCli
 } from './coverage.mjs'
-import { applyVerdicts } from '../coverage-classify/apply.mjs'
 import { classify } from '../coverage-classify/index.mjs'
 import { collectChangedFilesSince, resolveChangedBase } from '../scripts/lib/changed-files.mjs'
 import { collect as collectJs, detect as detectJs } from './js-collector.mjs'
+import { readFile, writeFile } from 'node:fs/promises'
+import { fixSurvivedMutants } from '../coverage-fix.mjs'
 
 vi.mock('../coverage-classify/apply.mjs', () => ({ applyVerdicts: vi.fn() }))
 vi.mock('../coverage-classify/index.mjs', () => ({ classify: vi.fn() }))
@@ -31,14 +32,15 @@ vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
   writeFile: vi.fn()
 }))
+vi.mock('../coverage-fix.mjs', () => ({ fixSurvivedMutants: vi.fn() }))
 
-import { readFile, writeFile } from 'node:fs/promises'
+const PIPE_REASON_RE = /(?<!\|) a\|b /
 
 describe('coverage.mjs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(readFile).mockResolvedValue('{}')
-    vi.mocked(writeFile).mockResolvedValue(undefined)
+    vi.mocked(writeFile).mockResolvedValue()
     vi.mocked(resolveChangedBase).mockReturnValue('HEAD~1')
     vi.mocked(collectChangedFilesSince).mockReturnValue(['src/a.js'])
     vi.mocked(detectJs).mockResolvedValue(true)
@@ -202,11 +204,11 @@ describe('coverage.mjs', () => {
         {
           file: 'f.js',
           mutant: { line: 1, original: 'x', replacement: 'y' },
-          verdict: { verdict: 'glue', confidence: 1.0, reason: 'a|b pipe test' }
+          verdict: { verdict: 'glue', confidence: 1, reason: 'a|b pipe test' }
         }
       ]
       const markdown = renderMarkdown(rows, allowedGaps)
-      expect(markdown).not.toMatch(/(?<!\|) a\|b /)
+      expect(markdown).not.toMatch(PIPE_REASON_RE)
     })
   })
 
@@ -253,6 +255,50 @@ describe('coverage.mjs', () => {
       const code = await runCoverageSteps({ cwd: '/cwd' })
       expect(code).toBe(0)
       expect(writeFile).toHaveBeenCalledWith('/cwd/COVERAGE.md', expect.stringContaining('# Coverage'), 'utf8')
+    })
+
+    describe('opts.fix', () => {
+      const rowsWithSurvived = [
+        {
+          area: 'JS',
+          coverage: { lines: { covered: 5, total: 10 }, functions: { covered: 2, total: 4 } },
+          mutation: { caught: 3, total: 5 },
+          survived: [
+            { file: 'src/a.js', mutants: [{ line: 1, col: 0, mutantType: 'X', original: 'a', replacement: 'b' }] }
+          ]
+        }
+      ]
+
+      it('returns 0 when fixSurvivedMutants fully succeeds', async () => {
+        vi.mocked(collectJs).mockResolvedValue(rowsWithSurvived)
+        vi.mocked(classify).mockResolvedValue([])
+        vi.mocked(fixSurvivedMutants).mockResolvedValue({ fixed: ['src/a.js'], failed: [] })
+        const code = await runCoverageSteps({ cwd: '/cwd', fix: true })
+        expect(code).toBe(0)
+        expect(fixSurvivedMutants).toHaveBeenCalledWith(rowsWithSurvived[0].survived, '/cwd')
+      })
+
+      it('returns 0 when fixSurvivedMutants partially succeeds (not treated as total failure)', async () => {
+        vi.mocked(collectJs).mockResolvedValue(rowsWithSurvived)
+        vi.mocked(classify).mockResolvedValue([])
+        vi.mocked(fixSurvivedMutants).mockResolvedValue({
+          fixed: ['src/a.js'],
+          failed: [{ files: ['src/b.js'], error: 'skill timeout 900000ms' }]
+        })
+        const code = await runCoverageSteps({ cwd: '/cwd', fix: true })
+        expect(code).toBe(0)
+      })
+
+      it('returns 1 when fixSurvivedMutants fails completely (no files fixed)', async () => {
+        vi.mocked(collectJs).mockResolvedValue(rowsWithSurvived)
+        vi.mocked(classify).mockResolvedValue([])
+        vi.mocked(fixSurvivedMutants).mockResolvedValue({
+          fixed: [],
+          failed: [{ files: ['src/a.js'], error: 'skill timeout 900000ms' }]
+        })
+        const code = await runCoverageSteps({ cwd: '/cwd', fix: true })
+        expect(code).toBe(1)
+      })
     })
   })
 
