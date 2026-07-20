@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.5] - 2026-07-20
+
+### Fixed
+
+- coverage-classify: витяг JSON з LLM-відповіді толерантний до markdown fences, prose навколо JSON, неекранованих лапок/backslash/control-символів у string-значеннях і задовгого reason (замість hard fail на JSON.parse/Zod)
+- coverage --fix: поділ fixSurvivedMutants на батчі за мутант-бюджетом (дефолт 40/batch), кожен batch — окремий агентний виклик з обробкою помилок і частковим прогресом замість uncaught timeout на весь проєкт; AGENT_TIMEOUT_MS configurable через N_CURSOR_AGENT_TIMEOUT_MS
+
 ## [0.16.4] - 2026-07-19
 
 ### Fixed
