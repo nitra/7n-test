@@ -8,37 +8,13 @@
  * встановлений, але вимкнений/не налаштований).
  */
 import { existsSync } from 'node:fs'
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
+import { walk } from './fs-walk.mjs'
 
 /** `*.stories.*` файли — не production-код, окремий вимір покриття (Storybook, не JS-рядок). */
 export const STORIES_FILE_RE = /\.stories\.[^.]+$/
-
-const IGNORE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', '.git', 'coverage', 'reports', 'docs', 'types'])
-
-/**
- * Рекурсивний обхід каталогу з відсіюванням службових директорій (dot-теки, IGNORE_DIRS).
- * @param {string} dir абсолютний шлях
- * @param {(absPath: string) => void} onFile колбек для кожного файлу
- * @returns {Promise<void>}
- */
-async function walk(dir, onFile) {
-  let entries
-  try {
-    entries = await readdir(dir, { withFileTypes: true })
-  } catch {
-    return
-  }
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
-    const abs = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      if (!IGNORE_DIRS.has(entry.name)) await walk(abs, onFile)
-    } else if (entry.isFile()) {
-      onFile(abs)
-    }
-  }
-}
 
 /**
  * Чи workspace налаштовано під Storybook coverage через vitest: тека `.storybook/`

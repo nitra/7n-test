@@ -30,16 +30,6 @@ async function expandWorkspacePattern(cwd, pattern) {
 }
 
 /**
- * @param {string} cwd корінь проєкту (де кореневий package.json)
- * @returns {Promise<string|null>} абсолютний шлях до JS-root або null без кореневого package.json
- */
-export async function resolveJsRoot(cwd) {
-  const roots = await resolveAllJsRoots(cwd)
-  if (roots.length === 0) return null
-  return roots[0]
-}
-
-/**
  * Plural-варіант: повертає всі JS-roots проєкту. Для workspace-projects — кожен
  * workspace з власним `package.json` (з розгортанням glob-патернів); для
  * single-package — `[cwd]`. Порожній масив без кореневого package.json.

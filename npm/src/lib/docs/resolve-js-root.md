@@ -3,7 +3,7 @@ type: JS Module
 title: resolve-js-root.mjs
 resource: npm/src/lib/resolve-js-root.mjs
 docgen:
-  crc: 270edc8d
+  crc: f4370476
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   tier: local-min-retry
   score: 100
@@ -16,13 +16,10 @@ docgen:
 
 ## Поведінка
 
-Поведінка:
-resolveJsRoot повертає абсолютний шлях до кореня JavaScript-коду, якщо він визначений, інакше повертає null.
 resolveAllJsRoots повертає список абсолютних шляхів до всіх коренів JavaScript-коду у проєкті, враховуючи конфігурацію `workspaces` з `package.json`.
 
 ## Публічний API
 
-resolveJsRoot — знаходить основний корінь проєкту, де розташований `package.json`.
 resolveAllJsRoots — надає повний список усіх JS-коренів у проєкті. Для багатопакетних (workspace) структур повертає кожен окремий workspace з його `package.json`; для одного пакета — поточний робочий каталог; повертає порожній масив, якщо `package.json` відсутній у корені.
 
 ## Гарантії поведінки
