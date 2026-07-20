@@ -3,7 +3,7 @@ type: JS Module
 title: prompt.mjs
 resource: npm/src/coverage-classify/prompt.mjs
 docgen:
-  crc: 12bfb99a
+  crc: b4dd4c52
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
   score: 100
   issues: judge:inaccurate:0.98
@@ -12,7 +12,7 @@ docgen:
 
 ## Огляд
 
-Промпт-builder для `coverage-classify` генерує контекстні інструкції. Він визначає статичну роль класифікатора (`SYSTEM_PROMPT`), яка кешується через `cache_control: ephemeral` при виклику API. Динамічно він збирає деталі кожного мутанта (location, source $\pm$10, tests, git) у промпт, що здійснюється функцією `buildUserPrompt`. Процес працює з механізмом fail-safe, запобігаючи виникненню винятків, а кешування відбувається в межах одного прогону.
+Промпт-builder для `coverage-classify` генерує контекстні інструкції. Він визначає статичну роль класифікатора (`SYSTEM_PROMPT`), яка кешується через `cache_control: ephemeral` при виклику API. Динамічно він збирає деталі кожного мутанта (location, source $\pm$10, tests, git) у промпт, що здійснюється функцією `buildUserPrompt`. Процес працює з механізмом fail-safe, запобігаючи виникненню винятків, а кешування відбувається в межах одного прогону. `SYSTEM_PROMPT` явно вимагає строго валідний JSON без markdown-fence і prose навколо нього, з інструкцією екранувати лапки/backslash усередині `reason`/`suggestedTest` і триматись у межах довжини — це знижує частку відповідей, які не парсяться як JSON.
 
 ## Поведінка
 
