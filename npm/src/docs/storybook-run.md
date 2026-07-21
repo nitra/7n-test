@@ -3,9 +3,8 @@ type: JS Module
 title: storybook-run.mjs
 resource: npm/src/storybook-run.mjs
 docgen:
-  crc: 77a2da36
+  crc: 28d7d850
   model: openai-codex/gpt-5.4-mini
-  tier: cloud-min
   score: 90
   issues: internal-name:isStorybookRoot,judge:inaccurate:0.95
   judgeModel: openai-codex/gpt-5.4-mini

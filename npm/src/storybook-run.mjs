@@ -24,7 +24,7 @@ import { resolveAllJsRoots } from './lib/resolve-js-root.mjs'
  * пакет може ще не мати жодного сторі-файлу (LLM-генерація stories — хвиля 2
  * канону) — порожній storybook-проєкт не має валити PR-гейт.
  */
-export const defaultRunner = {
+const defaultRunner = {
   /**
    * Запускає storybook-проєкт vitest у workspace-корені.
    * @param {{cwd: string}} opts корінь workspace-а
