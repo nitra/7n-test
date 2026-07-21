@@ -1,7 +1,23 @@
-amends "package://hk/hk.pkl"
+amends "package://github.com/jdx/hk/releases/download/v1.42.0/hk@1.42.0#/Config.pkl"
+
+local linters = new Mapping<String, Step> {
+  ["npm-tsc-types"] {
+    check_first = false
+    fix = "cd npm && bunx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
+  }
+  ["npm-changelog"] {
+    glob = List("npm/**")
+    check_first = false
+    // Autofix-режим (env): за відсутності change-файлу правило саме його створює
+    // (patch/Changed, subject останнього коміту) і ставить у індекс — коміт не падає.
+    fix = "N_RULES_CHANGELOG_AUTOFIX=1 npx @7n/rules lint changelog"
+  }
+}
 
 hooks {
   ["pre-commit"] {
-    command = "bunx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
+    fix = true
+    stash = "git"
+    steps = linters
   }
 }

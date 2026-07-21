@@ -301,6 +301,41 @@ function resolveLocalStrykerBin() {
   return strykerBinCache
 }
 
+/** Канонічні імена Stryker-конфіга JS-виміру консюмера (test.mdc; .mjs — пріоритет). */
+const STRYKER_CONFIG_NAMES = ['stryker.config.mjs', 'stryker.config.js']
+/** Маркер посилання на ізольований vitest-конфіг Stryker (канон Storybook, Кластер 5). */
+const STRYKER_ISOLATED_VITEST_CONFIG_RE = /vitest\.stryker\.config/
+
+/**
+ * Fail-fast контракт канону Storybook (Кластер 5) для JS-виміру мутації: на
+ * Storybook-root `stryker.config.*` консюмера МАЄ вказувати `vitest.configFile`
+ * на ізольований `vitest.stryker.config.*` (генерує правило `storybook` з
+ * `@7n/rules-lang-js` — той самий unit-набір БЕЗ browser-mode `projects`).
+ * Основний канонічний `vitest.config` містить browser-mode проєкт "storybook",
+ * на якому `@stryker-mutator/vitest-runner` крашиться — без цієї перевірки
+ * прогін падає значно пізніше і з незрозумілою помилкою (без mutation.json).
+ * Відсутній `stryker.config.*` не перевіряємо — Stryker сам упаде, і повідомлення
+ * про відсутній mutation.json нижче вже містить підказку про canonical config.
+ * @param {string} jsRoot абсолютний шлях workspace-кореня
+ * @param {string} wsRel відносний шлях root-а (для повідомлення)
+ * @returns {void}
+ * @throws {Error} коли stryker.config.* існує, але не посилається на vitest.stryker.config.*
+ */
+function assertStorybookStrykerIsolation(jsRoot, wsRel) {
+  const configName = STRYKER_CONFIG_NAMES.find(name => existsSync(join(jsRoot, name)))
+  if (!configName) return
+  const text = readFileSync(join(jsRoot, configName), 'utf8')
+  if (STRYKER_ISOLATED_VITEST_CONFIG_RE.test(text)) return
+  throw new Error(
+    `js coverage: ${wsRel || '.'} — канонічний Storybook-пакет, але ${configName} не вказує ` +
+      'vitest.configFile на ізольований vitest.stryker.config.* — Stryker vitest-runner крашиться ' +
+      'на browser-mode проєкті "storybook" основного vitest.config (канон Storybook, Кластер 5). ' +
+      'Згенеруй ізольований конфіг правилом storybook (npx @7n/rules lint storybook) і постав ' +
+      "vitest: { configFile: 'vitest.stryker.config.mjs' } у " +
+      configName
+  )
+}
+
 const defaultRunner = {
   runJsCoverage({ cwd, lcovDir, base, excludeStorybookProject }) {
     // base !== undefined ⇔ --changed-режим: vitest сам рахує зачеплені змінами тести
@@ -560,21 +595,24 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
     return { coverage, mutation: { caught: 0, total: 0 }, survived: [] }
   }
 
-  // 2. Mutation через Stryker (у changed-режимі — лише по mutateSrc)
+  // 2. Mutation через Stryker (у changed-режимі — лише по mutateSrc). На Storybook-root
+  // спершу fail-fast контракт канону: stryker.config.* → ізольований vitest.stryker.config.*.
+  if (isStorybook) assertStorybookStrykerIsolation(jsRoot, wsRel)
   await runner.runStryker(scope ? { cwd: jsRoot, mutate: mutateSrc } : { cwd: jsRoot })
   const mutationPath = join(jsRoot, 'reports', 'stryker', 'mutation.json')
   if (!existsSync(mutationPath)) {
     // Stryker vitest-runner не підтримує сучасний (Playwright-based) vitest browser mode
-    // (докладніше — коментар над collectStorybookForRoot): якщо стрикер-фейсінг vitest.config.mjs
+    // (докладніше — коментар над collectStorybookForRoot): якщо стрикер-фейсінг vitest-конфіг
     // (на який вказує stryker.config.mjs#vitest.configFile) містить named-проєкт "storybook",
-    // Stryker намагається виконати і його — і падає без mutation.json. Виправлення на боці
-    // target-проєкту: винести Storybook-проєкт в окремий vitest-конфіг, якого Stryker НЕ бачить
-    // (не reused той самий configFile).
+    // Stryker намагається виконати і його — і падає без mutation.json. Канонічне виправлення
+    // (канон Storybook, Кластер 5): ізольований vitest.stryker.config.* (генерує правило
+    // storybook) — той самий unit-набір без browser-mode projects.
     const storybookHint = excludeStorybookProject
-      ? ' Root має Storybook (.storybook/ + @storybook/addon-vitest) — якщо vitest.config.mjs, ' +
-        'на який вказує stryker.config.mjs#vitest.configFile, містить named-проєкт "storybook" ' +
-        '(browser mode), Stryker впаде на ньому (browser mode не підтримується vitest-runner) — ' +
-        'винеси Storybook-проєкт в окремий vitest-конфіг.'
+      ? ' Root — канонічний Storybook-пакет (identity-devDeps у package.json): ' +
+        'stryker.config.mjs#vitest.configFile має вказувати на ізольований ' +
+        'vitest.stryker.config.mjs (генерує правило storybook, npx @7n/rules lint storybook), ' +
+        'бо основний vitest.config містить browser-mode проєкт "storybook", ' +
+        'який не підтримується vitest-runner.'
       : ''
     throw new Error(
       'js coverage: stryker не залишив mutation.json — ' +
@@ -603,9 +641,10 @@ async function collectOneRoot(jsRoot, cwd, runner, scope = null) {
 }
 
 /**
- * Збирає Storybook-покриття (Vue/React/... компоненти зі сторі) для **одного** JS-root.
- * Активується лише коли `isStorybookRoot` (тека `.storybook/` + `@storybook/addon-vitest`
- * у deps) і `hasStories` — інакше `null` (root не бере участі у рядку `Vue (Storybook)`).
+ * Збирає Storybook-покриття (Vue-компонентні бібліотеки зі сторі) для **одного** JS-root.
+ * Активується лише коли `isStorybookRoot` (канонічні Storybook-identity devDeps у
+ * `package.json` — канон Storybook, Кластер 7) і `hasStories` — інакше `null`
+ * (root не бере участі у рядку `Vue (Storybook)`).
  *
  * Mutation testing: у **changed-режимі** виконується власним mutate→run→restore
  * executor-ом (`storybook-mutation.mjs`) — детерміновані AST-мутанти по змінених

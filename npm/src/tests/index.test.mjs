@@ -1,5 +1,11 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 
+import { run } from '../index.js'
+import { runCoverageCli } from '../coverage/coverage.mjs'
+import { runAutoTest } from '../run.mjs'
+import { runStorybookCli } from '../storybook-run.mjs'
+
+// vi.mock hoist-иться vitest-ом над імпортами — порядок у джерелі не впливає.
 vi.mock('../coverage/coverage.mjs', () => ({
   runCoverageCli: vi.fn().mockResolvedValue(0)
 }))
@@ -8,9 +14,9 @@ vi.mock('../run.mjs', () => ({
   runAutoTest: vi.fn().mockResolvedValue(0)
 }))
 
-import { run } from '../index.js'
-import { runCoverageCli } from '../coverage/coverage.mjs'
-import { runAutoTest } from '../run.mjs'
+vi.mock('../storybook-run.mjs', () => ({
+  runStorybookCli: vi.fn().mockResolvedValue(0)
+}))
 
 describe('run', () => {
   beforeEach(() => {
@@ -51,6 +57,23 @@ describe('run', () => {
     })
   })
 
+  describe('storybook subcommand (швидкий PR-гейт канону Storybook)', () => {
+    it('делегує в runStorybookCli з cwd поточного процесу', async () => {
+      const code = await run(['storybook'])
+
+      expect(runStorybookCli).toHaveBeenCalledWith({ cwd: process.cwd() })
+      expect(runAutoTest).not.toHaveBeenCalled()
+      expect(runCoverageCli).not.toHaveBeenCalled()
+      expect(code).toBe(0)
+    })
+
+    it('повертає exit code від runStorybookCli', async () => {
+      vi.mocked(runStorybookCli).mockResolvedValueOnce(1)
+
+      expect(await run(['storybook'])).toBe(1)
+    })
+  })
+
   describe('дефолтний auto-test flow', () => {
     it('делегує в runAutoTest з поточним каталогом, коли directory не передано', async () => {
       await run([])
@@ -75,7 +98,7 @@ describe('run', () => {
 
   describe('--help', () => {
     it('друкує usage і повертає 0 без виклику runAutoTest/runCoverageCli', async () => {
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn())
 
       const code = await run(['--help'])
 

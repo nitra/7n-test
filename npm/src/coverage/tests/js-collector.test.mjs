@@ -22,19 +22,19 @@ import {
 const JS_COVERAGE_EXIT_RE = /JS coverage.*exit 1/
 const JS_COVERAGE_EXIT2_RE = /JS coverage.*exit 2/
 const MUTATION_JSON_RE = /canonical stryker.config.mjs/
+const STRYKER_ISOLATION_RE = /vitest\.stryker\.config/
 const STORYBOOK_COVERAGE_EXIT_RE = /Storybook coverage exit 1.*Playwright/s
 const STORYBOOK_STRYKER_FULL_EXIT_RE = /Storybook Stryker \(command runner\) exit 1/
 
 /**
- * Fixture workspace з .storybook/, @storybook/addon-vitest у deps, і одним *.stories.* файлом.
+ * Fixture workspace з канонічними Storybook-identity devDeps і одним *.stories.* файлом.
  * @param {string} dir абсолютний шлях workspace-кореня
  */
 function makeStorybookRoot(dir) {
-  mkdirSync(join(dir, '.storybook'), { recursive: true })
   mkdirSync(join(dir, 'src'), { recursive: true })
   writeFileSync(
     join(dir, 'package.json'),
-    JSON.stringify({ devDependencies: { vitest: '^2.0.0', '@storybook/addon-vitest': '^9.0.0' } })
+    JSON.stringify({ devDependencies: { vitest: '^2.0.0', storybook: '9.1.10', '@storybook/vue3-vite': '9.1.10' } })
   )
   writeFileSync(join(dir, 'src', 'Card.stories.js'), 'export default {}\n')
 }
@@ -841,12 +841,69 @@ describe('js coverage collect() — Storybook-рядок', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  test('Storybook-root: stryker.config.mjs без vitest.stryker.config — канонічна помилка ДО запуску Stryker', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-stryker-drift-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'a.test.js'), 'test("x", () => {})\n')
+    writeFileSync(
+      join(dir, 'stryker.config.mjs'),
+      "export default { testRunner: 'vitest', vitest: { configFile: 'vitest.config.mjs' } }\n"
+    )
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:10\nLH:5\nFNF:2\nFNH:1\n')
+        return 0
+      },
+      runStryker() {
+        throw new Error('не мало викликатись — fail-fast перевірка канону йде до Stryker')
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      }
+    }
+    await expect(collect(dir, { runner })).rejects.toThrow(STRYKER_ISOLATION_RE)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('Storybook-root: stryker.config.mjs вказує на vitest.stryker.config.mjs — Stryker запускається', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-stryker-canon-'))
+    makeStorybookRoot(dir)
+    writeFileSync(join(dir, 'src', 'a.test.js'), 'test("x", () => {})\n')
+    writeFileSync(
+      join(dir, 'stryker.config.mjs'),
+      "export default { testRunner: 'vitest', vitest: { configFile: 'vitest.stryker.config.mjs' } }\n"
+    )
+    const reportDir = join(dir, 'reports', 'stryker')
+    mkdirSync(reportDir, { recursive: true })
+    writeFileSync(join(reportDir, 'mutation.json'), JSON.stringify({ files: {} }))
+
+    const calls = []
+    const runner = {
+      runJsCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), 'LF:10\nLH:5\nFNF:2\nFNH:1\n')
+        return 0
+      },
+      runStryker() {
+        calls.push('stryker')
+        return 0
+      },
+      runStorybookCoverage({ lcovDir }) {
+        writeFileSync(join(lcovDir, 'lcov.info'), '')
+        return 0
+      }
+    }
+    const rows = await collect(dir, { runner })
+    expect(calls).toEqual(['stryker'])
+    expect(rows.map(r => r.area)).toEqual(['JS', 'Vue (Storybook)'])
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   test('Storybook-root без *.stories.* файлів — Storybook-раннер не викликається', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'js-cov-sb-no-stories-'))
-    mkdirSync(join(dir, '.storybook'), { recursive: true })
     writeFileSync(
       join(dir, 'package.json'),
-      JSON.stringify({ devDependencies: { vitest: '^2.0.0', '@storybook/addon-vitest': '^9.0.0' } })
+      JSON.stringify({ devDependencies: { vitest: '^2.0.0', storybook: '9.1.10', '@storybook/vue3-vite': '9.1.10' } })
     )
     const runner = {
       runJsCoverage({ lcovDir }) {
