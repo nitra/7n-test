@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.1] - 2026-07-21
+
+### Fixed
+
+- knip: `defaultRunner` у `storybook-run.mjs` більше не експортується — інʼєкція в тестах іде через `opts.runner` (за зразком `js-collector.mjs`), невикористаний експорт валив repo-wide lint
+
 ## [0.17.0] - 2026-07-21
 
 ### Added
