@@ -39,11 +39,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@7n/llm-lib": "^2.8.2",
+    "@7n/llm-lib": "^2.8.3",
     "@earendil-works/pi-coding-agent": "^0.80.10",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^4.1.10",
     "rollup": "^4.62.2",
-    "vitest": "^4.1.9",
+    "vitest": "^4.1.10",
     "zod": "^4.4.3"
   },
   "engines": {
