@@ -23,9 +23,17 @@
 > реальний mutation score (15/59 вбито) на реальних `Button.vue`/`Header.vue`/
 > `Page.vue`. `--changed`-режим (власний mutate→run→restore executor,
 > `storybook-mutation.mjs`) лишається окремим, незалежно перевіреним шляхом
-> (детерміновані AST-мутанти + LLM-мутанти) — обирай його для звичайного
-> PR-прогону по змінених файлах, full-режим — для рідшого (nightly/weekly)
-> прогону по всій кодовій базі.
+> (детерміновані AST-мутанти + LLM-мутанти) по змінених файлах.
+>
+> **Розподіл прогонів за каноном Storybook (ADR, Кластер 5): PR — лише швидкий
+> pass/fail-гейт `@7n/test storybook` (`vitest run --project=storybook`,
+> browser-mode chromium, без coverage і без мутантів); nightly — повний
+> `@7n/test coverage` з mutation testing.** JS-вимір мутації на Storybook-пакеті
+> при цьому йде через ізольований `vitest.stryker.config.mjs` (генерує правило
+> `storybook` з `@7n/rules-lang-js`): `stryker.config.mjs#vitest.configFile` має
+> вказувати саме на нього — основний `vitest.config` містить browser-mode проєкт
+> `storybook`, на якому `@stryker-mutator/vitest-runner` крашиться; `@7n/test
+> coverage` перевіряє цей контракт fail-fast до запуску Stryker.
 
 Ручна (не auto-generated) довідка для мейнтейнерів target-проєктів. Без цього
 файлу `@7n/test coverage` (full-режим, без `--changed`) для рядка

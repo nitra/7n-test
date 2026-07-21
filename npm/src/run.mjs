@@ -36,7 +36,7 @@ const COVERAGE_THRESHOLD = 80
 
 /**
  * Routes uncovered files to the appropriate generator: `.vue` components in a
- * Storybook-configured root (`.storybook/` + `@storybook/addon-vitest`) get CSF3
+ * Storybook root (canonical identity devDeps, `isStorybookRoot`) get CSF3
  * stories (fills the `Vue (Storybook)` coverage dimension); everything else — and
  * `.vue` files when the project has no Storybook set up — gets a regular vitest
  * unit test, as before.
