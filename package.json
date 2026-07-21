@@ -13,7 +13,7 @@
     "test": "bun run --bun vitest run"
   },
   "devDependencies": {
-    "@7n/rules": "^1.17.1",
+    "@7n/rules": "^1.36.1",
     "@7n/rules-ci-github": "^1.4.1",
     "@nitra/cspell-dict": "^2.2.2",
     "@nitra/eslint-config": "^3.10.3",
