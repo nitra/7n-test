@@ -98,22 +98,25 @@ export async function measureCoveragePerFile(dir) {
   const jsonResultsFile = join(lcovDir, 'test-results.json')
 
   const { bin, configArgs } = resolveVitestRun(dir)
-  // `--coverage.exclude` на CLI ПОВНІСТЮ замінює (не мерджить) масив
-  // `test.coverage.exclude` із target-проєкту vitest.config.js — так влаштований
-  // vitest CLI-override для array-полів. Коли `configArgs` порожній, resolveVitestRun
-  // вже обрав ЛОКАЛЬНИЙ vitest target-проєкту (він сам підхопить свій vitest.config.js) —
-  // додавання CLI-флагу тут тихо затирає власні винятки проєкту (напр. тести, що
-  // структурно можуть виконуватись лише під `bun test`, а не vitest), через що колектор
-  // бачить їх як 0%-покриті й намагається згенерувати для них НОВІ тести, хоча вони вже
-  // покриті. У bundled/shim-режимі (`configArgs` непорожній) конфлікту немає — стороннього
-  // конфіга для затирання нема, а shim (`ensureVitestShim`) вже сам включає `**/*.d.ts`.
-  const coverageExcludeArgs =
-    configArgs.length === 0
-      ? []
-      : [
-          // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
-          '--coverage.exclude=**/*.d.ts'
-        ]
+  // `--coverage.include` на CLI — unanchored glob (`**/*.{js,mjs,ts,vue}`, рядок нижче):
+  // без відповідного `--coverage.exclude` він матчить будь-яку вкладену копію дерева
+  // під `dir` (найгірший випадок — `.claude/worktrees/<name>/**`, повний чек-аут проєкту
+  // всередині власного репо), і жодні дефолтні exclude coverage-v8 (`**/{git,cache,...}/**`)
+  // це не ловлять. Тому базовий список нижче передаємо ЗАВЖДИ, незалежно від `configArgs`.
+  //
+  // `--coverage.exclude` на CLI ПОВНІСТЮ замінює (не мерджить) масив `test.coverage.exclude` —
+  // як зі стороннього `vitest.config.js` цільового проєкту (коли `configArgs` порожній і
+  // resolveVitestRun обрав ЛОКАЛЬНИЙ vitest target-проєкту), так і з shim-конфіга
+  // (`ensureVitestShim`, коли `configArgs` непорожній) — його власний
+  // `exclude: ['**/node_modules/**', '**/*.d.ts']` теж би затерло, якби ми не повторили
+  // ті самі патерни тут. Тому base-список — єдине джерело істини для обох гілок.
+  const coverageExcludeArgs = [
+    '--coverage.exclude=**/node_modules/**',
+    '--coverage.exclude=**/.git/**',
+    '--coverage.exclude=**/.claude/**',
+    // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
+    '--coverage.exclude=**/*.d.ts'
+  ]
   try {
     spawnSync(
       process.execPath,
