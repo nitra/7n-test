@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.2] - 2026-07-22
+
+### Fixed
+
+- coverage-per-file: exclude .claude/**, node_modules, .git from unanchored --coverage.include CLI glob (was leaking into lcov via nested worktree copies)
+
 ## [0.17.1] - 2026-07-21
 
 ### Fixed
