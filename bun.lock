@@ -5,7 +5,7 @@
     "": {
       "name": "mono",
       "devDependencies": {
-        "@7n/rules": "^1.41.0",
+        "@7n/rules": "^1.42.0",
         "@7n/rules-ci-github": "^1.4.1",
         "@7n/rules-lang-js": "^0.14.0",
         "@nitra/cspell-dict": "^2.2.2",
@@ -19,7 +19,7 @@
     },
     "npm": {
       "name": "@7n/test",
-      "version": "0.17.1",
+      "version": "0.17.2",
       "bin": {
         "7n-test": "bin/7n-test.js",
       },
@@ -46,7 +46,7 @@
 
     "@7n/mt-linux-x64": ["@7n/mt-linux-x64@0.5.1", "", { "os": "linux", "cpu": "x64" }, "sha512-c4b1c435vfGZcRKkLnWcoKs8O6KTATFFx6gPGnid4ee+JDqzyhtxb5kzxYkcTQySO8iBHPAtUMEOBCHDrF1UjQ=="],
 
-    "@7n/rules": ["@7n/rules@1.41.0", "", { "dependencies": { "@7n/llm-lib": "^2.8.2", "@7n/mt": "^0.5.1", "@zed-industries/agent-client-protocol": "^0.4.5", "ajv": "^8.20.0", "cli-progress": "^3.12.0", "github-actionlint": "^1.7.12", "globby": "^16.0.0", "ignore": "^7.0.5", "markdownlint-cli2": "^0.22.1", "oxc-parser": "^0.137.0", "picomatch": "^4.0.4", "smol-toml": "^1.7.0", "v8r": "^6.1.0", "yaml": "^2.9.0", "zod": "^4.4.3" }, "optionalDependencies": { "@agentclientprotocol/claude-agent-acp": "^0.59.0", "@earendil-works/pi-ai": "0.80.10", "@earendil-works/pi-coding-agent": "0.80.10" }, "bin": { "n-rules": "bin/n-rules.js", "n-cursor": "bin/n-rules.js" } }, "sha512-IuOLCRSijyCJJyCR1cTMtWpDWYlCd9j8wIFMpC7f/NcKDtOT2VlAnNyDRpQzyOqw/G5TOm5LkoyaA3x6g7M1WA=="],
+    "@7n/rules": ["@7n/rules@1.42.0", "", { "dependencies": { "@7n/llm-lib": "^2.8.2", "@7n/mt": "^0.5.1", "@zed-industries/agent-client-protocol": "^0.4.5", "ajv": "^8.20.0", "cli-progress": "^3.12.0", "github-actionlint": "^1.7.12", "globby": "^16.0.0", "ignore": "^7.0.5", "markdownlint-cli2": "^0.22.1", "oxc-parser": "^0.137.0", "picomatch": "^4.0.4", "smol-toml": "^1.7.0", "v8r": "^6.1.0", "yaml": "^2.9.0", "zod": "^4.4.3" }, "optionalDependencies": { "@agentclientprotocol/claude-agent-acp": "^0.59.0", "@earendil-works/pi-ai": "0.80.10", "@earendil-works/pi-coding-agent": "0.80.10" }, "bin": { "n-rules": "bin/n-rules.js", "n-cursor": "bin/n-rules.js" } }, "sha512-zFHRbFOUvAiIDrKdnIjPVCyOziX/FV45/9acc+gxWnjbLnKAUn5s4S3vroOfshmNqEzSb145i6k0VEI89PAOew=="],
 
     "@7n/rules-ci-github": ["@7n/rules-ci-github@1.4.1", "", { "peerDependencies": { "@7n/rules": ">=1.2.0" } }, "sha512-9qwcPPao5PRNhgRZ8k14rApZMD82K+oKzxOV4b4a1juwZ9g4GAkbL3Vx5dCEyJv+yDmlaGU9O+Wx4ndPlTKbSw=="],
 
