@@ -90,7 +90,7 @@ describe('coverage-per-file.mjs', () => {
       expect(result.failingTests).toHaveLength(0)
     })
 
-    it('passes --coverage.exclude=**/*.d.ts in bundled/shim mode', async () => {
+    it('filters junk paths via negated include patterns in bundled/shim mode', async () => {
       vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockImplementation(p =>
@@ -105,14 +105,19 @@ describe('coverage-per-file.mjs', () => {
       await measureCoveragePerFile('/proj')
 
       const args = vi.mocked(spawnSync).mock.calls[0][1]
-      expect(args).toContain('--coverage.exclude=**/*.d.ts')
+      // негації всередині include (а не --coverage.exclude, який затер би exclude shim-конфіга)
+      expect(args).toContain('--coverage.include=!**/.*/**')
+      expect(args).toContain('--coverage.include=!**/node_modules/**')
+      expect(args).toContain('--coverage.include=!**/*.d.ts')
+      expect(args.some(a => String(a).startsWith('--coverage.exclude'))).toBe(false)
     })
 
-    it('always excludes node_modules/.git/.claude/.worktrees even when target has its own local vitest+config (configArgs empty)', async () => {
-      // `--coverage.include` — unanchored glob, матчить будь-яку вкладену копію дерева
-      // під `dir` (напр. `.claude/worktrees/<name>/**` чи `.worktrees/<name>/**`). Base-exclude-
-      // список тому передаємо ЗАВЖДИ, незалежно від configArgs (regression test for the
-      // unanchored-include-leaks-into-lcov bug).
+    it('never passes --coverage.exclude when target has its own local vitest+config (configArgs empty)', async () => {
+      // CLI `--coverage.exclude` REPLACES (не мерджить) target-проєктний
+      // `test.coverage.exclude` — не додаємо CLI-флаг у жодному режимі, щоб не
+      // затирати власні винятки проєкту (regression test for the silent-clobber bug).
+      // Небажані шляхи (.claude/worktrees, .worktrees, node_modules, *.d.ts) відсіюються
+      // негативними патернами всередині include, який ми і так задаємо самі.
       vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileSync).mockImplementation(p =>
@@ -124,13 +129,50 @@ describe('coverage-per-file.mjs', () => {
       await measureCoveragePerFile('/proj')
 
       const args = vi.mocked(spawnSync).mock.calls[0][1]
-      expect(args).toContain('--coverage.exclude=**/node_modules/**')
-      expect(args).toContain('--coverage.exclude=**/.git/**')
-      expect(args).toContain('--coverage.exclude=**/.claude/**')
-      expect(args).toContain('--coverage.exclude=**/.worktrees/**')
-      expect(args).toContain('--coverage.exclude=**/*.d.ts')
+      expect(args.some(a => String(a).startsWith('--coverage.exclude'))).toBe(false)
       // --coverage.include лишається завжди (без нього vitest 4 не покаже файли без тестів як 0%)
       expect(args).toContain('--coverage.include=**/*.{js,mjs,ts,vue}')
+      // …разом із негаціями, що прибирають вкладені робочі дерева й приховані теки
+      expect(args).toContain('--coverage.include=!**/.*/**')
+      expect(args).toContain('--coverage.include=!**/node_modules/**')
+      expect(args).toContain('--coverage.include=!**/*.d.ts')
+      // test discovery: CLI --exclude ДОДАЄ до test.exclude (не clobber) — тести
+      // вкладених робочих дерев (.claude/worktrees/**) не запускаються
+      expect(args).toContain('--exclude=**/.*/**')
+    })
+
+    it('drops lcov rows and failing tests under hidden dirs (nested worktrees)', async () => {
+      const lcovWithHidden = `TN:
+SF:/proj/.claude/worktrees/x/src/inner.js
+LF:4
+LH:4
+end_of_record
+TN:
+SF:/proj/src/a.js
+LF:10
+LH:8
+end_of_record
+`
+      const jsonWithHiddenFailure = JSON.stringify({
+        testResults: [
+          {
+            name: '/proj/.claude/worktrees/x/src/inner.test.js',
+            status: 'failed',
+            assertionResults: [{ status: 'failed', title: 'inner', ancestorTitles: [], failureMessages: ['boom'] }]
+          }
+        ]
+      })
+      vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
+      vi.mocked(existsSync).mockReturnValue(true)
+      vi.mocked(readFileSync).mockImplementation(p =>
+        String(p).endsWith('test-results.json') ? jsonWithHiddenFailure : lcovWithHidden
+      )
+      vi.mocked(rm).mockResolvedValue()
+
+      const result = await measureCoveragePerFile('/proj')
+
+      expect(result.files.map(f => f.file)).toEqual(['src/a.js'])
+      expect(result.failingTests).toEqual([])
     })
 
     it('returns failing tests when json reports failures', async () => {

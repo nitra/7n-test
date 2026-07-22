@@ -74,43 +74,39 @@ describe('runtime-probe.mjs', () => {
   })
 
   describe('probeModule (integration, child process)', () => {
-    it(
-      'caps oversized outputs, limits entries per export and caps oversized constants',
-      { timeout: 30_000 },
-      () => {
-        const dir = mkdtempSync(join(tmpdir(), 'probe-test-'))
-        const modPath = join(dir, 'big.mjs')
-        writeFileSync(
-          modPath,
-          [
-            'export function bigArray() {',
-            "  return Array.from({ length: 300 }, (_, i) => ({ file: 'f' + i, mutants: [{ line: i, col: 1 }] }))",
-            '}',
-            'export function echo(x) { return x }',
-            "export const BIG_CONST = 'y'.repeat(5000)",
-            ''
-          ].join('\n')
-        )
-        try {
-          const results = probeModule(modPath, ['bigArray', 'echo', 'BIG_CONST'])
+    it('caps oversized outputs, limits entries per export and caps oversized constants', { timeout: 30_000 }, () => {
+      const dir = mkdtempSync(join(tmpdir(), 'probe-test-'))
+      const modPath = join(dir, 'big.mjs')
+      writeFileSync(
+        modPath,
+        [
+          'export function bigArray() {',
+          "  return Array.from({ length: 300 }, (_, i) => ({ file: 'f' + i, mutants: [{ line: i, col: 1 }] }))",
+          '}',
+          'export function echo(x) { return x }',
+          "export const BIG_CONST = 'y'.repeat(5000)",
+          ''
+        ].join('\n')
+      )
+      try {
+        const results = probeModule(modPath, ['bigArray', 'echo', 'BIG_CONST'])
 
-          expect(results.bigArray.length).toBeLessThanOrEqual(12)
-          for (const entry of results.bigArray) {
-            expect(entry.output.length).toBeLessThanOrEqual(CAP)
-            expect(entry.output).toContain('[shape-summary')
-            expect(entry.output).toContain('Array(300) of')
-          }
-
-          expect(results.echo.length).toBeLessThanOrEqual(12)
-          expect(results.echo.some(e => !e.output.includes('[shape-summary'))).toBe(true)
-
-          expect(results.BIG_CONST.constant.length).toBeLessThanOrEqual(CAP)
-          expect(results.BIG_CONST.constant).toContain('[shape-summary')
-        } finally {
-          rmSync(dir, { recursive: true, force: true })
+        expect(results.bigArray.length).toBeLessThanOrEqual(12)
+        for (const entry of results.bigArray) {
+          expect(entry.output.length).toBeLessThanOrEqual(CAP)
+          expect(entry.output).toContain('[shape-summary')
+          expect(entry.output).toContain('Array(300) of')
         }
+
+        expect(results.echo.length).toBeLessThanOrEqual(12)
+        expect(results.echo.some(e => !e.output.includes('[shape-summary'))).toBe(true)
+
+        expect(results.BIG_CONST.constant.length).toBeLessThanOrEqual(CAP)
+        expect(results.BIG_CONST.constant).toContain('[shape-summary')
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
       }
-    )
+    })
 
     it(
       'runs the probe child in an empty tmp cwd so relative file reads cannot leak project files',

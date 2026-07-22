@@ -3,41 +3,35 @@ type: JS Module
 title: coverage-per-file.mjs
 resource: npm/src/coverage-per-file.mjs
 docgen:
-  crc: bd6aa877
-  model: openai-codex/gpt-5.4-mini
-  tier: cloud-min
-  score: 100
-  issues: judge-refine:kept-original,judge:inaccurate:0.98
-  judgeModel: openai-codex/gpt-5.4-mini
+  crc: 5de7da67
 ---
 
 ## Огляд
 
-Файл збирає per-file coverage з Vitest у форматі lcov і список упалих тестів за один прогін `@7n/test`, щоб одночасно бачити прогалини покриття й проблемні тести без повторних запусків. Він fail-safe: перехоплює помилки й не кидає винятків назовні, а також кешує результати в межах прогону. Публічні точки входу: `parseFailingTests`, `measureCoveragePerFile`, `getUncoveredFiles`, `renderPerFileMarkdown`, `findSourceFiles`; пошук джерел свідомо пропускає `.git` і `node_modules`.
+Модуль виконує повне вимірювання покриття коду за допомогою Vitest у єдиному проході. Повертає дані про покриття для кожного файлу разом зі списком тестів, які не пройшли. Цільовому проєкту не потрібні встановлені vitest чи `@vitest/coverage-v8` — за відсутності локального vitest використовується копія, що постачається з `@7n/test`.
 
 ## Поведінка
 
-parseFailingTests зчитує JSON-результати Vitest із test-results.json і зводить їх до короткого списку проблемних файлів, після чого measureCoveragePerFile поєднує цей список із покриттям з одного запуску Vitest: спочатку збирає per-file coverage через lcov, паралельно фіксує падіння тестів, і повертає обидва набори даних як спільний знімок прогону.
-
-getUncoveredFiles працює як фільтр над уже зібраними метриками та відбирає лише файли нижче порога, щоб інші кроки могли швидко визначити прогалини без повторного запуску тестів. renderPerFileMarkdown перетворює цей самий набір coverage-рядків у Markdown-звіт для COVERAGE.md, коли мутаційне тестування пропущено і провайдери з .n-cursor.json не залучались.
-
-findSourceFiles слугує початковим заповненням, коли coverage-даних ще немає: вона обходить дерево проєкту, ігнорує .git та node_modules, та повертає лише ті вихідні файли, які можна вважати придатними для unit coverage. Уся поведінка побудована fail-safe: помилки не виходять назовні, а кеш у межах одного прогону не дає дублювати роботу.
+- `measureCoveragePerFile` запускає Vitest із lcov-покриттям та JSON-звітом за один прохід і повертає per-file покриття та провалені тести. Явний `--coverage.include` гарантує, що файли без жодного тесту зʼявляються у звіті як 0%-покриті.
+- Небажані шляхи відсіюються негативними патернами всередині того самого `--coverage.include` — **не** через `--coverage.exclude`: CLI-override для array-полів у vitest повністю замінює масив із конфіга, тож CLI-`exclude` затирав би власні `coverage.exclude` цільового проєкту. Відсіюються приховані теки (`.claude/worktrees/**`, `.git`, `.cursor`, …), `node_modules` та `*.d.ts` (v8-remap падає на синтаксисі TS-декларацій).
+- Тести під прихованими теками (вкладені робочі дерева) не запускаються: до аргументів додається CLI-`--exclude`, який у vitest додається до `test.exclude` цільового конфіга, а не замінює його.
+- Фільтрація після парсингу звітів страхує додатково: lcov-рядки та провалені тести зі шляхами під прихованими теками відкидаються (покриті файли vitest не фільтрує негативними include-патернами).
+- Тестові файли, що використовують інші тест-фреймворки (`bun:test`, jest), не потрапляють до списку провалених — їх неможливо виправити цим інструментом.
+- `getUncoveredFiles` відфільтровує файли, покриття яких нижче порогового значення (типово 80).
+- `findSourceFiles` рекурсивно знаходить файли вихідного коду, пропускаючи тести, приховані теки та службові директорії (`node_modules`, `dist`, `coverage` тощо); використовується для bootstrap, коли даних покриття ще немає.
+- `renderPerFileMarkdown` рендерить per-file покриття рядків (без мутаційних даних) як Markdown-таблицю з підсумковим рядком «Разом», відсортовану за зростанням відсотка покриття.
 
 ## Публічний API
 
-- measureCoveragePerFile — Runs vitest coverage + JSON reporter in a single pass.
-Returns per-file coverage and any failing tests detected in the same run.
-- getUncoveredFiles — Files below the coverage threshold.
-- renderPerFileMarkdown — Рендерить per-file line coverage як Markdown-таблицю без мутаційних даних.
-Використовується для `COVERAGE.md`, коли мутаційне тестування пропущено
-(`--no-mutation`) і провайдери `.n-cursor.json#rules` не викликались.
-- findSourceFiles — Recursively finds source code files in a directory, excluding tests and
-ignored directories. Used for bootstrap when no coverage data exists.
-- parseFailingTests — витягує з `test-results.json` перелік тестів, які впали, щоб на їх основі формувати подальші дії
-- Спирається на `test-results.json` і `.n-cursor.json`, щоб визначати актуальний стан запусків і пов’язувати його з локальними налаштуваннями роботи
+- `measureCoveragePerFile(dir)` — вимірює per-file покриття та збирає провалені тести за один прогін Vitest.
+- `parseFailingTests(jsonPath, dir)` — парсить JSON-звіт Vitest у список провалених тест-файлів із короткими помилками.
+- `getUncoveredFiles(files, threshold)` — повертає файли, які не досягли порогу покриття.
+- `findSourceFiles(dir)` — рекурсивно шукає кодові файли для bootstrap без даних покриття.
+- `renderPerFileMarkdown(files)` — форматує per-file coverage у Markdown-документ `# Coverage` для `COVERAGE.md`, коли мутаційне тестування пропущено.
 
 ## Гарантії поведінки
 
-- Перехоплює помилки і не пропускає винятків назовні (fail-safe).
-- Кешує результати в межах одного прогону.
-- Свідомо пропускає шляхи: `.git`, `node_modules`.
+- Помилки читання/парсингу звітів перехоплюються і не пропускаються назовні (fail-safe: порожні результати замість винятку).
+- Тимчасова тека зі звітами прибирається після прогону навіть при помилках.
+- Власні `coverage.exclude` та `test.exclude` цільового `vitest.config.*` не затираються CLI-прапорцями.
+- Шляхи під прихованими теками (зокрема вкладені робочі дерева `.claude/worktrees/**`), `node_modules` і `*.d.ts` не інструментуються й не потрапляють ні в покриття, ні в список провалених тестів.

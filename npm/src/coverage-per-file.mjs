@@ -13,6 +13,37 @@ import { env } from 'node:process'
 import { resolveVitestRun } from './lib/vitest-shim.mjs'
 
 const TEST_FILE_RE = /\.(test|spec)\.[^.]+$|(?:^|[/\\])tests?[/\\]|\.stories\.[^.]+$/
+
+// vitest 4 прибрав coverage.all — явний include, щоб файли без тестів лишались у lcov (0%).
+// Небажані шляхи відсіюємо НЕГАТИВНИМИ патернами всередині цього ж include, а НЕ через
+// `--coverage.exclude`: CLI-override для array-полів у vitest ПОВНІСТЮ замінює (не мерджить)
+// відповідний масив із конфіга, тож CLI `--coverage.exclude` тихо затирає власні винятки
+// target-проєкту з його vitest.config.js (напр. файли, покриті лише `bun test`-тестами, —
+// колектор бачив би їх як 0% і генерував дублікати тестів) та `exclude` нашого shim-конфіга.
+// `include` ж ми і так задаємо самі, тому негації в ньому нічого чужого не затирають,
+// а без них unanchored `**/*.…` матчить вкладені робочі дерева — повні чек-аути проєкту
+// всередині власного репо (`.claude/worktrees/<name>/**` — харнес-worktree,
+// `.worktrees/<name>/**` — worktree-only скіли) — і сторонні директорії, які жодні
+// дефолтні exclude coverage-v8 не ловлять.
+const COVERAGE_INCLUDE_ARGS = [
+  '--coverage.include=**/*.{js,mjs,ts,vue}',
+  // приховані теки (.claude, .worktrees, .git, .cursor, …) — узгоджено з IGNORE_DIRS/findSourceFiles
+  '--coverage.include=!**/.*/**',
+  '--coverage.include=!**/node_modules/**',
+  // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
+  '--coverage.include=!**/*.d.ts',
+  // test discovery (test.exclude) — окремий канал від coverage: без цього vitest ЗАПУСКАЄ
+  // тести вкладених робочих дерев (.claude/worktrees/**), і їхні файли стають covered,
+  // а для covered-файлів vitest не застосовує негативні include-патерни. CLI `--exclude`,
+  // на відміну від `--coverage.exclude`, ДОДАЄ патерн до test.exclude (не замінює масив) —
+  // перевірено на vitest 4.1.9: custom test.exclude із конфіга лишається чинним.
+  '--exclude=**/.*/**'
+]
+
+// Сегмент шляху, що починається з крапки (прихована тека/файл) — не source для колектора
+// (як у findSourceFiles). Страхує від covered-файлів під прихованими теками, які могли
+// потрапити в lcov попри include-негації (напр. імпорт із тесту зовні).
+const HIDDEN_PATH_RE = /(^|[/\\])\./
 const VITEST_UNSUPPORTED_TEST_RE = /bun:test|Cannot find package 'bun/i
 const MAX_ERRORS_PER_FILE = 5
 const MAX_ERROR_LINES = 10
@@ -78,6 +109,8 @@ export function parseFailingTests(jsonPath, dir) {
           return { file: relative(dir, r.testFilePath ?? r.name), errors }
         })
         .filter(f => !f.file.startsWith('..'))
+        // Тести під прихованими теками (вкладені робочі дерева тощо) — не наші для фіксу
+        .filter(f => !HIDDEN_PATH_RE.test(f.file))
         // Skip test files that use a non-vitest runner (bun:test, jest, etc.)
         // They are expected to fail and cannot be fixed by this tool.
         .filter(f => f.errors.every(e => !VITEST_UNSUPPORTED_TEST_RE.test(e)))
@@ -98,28 +131,6 @@ export async function measureCoveragePerFile(dir) {
   const jsonResultsFile = join(lcovDir, 'test-results.json')
 
   const { bin, configArgs } = resolveVitestRun(dir)
-  // `--coverage.include` на CLI — unanchored glob (`**/*.{js,mjs,ts,vue}`, рядок нижче):
-  // без відповідного `--coverage.exclude` він матчить будь-яку вкладену копію дерева
-  // під `dir` (найгірші випадки — `.claude/worktrees/<name>/**`, харнес-worktree, і
-  // `.worktrees/<name>/**`, worktree-only скіли на кшталт n-mt/n-lint — обидва повний
-  // чек-аут проєкту всередині власного репо), і жодні дефолтні exclude coverage-v8
-  // (`**/{git,cache,...}/**`) це не ловлять. Тому базовий список нижче передаємо
-  // ЗАВЖДИ, незалежно від `configArgs`.
-  //
-  // `--coverage.exclude` на CLI ПОВНІСТЮ замінює (не мерджить) масив `test.coverage.exclude` —
-  // як зі стороннього `vitest.config.js` цільового проєкту (коли `configArgs` порожній і
-  // resolveVitestRun обрав ЛОКАЛЬНИЙ vitest target-проєкту), так і з shim-конфіга
-  // (`ensureVitestShim`, коли `configArgs` непорожній) — його власний
-  // `exclude: ['**/node_modules/**', '**/*.d.ts']` теж би затерло, якби ми не повторили
-  // ті самі патерни тут. Тому base-список — єдине джерело істини для обох гілок.
-  const coverageExcludeArgs = [
-    '--coverage.exclude=**/node_modules/**',
-    '--coverage.exclude=**/.git/**',
-    '--coverage.exclude=**/.claude/**',
-    '--coverage.exclude=**/.worktrees/**',
-    // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
-    '--coverage.exclude=**/*.d.ts'
-  ]
   try {
     spawnSync(
       process.execPath,
@@ -132,9 +143,7 @@ export async function measureCoveragePerFile(dir) {
         '--passWithNoTests',
         '--coverage',
         '--coverage.reporter=lcov',
-        // vitest 4 прибрав coverage.all — явний include, щоб файли без тестів лишались у lcov (0%)
-        '--coverage.include=**/*.{js,mjs,ts,vue}',
-        ...coverageExcludeArgs,
+        ...COVERAGE_INCLUDE_ARGS,
         `--coverage.reportsDirectory=${lcovDir}`,
         '--reporter=verbose',
         '--reporter=json',
@@ -151,7 +160,7 @@ export async function measureCoveragePerFile(dir) {
     const allFiles = parseLcovPerFile(readFileSync(lcovPath, 'utf8'))
     const files = allFiles
       .map(f => ({ ...f, file: relative(dir, f.file) }))
-      .filter(f => !f.file.startsWith('..') && !TEST_FILE_RE.test(f.file))
+      .filter(f => !f.file.startsWith('..') && !TEST_FILE_RE.test(f.file) && !HIDDEN_PATH_RE.test(f.file))
 
     return { files, failingTests }
   } finally {
