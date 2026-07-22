@@ -62,6 +62,16 @@ const SAMPLE_JSON_RESULTS_FAILING = JSON.stringify({
   ]
 })
 
+/**
+ * Створює тестовий entry для readdir.
+ * @param {string} name Назва entry.
+ * @param {boolean} [isDirectory] Чи є entry директорією.
+ * @returns {{ name: string, isDirectory: () => boolean, isFile: () => boolean }} Тестовий entry.
+ */
+function makeEntry(name, isDirectory = false) {
+  return { name, isDirectory: () => isDirectory, isFile: () => !isDirectory }
+}
+
 describe('coverage-per-file.mjs', () => {
   beforeEach(() => vi.clearAllMocks())
 
@@ -252,12 +262,6 @@ end_of_record
   })
 
   describe('findSourceFiles', () => {
-    /**
-     *
-     */
-    function makeEntry(name, isDirectory = false) {
-      return { name, isDirectory: () => isDirectory, isFile: () => !isDirectory }
-    }
 
     it('returns source files excluding tests and node_modules', async () => {
       vi.mocked(readdir)
