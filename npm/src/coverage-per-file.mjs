@@ -100,9 +100,11 @@ export async function measureCoveragePerFile(dir) {
   const { bin, configArgs } = resolveVitestRun(dir)
   // `--coverage.include` на CLI — unanchored glob (`**/*.{js,mjs,ts,vue}`, рядок нижче):
   // без відповідного `--coverage.exclude` він матчить будь-яку вкладену копію дерева
-  // під `dir` (найгірший випадок — `.claude/worktrees/<name>/**`, повний чек-аут проєкту
-  // всередині власного репо), і жодні дефолтні exclude coverage-v8 (`**/{git,cache,...}/**`)
-  // це не ловлять. Тому базовий список нижче передаємо ЗАВЖДИ, незалежно від `configArgs`.
+  // під `dir` (найгірші випадки — `.claude/worktrees/<name>/**`, харнес-worktree, і
+  // `.worktrees/<name>/**`, worktree-only скіли на кшталт n-mt/n-lint — обидва повний
+  // чек-аут проєкту всередині власного репо), і жодні дефолтні exclude coverage-v8
+  // (`**/{git,cache,...}/**`) це не ловлять. Тому базовий список нижче передаємо
+  // ЗАВЖДИ, незалежно від `configArgs`.
   //
   // `--coverage.exclude` на CLI ПОВНІСТЮ замінює (не мерджить) масив `test.coverage.exclude` —
   // як зі стороннього `vitest.config.js` цільового проєкту (коли `configArgs` порожній і
@@ -114,6 +116,7 @@ export async function measureCoveragePerFile(dir) {
     '--coverage.exclude=**/node_modules/**',
     '--coverage.exclude=**/.git/**',
     '--coverage.exclude=**/.claude/**',
+    '--coverage.exclude=**/.worktrees/**',
     // vitest 4 прибрав дефолтний exclude **/*.d.ts — без нього v8-remap падає на TS-синтаксисі декларацій
     '--coverage.exclude=**/*.d.ts'
   ]

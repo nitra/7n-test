@@ -108,10 +108,10 @@ describe('coverage-per-file.mjs', () => {
       expect(args).toContain('--coverage.exclude=**/*.d.ts')
     })
 
-    it('always excludes node_modules/.git/.claude even when target has its own local vitest+config (configArgs empty)', async () => {
+    it('always excludes node_modules/.git/.claude/.worktrees even when target has its own local vitest+config (configArgs empty)', async () => {
       // `--coverage.include` — unanchored glob, матчить будь-яку вкладену копію дерева
-      // під `dir` (напр. `.claude/worktrees/<name>/**`). Base-exclude-список тому
-      // передаємо ЗАВЖДИ, незалежно від configArgs (regression test for the
+      // під `dir` (напр. `.claude/worktrees/<name>/**` чи `.worktrees/<name>/**`). Base-exclude-
+      // список тому передаємо ЗАВЖДИ, незалежно від configArgs (regression test for the
       // unanchored-include-leaks-into-lcov bug).
       vi.mocked(mkdtemp).mockResolvedValue('/proj/.tmp/7n-cov-xxx')
       vi.mocked(existsSync).mockReturnValue(true)
@@ -127,6 +127,7 @@ describe('coverage-per-file.mjs', () => {
       expect(args).toContain('--coverage.exclude=**/node_modules/**')
       expect(args).toContain('--coverage.exclude=**/.git/**')
       expect(args).toContain('--coverage.exclude=**/.claude/**')
+      expect(args).toContain('--coverage.exclude=**/.worktrees/**')
       expect(args).toContain('--coverage.exclude=**/*.d.ts')
       // --coverage.include лишається завжди (без нього vitest 4 не покаже файли без тестів як 0%)
       expect(args).toContain('--coverage.include=**/*.{js,mjs,ts,vue}')
