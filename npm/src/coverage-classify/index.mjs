@@ -10,8 +10,8 @@
 import { join } from 'node:path'
 
 import { callText } from '../lib/llm.mjs'
-import { CLOUD_MIN, LOCAL_MIN } from '@nitra/llm-lib/model-tiers'
-import { startChain } from '@nitra/llm-lib/chain'
+import { CLOUD_MIN, LOCAL_MIN } from '@7n/llm-lib/model-tiers'
+import { startChain } from '@7n/llm-lib/chain'
 import { deriveCacheKey, readCache, writeCache } from './cache.mjs'
 import { buildUserPrompt, SYSTEM_PROMPT } from './prompt.mjs'
 import { parseVerdict } from './verdict-schema.mjs'

@@ -3,7 +3,7 @@ type: JS Module
 title: assess-need.mjs
 resource: npm/src/assess-need.mjs
 docgen:
-  crc: 960f8332
+  crc: 20c3d440
   model: omlx/gemma-4-e4b-it-OptiQ-4bit
 ---
 

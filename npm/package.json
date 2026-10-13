@@ -1,6 +1,6 @@
 {
   "name": "@7n/test",
-  "version": "0.13.0",
+  "version": "0.17.3",
   "description": "CLI-утиліта @7n/test",
   "keywords": [
     "7n",
@@ -39,12 +39,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "^0.80.3",
-    "@nitra/check-env": "^4.2.1",
-    "@nitra/llm-lib": "^1.1.0",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@7n/llm-lib": "^2.8.2",
+    "@earendil-works/pi-coding-agent": "^0.80.10",
+    "@vitest/coverage-v8": "^5.0.4",
     "rollup": "^4.62.2",
-    "vitest": "^4.1.9",
+    "vitest": "^5.0.4",
     "zod": "^4.4.3"
   },
   "engines": {

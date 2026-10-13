@@ -28,7 +28,8 @@ For each survived Stryker mutant, classify it into exactly one verdict:
   The wrapper has no logic worth unit-testing in isolation; behavior comes from the
   wrapped tool. Name the integration test or pattern.
 
-Output ONLY a single JSON object matching this schema:
+Output ONLY a single JSON object matching this schema — no markdown code fences, no
+prose before or after, nothing but the JSON object itself:
 
 \`\`\`
 {
@@ -38,6 +39,15 @@ Output ONLY a single JSON object matching this schema:
   "suggestedTest": string (max 300 chars; required only when verdict is worth-testing)
 }
 \`\`\`
+
+The response must be valid JSON, parseable by a strict JSON.parse. In particular:
+- "reason" and "suggestedTest" are single-line strings: no literal newlines — if you
+  need to separate points, use "; " instead of a line break.
+- Escape every double quote and backslash that occurs inside a string value (e.g. a
+  quoted identifier like \`user.role\`, or a regex like /\\d+/, must become
+  \\"user.role\\" and /\\\\d+/ inside the JSON string).
+- Stay within the 500/300 char limits above — summarize instead of running long;
+  a response that gets cut off for length is worse than a terse one.
 
 Confidence guidance:
 - 0.9+: cite specific code fragment, identifier, or input contract proving the verdict.

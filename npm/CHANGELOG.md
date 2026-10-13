@@ -1,5 +1,128 @@
 # Changelog
 
+## [0.17.3] - 2026-07-22
+
+### Fixed
+
+- coverage-per-file: механізм захисту від сміттєвих шляхів замінено з базового CLI `--coverage.exclude` (затирав власні `coverage.exclude` цільового vitest.config та exclude shim-конфіга — CLI-override для array-полів замінює масив, не мерджить) на негативні патерни всередині `--coverage.include`; додатково тести під прихованими теками (вкладені робочі дерева `.claude/worktrees/**`, `.worktrees/**`) більше не запускаються (`--exclude` додається до `test.exclude`, не замінює), а lcov-рядки й failing-тести під прихованими шляхами фільтруються після парсингу звітів
+
+## [0.17.2] - 2026-07-22
+
+### Fixed
+
+- coverage-per-file: exclude .claude/**, node_modules, .git from unanchored --coverage.include CLI glob (was leaking into lcov via nested worktree copies)
+
+## [0.17.1] - 2026-07-21
+
+### Fixed
+
+- knip: `defaultRunner` у `storybook-run.mjs` більше не експортується — інʼєкція в тестах іде через `opts.runner` (за зразком `js-collector.mjs`), невикористаний експорт валив repo-wide lint
+
+## [0.17.0] - 2026-07-21
+
+### Added
+
+- Канон Storybook (ADR «Канон Storybook для Vue-компонентних бібліотек», Кластер 5): `isStorybookRoot()` детектує Storybook-пакети за канонічними identity-devDeps (`storybook`, `@storybook/vue3-vite`, `@storybook/vue3`, `msw`, `msw-storybook-addon`) у `package.json` workspace-а замість `.storybook/` + `@storybook/addon-vitest`; нова команда `@7n/test storybook` — швидкий PR-гейт `vitest run --project=storybook` (browser-mode chromium) по всіх Storybook-roots (nightly — повний `@7n/test coverage`); `@7n/test coverage` fail-fast перевіряє, що `stryker.config.*` Storybook-пакета вказує на ізольований `vitest.stryker.config.*`, і канонізовано підказку при відсутньому `mutation.json`.
+
+## [0.16.6] - 2026-07-20
+
+### Changed
+
+- Прибрано мертвий код (`resolveJsRoot`), винесено спільний `walk()`-хелпер (`bun-native.mjs`/`storybook.mjs` → `fs-walk.mjs`), прибрано невикористану залежність `@nitra/check-env`; виправлено дублювання кроків у `.github/workflows/{lint-js,lint-style,npm-publish}.yml` (canonical `bunx n-rules …`), синхронізовано `.vscode/settings.json`/`extensions.json` і кореневий `package.json#scripts` (`coverage`/`test`) з політиками `@7n/rules`.
+
+## [0.16.5] - 2026-07-20
+
+### Fixed
+
+- coverage-classify: витяг JSON з LLM-відповіді толерантний до markdown fences, prose навколо JSON, неекранованих лапок/backslash/control-символів у string-значеннях і задовгого reason (замість hard fail на JSON.parse/Zod)
+- coverage --fix: поділ fixSurvivedMutants на батчі за мутант-бюджетом (дефолт 40/batch), кожен batch — окремий агентний виклик з обробкою помилок і частковим прогресом замість uncaught timeout на весь проєкт; AGENT_TIMEOUT_MS configurable через N_CURSOR_AGENT_TIMEOUT_MS
+
+## [0.16.4] - 2026-07-19
+
+### Fixed
+
+- Оновлено @7n/llm-lib до 2.8.2 і @earendil-works/pi-coding-agent до ^0.80.10 — фіксить getRegistry() для нового auth-API pi (nitra/7n-rules#139), розблоковує gpt-5.6-* моделі для callText/callAgent (LLM-мутанти, класифікатор survived-мутантів, coverage --fix агент)
+
+## [0.16.3] - 2026-07-18
+
+### Fixed
+
+- Full-режим Storybook mutation testing: mutate-glob має виключати *.stories.* і *.mdx — інакше Stryker-інструментація ламає CSF-індексацію Storybook (виявлено при наскрізній перевірці через @7n/test coverage, підтверджено реальним mutation score 15/59 на Button/Header/Page.vue)
+
+## [0.16.2] - 2026-07-18
+
+### Fixed
+
+- coverage: точний root cause провалу full-режиму Storybook mutation testing — дві незалежні причини замість 'невідомо'. (1) Stryker-інструментація ламає vue-docgen-api парсер @storybook/vue3-vite (framework-вбудований, не залежить від addon-docs) — виправлено через docgen:false у .storybook/main.js#framework.options, root cause підтверджено відтворенням поза Stryker-процесом. (2) окремий, підтверджений upstream Vitest browser mode баг (vitest#9509) — детерміновано (3/3), не флейкі, прогрів кешу не допомагає, не виправна на нашому боці. Full-режим лишається задокументованим напрямком до фіксу у Vitest
+- coverage: подальше розслідування upstream Vitest browser-mode бага (vitest#9509) у full-режимі Storybook mutation testing — 11/11 детермінованих відтворень (було 3/3), простежено точний механізм резолву setup-file.js (bare-специфікатор через package.json#exports, версієзалежний .../internal/setup-file.browser.4), випробувано й відкинуто optimizeDeps.include з буквальним dist-шляхом (дає окрему exports-помилку) і з коректними bare-специфікаторами (синтаксично вірно, але не усуває fetch-провал). Висновок незмінний — --changed-executor лишається єдиним підтвердженим робочим шляхом
+- coverage: vitest#9509 закритий upstream, але його фікс (optimizeDeps.include з повним runtime-стеком) не переноситься на наш кейс — ізоляційний тест з mutate:[] (0 інструментованих файлів) дає ту саму fetch-помилку на setup-file.js, виключаючи вміст файлів; штучна затримка перед стартом vitest теж не допомогла, виключаючи startup-race. Провал специфічний до факту спавну як дочірнього процесу Stryker — ймовірно окремий, ще не задокументований баг зі схожим симптомом. Висновок незмінний: --changed-executor лишається єдиним підтвердженим шляхом
+- Full-режим Storybook mutation testing (Stryker command runner) тепер працює на реальних проєктах: root cause "Failed to fetch dynamically imported module" — symlinked node_modules у Stryker sandbox-копії, обхід через inPlace: true в stryker.storybook.config.mjs
+
+## [0.16.1] - 2026-07-18
+
+### Fixed
+
+- coverage: три реальні баги, знайдені живою перевіркою на справжньому Storybook 10 + Vue 3 проєкті (storybook init-скаффолд) — (1) --project=!storybook падав з 'No projects matched the filter' для проєктів без окремого JS unit-test vitest-проєкту (типовий default-скаффолд), тепер трактується як passWithNoTests; (2) .vue на Storybook-root виключено з JS-виміру Stryker-мутації — vitest-runner структурно не може прогнати dry-run, коли єдиний vitest-проєкт це browser-mode 'storybook', раніше це валило ВЕСЬ прогін; (3) Stryker CLI configFile — позиційний аргумент, не --configFile. Задокументовано нове невирішене обмеження full-режиму command runner на реальних проєктах (npm/docs/stryker-storybook-config.md) — --changed-executor лишається єдиним підтвердженим робочим шляхом
+
+## [0.16.0] - 2026-07-18
+
+### Added
+
+- coverage: full-режим mutation testing для Storybook через Stryker command runner — canonical stryker.storybook.config.mjs (testRunner:'command', jsonReporter → reports/stryker-storybook/mutation.json), спайк-валідований define-трюк для __STRYKER_ACTIVE_MUTANT__ у browser-mode vite-конфізі; без canonical конфіга — чесний skip, як і раніше. Задокументовано контракт у npm/docs/stryker-storybook-config.md
+
+## [0.15.0] - 2026-07-18
+
+### Added
+
+- coverage: окремий рядок «Vue (Storybook)» — Storybook-покриття через vitest browser mode (@storybook/addon-vitest), незалежно від JS/mutation-виміру
+- Mutation testing тепер мутує `.vue` SFC (`<script>`/`<script setup>`) поряд зі звичайним JS/TS — Stryker core підтримує це нативно, обмеження лише на browser-mode тести (Storybook). `run` (без `--no-mutation`) генерує Storybook CSF3 `.stories.*` для непокритих Vue-компонентів у Storybook-проєктах замість звичайних unit-тестів (`gen-stories.mjs`), з валідацією через реальний `vitest run --project=storybook`.
+- coverage: mutation testing для Storybook-покритого коду (vitest browser mode) — власний mutate→run→restore executor у --changed-режимі: детерміновані AST-мутанти (rollup parseAst, 5 тірів операторів) по змінених production-файлах і покритих сторі рядках (lcov DA), вбиває/милує реальний browser-mode прогін зі сторі-фільтром і бюджетами (8/файл, 32/прогін); survived мутанти йдуть у наявний ланцюг classify/fix
+- coverage: LLM-джерело мутантів для Storybook mutation executor-а (Mutahunter/Meta-ACH-патерн) — LLM пропонує context-aware bug-like мутанти (off-by-one, підмінені fallback, переплутані аргументи) поверх детермінованих, вбиває/милує так само лише реальний browser-mode прогін; жорстка валідація пропозицій (точний підрядок, покритий рядок, parseAst-синтакс-перевірка), власна стеля 3/файл, graceful degradation без API-ключа, opt-out N_7N_TEST_NO_LLM_MUTANTS=1
+
+### Fixed
+
+- deps: оновити @7n/llm-lib ^2.0.2 → ^2.7.6 — виправляє помилкову класифікацію unresolved-model викликів (порожній modelSpec) як cloud у chain-телеметрії; тепер фактично резолвлена pi-модель (напр. локальний omlx) прокидається в chain.note() коректно, окремий бакет unknownCalls замість неявного cloud
+
+## [0.14.5] - 2026-07-12
+
+### Fixed
+
+- runBunCoverage: --parallel для ізоляції test-файлів
+
+## [0.14.4] - 2026-07-11
+
+### Fixed
+
+- `measureCoveragePerFile`: не додавати `--coverage.exclude=**/*.d.ts` на CLI, коли target-проєкт має власний локальний vitest + `vitest.config.js` — CLI-флаг повністю замінює (не мерджить) масив `test.coverage.exclude` із конфіга проєкту, через що тихо затирались власні винятки (напр. bun-native-тести, що можуть виконуватись лише під `bun test`) і колектор помилково бачив уже покриті файли як 0%, намагаючись згенерувати для них нові тести. У bundled/shim-режимі (без локального vitest) флаг лишається — там немає стороннього конфіга для затирання.
+
+## [0.14.3] - 2026-07-11
+
+### Changed
+
+- feat(coverage): bun-native workspace підтримка — coverage через `bun test`
+
+## [0.14.2] - 2026-07-11
+
+### Changed
+
+- fix(coverage): окремий lock-ключ для --changed vs full-режиму
+
+## [0.14.1] - 2026-07-11
+
+### Changed
+
+- fix(coverage): самодостатній JS-колектор — без залежності від @nitra/cursor providers
+
+## [0.14.0] - 2026-07-11
+
+### Added
+
+- Ланцюжки (chains) @nitra/llm-lib ^1.1.0: mutant-classify — chain per mutant (tier1/tier2 = кроки, cache hit без chain), test-generate — chain per file (header + local/cloud спроби + vitest/length-retry = кроки), test-fix — chain per прогін (batch-виклики = кроки); адаптер callText/callAgent прокидає opts.chain. Аналітика ланцюжків — n-llm-chains-report і вкладка «Ланцюжки» в myllm.
+
+### Changed
+
+- підняти @7n/llm-lib до ^2.0.2 (rename @nitra/llm-lib → @7n/llm-lib уже застосовано в dacc051; нова мажорна версія без змін API — chains/компресія/body-capture, лише перейменування пакета)
+
 ## [0.13.0] - 2026-07-05
 
 ### Changed
