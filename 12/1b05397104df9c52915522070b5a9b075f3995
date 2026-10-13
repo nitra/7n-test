@@ -1,0 +1,25 @@
+hk.pkl
+  s_67b4eba3ce3a00::t_93143017a6bd9b 6
+bun.lock
+  s_67b4eba3ce3a00::t_ed0ce4b5d1bd8e 22,29,31,827-830,963,2221-2224,2273-2274,2377-2404,2449-2454
+npm/.changes/261013-0625.md
+  s_67b4eba3ce3a00::t_5a8ed22e371695 1-5
+npm/package.json
+  s_67b4eba3ce3a00::t_20d0ccfc321d80 44,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "121b05397104df9c52915522070b5a9b075f3995",
+  "prompts": {},
+  "sessions": {
+    "s_67b4eba3ce3a00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7e4fff7f-7e21-4382-a276-0f138a634c4a",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "vitaliytv <v@nitra.ai>"
+    }
+  }
+}
