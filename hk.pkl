@@ -3,7 +3,7 @@ amends "package://github.com/jdx/hk/releases/download/v1.42.0/hk@1.42.0#/Config.
 local linters = new Mapping<String, Step> {
   ["npm-tsc-types"] {
     check_first = false
-    fix = "cd npm && bunx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
+    fix = "cd npm && bunx -p typescript tsc src/**/*.mjs --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
   }
   ["npm-changelog"] {
     glob = List("npm/**")
