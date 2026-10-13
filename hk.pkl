@@ -1,7 +1,7 @@
-amends "package://hk/hk.pkl"
+amends "package://github.com/jdx/hk/releases/download/v2.6.0/hk@2.6.0#/Config.pkl"
 
 hooks {
   ["pre-commit"] {
-    command = "bunx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
+    command = "bunx -p typescript tsc src/**/*.mjs --declaration --allowJs --emitDeclarationOnly --outDir types --skipLibCheck"
   }
 }
