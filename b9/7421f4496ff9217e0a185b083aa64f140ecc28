@@ -1,0 +1,19 @@
+hk.pkl
+  s_67b4eba3ce3a00::t_88c041d2bb89fc 1,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b97421f4496ff9217e0a185b083aa64f140ecc28",
+  "prompts": {},
+  "sessions": {
+    "s_67b4eba3ce3a00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7e4fff7f-7e21-4382-a276-0f138a634c4a",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "vitaliytv <v@nitra.ai>"
+    }
+  }
+}
